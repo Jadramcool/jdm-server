@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  username    String    @unique
+  name        String?
+  phone       String?   @unique
+  email       String?   @unique
+  sex         Sex?      @default(OTHER)
+  birthday    DateTime?
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime? @updatedAt @map("updated_time")
+  deletedTime DateTime? @map("deleted_time")
+  password    String
+  deleted     Boolean   @default(false)
+
+  @@map("user")
+}
+
+model Navigation {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String?
+  url         String
+  order       Int?
+  authorId    Int
+  createdTime DateTime @default(now()) @map("created_time")
+  updatedTime DateTime @updatedAt @map("updated_time")
+
+  @@index([authorId], map: "navigation_authorId_fkey")
+  @@map("navigation")
+}
+
+model NavigationOnType {
+  id           Int @id @default(autoincrement())
+  navigationId Int
+  typeId       Int
+
+  @@index([typeId], map: "navigation_on_type_typeId_fkey")
+  @@map("navigation_on_type")
+}
+
+model Type {
+  id          Int      @id @default(autoincrement())
+  name        String
+  createdTime DateTime @default(now()) @map("created_time")
+  updatedTime DateTime @updatedAt @map("updated_time")
+
+  @@map("type")
+}
+
+// 枚举
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// 权限表
+model Premission {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String
+  type        String
+  pid         Int?
+  path        String
+  redirect    String?
+  icon        String
+  component   String?
+  layout      String
+  keepAlive   Boolean? @default(false)
+  method      String?
+  description String?
+  show        Boolean  @default(true)
+  enable      Boolean  @default(true)
+  order       Int
+
+  // // 如果`pid`字段代表父菜单ID，则可以添加关联关系
+  // parent Menu? @relation("MenuParent", fields: [pid], references: [id])
+
+  // // 如果菜单下还有子菜单，也可以添加关联关系
+  // children Menu[] @relation("MenuChildren")
+
+  @@map("premission")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdTime DateTime @default(now()) @map("created_time")
+  updatedTime DateTime @updatedAt @map("updated_time")
+
+  @@map("role")
+}
+
+model RoleOnPremission {
+  id           Int @id @default(autoincrement())
+  roleId       Int
+  premissionId Int
+
+  @@index([premissionId], map: "role_on_premission_premissionId_fkey")
+  @@map("role_on_premission")
+}
+
+model UserOnRole {
+  id     Int @id @default(autoincrement())
+  userId Int
+  roleId Int
+
+  @@index([roleId], map: "user_on_role_roleId_fkey")
+  @@map("user_on_role")
+}

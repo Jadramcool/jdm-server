@@ -1,0 +1,23 @@
+# GET http://localhost:3000/api/user/index HTTP/1.1
+# Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjMsIm5hbWUiOiJqZG0xIiwiZW1haWwiOiIxMjMxMzEyM0BxcS5jb20iLCJpYXQiOjE3MTM0OTI3MTUsImV4cCI6MTcxNDA5NzUxNX0.tU324BvbOphpSNRJqLoO31lDengAVxQHiBYxI0g40-w
+
+// 注册
+# POST http://localhost:3000/api/user/register HTTP/1.1
+# Content-Type: application/json
+
+# {
+#     "username":"j1d111m1",
+#     "password":"123123"
+# }
+# // 登录
+# POST http://localhost:3000/api/user/login HTTP/1.1
+# Content-Type: application/json
+
+# {
+#     "username":"jd111m1",
+#     "password":"123123"
+# }
+
+# 用户信息
+GET http://localhost:3000/api/user/info HTTP/1.1
+Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYsInVzZXJuYW1lIjoiMTIzIiwibmFtZSI6bnVsbCwicGhvbmUiOm51bGwsImVtYWlsIjpudWxsLCJzZXgiOiJPVEhFUiIsImJpcnRoZGF5IjpudWxsLCJjcmVhdGVkVGltZSI6IjIwMjQtMDQtMjlUMDY6NTI6NDguNjA2WiIsInVwZGF0ZWRUaW1lIjoiMjAyNC0wNC0yOVQwNjo1Mjo0OC42MDZaIiwiaWF0IjoxNzE0OTY3OTQyLCJleHAiOjE3MTU1NzI3NDJ9.XvGKOLZseQSYuC4x-I7D_45wH70Pj-YJ8qljwPCPXBg
