@@ -253,7 +253,7 @@ export class UserService {
     }
   }
   // 获取权限
-  public async getPremissionMenu(userId: number) {
+  public async getPermissionMenu(userId: number) {
     try {
       return {
         data: menu,

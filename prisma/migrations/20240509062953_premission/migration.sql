@@ -8,7 +8,7 @@
 DROP TABLE `menus`;
 
 -- CreateTable
-CREATE TABLE `premission` (
+CREATE TABLE `permission` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `code` VARCHAR(191) NOT NULL,

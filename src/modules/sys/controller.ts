@@ -16,14 +16,14 @@ export class System {
     private readonly SystemService: SystemService
   ) {}
 
-  @Get("/premission")
+  @Get("/permission")
   public async getMenu(req: Request, res: Response) {
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.SystemService.getPremissionList();
+    }: Jres = await this.SystemService.getPermissionList();
     res.sendResult(data, code, message, errMsg);
   }
 }

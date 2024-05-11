@@ -86,12 +86,12 @@ CREATE TABLE `role` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `role_on_premission` (
+CREATE TABLE `role_on_permission` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `roleId` INTEGER NOT NULL,
-    `premissionId` INTEGER NOT NULL,
+    `permissionId` INTEGER NOT NULL,
 
-    INDEX `role_on_premission_premissionId_fkey`(`premissionId`),
+    INDEX `role_on_permission_permissionId_fkey`(`permissionId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

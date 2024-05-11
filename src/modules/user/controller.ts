@@ -53,14 +53,14 @@ export class User {
     res.sendResult(data, code, message, errMsg);
   }
 
-  @Get("/premission/menu", JWT.middleware())
-  public async getPremissionMenu(req: Request, res: Response) {
+  @Get("/permission/menu", JWT.middleware())
+  public async getPermissionMenu(req: Request, res: Response) {
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.userService.getPremissionMenu(req.user?.id);
+    }: Jres = await this.userService.getPermissionMenu(req.user?.id);
     res.sendResult(data, code, message, errMsg);
   }
 }

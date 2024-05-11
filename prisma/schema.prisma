@@ -64,7 +64,7 @@ enum Sex {
 }
 
 // 权限表
-model Premission {
+model Permission {
   id          Int      @id @default(autoincrement())
   name        String
   code        String
@@ -88,7 +88,7 @@ model Premission {
   // // 如果菜单下还有子菜单，也可以添加关联关系
   // children Menu[] @relation("MenuChildren")
 
-  @@map("premission")
+  @@map("permission")
 }
 
 model Role {
@@ -101,13 +101,13 @@ model Role {
   @@map("role")
 }
 
-model RoleOnPremission {
+model RoleOnPermission {
   id           Int @id @default(autoincrement())
   roleId       Int
-  premissionId Int
+  permissionId Int
 
-  @@index([premissionId], map: "role_on_premission_premissionId_fkey")
-  @@map("role_on_premission")
+  @@index([permissionId], map: "role_on_permission_permissionId_fkey")
+  @@map("role_on_permission")
 }
 
 model UserOnRole {

@@ -8,9 +8,9 @@ import { validate } from "class-validator";
 export class SystemService {
   constructor(@inject(PrismaDB) private readonly PrismaDB: PrismaDB) {}
   // 获取菜单
-  public async getPremissionList(userId: number = 1) {
+  public async getPermissionList(userId: number = 1) {
     try {
-      const result = await this.PrismaDB.prisma.premission.findMany({});
+      const result = await this.PrismaDB.prisma.permission.findMany({});
       return {
         data: result,
         message: "",
