@@ -5,9 +5,9 @@ import { IsNotEmpty, IsEmail, IsMobilePhone } from "class-validator";
 import { Transform } from "class-transformer";
 
 export class UserDto {
-  @IsNotEmpty({ message: "名称是必填的" })
+  @IsNotEmpty({ message: "用户名是必填的" })
   @Transform((user) => user.value.trim())
-  name: string;
+  username: string;
 
   @IsNotEmpty({ message: "邮箱是必填的" })
   @IsEmail({}, { message: "邮箱格式不正确" })
@@ -18,5 +18,15 @@ export class UserDto {
   phone: string;
 
   @IsNotEmpty({ message: "密码是必填的" })
+  password: string;
+}
+
+export class LoginDto {
+  @IsNotEmpty({ message: "用户名是必填的" })
+  @Transform((user) => user.value.trim())
+  username: string;
+
+  @IsNotEmpty({ message: "密码是必填的" })
+  @Transform((password) => password.value.trim())
   password: string;
 }

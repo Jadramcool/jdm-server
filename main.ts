@@ -1,10 +1,13 @@
+// 引入模块别名
+import "module-alias/register";
 import "reflect-metadata"; // 反射元数据功能
-import { InversifyExpressServer } from "inversify-express-utils";
+import { InversifyExpressServer, getRouteInfo } from "inversify-express-utils";
 import { JWT } from "./src/jwt";
 import express from "express";
 import createContainer from "./config/container";
 import { responseHandler } from "./src/middleware/sendResult";
 import cors from "cors";
+import * as prettyjson from "prettyjson";
 
 const container = createContainer();
 
@@ -23,6 +26,9 @@ server.setConfig((app) => {
 
 // 构建一个Express应用程序
 const app = server.build();
+
+const routeInfo = getRouteInfo(container);
+console.log(prettyjson.render({ routes: routeInfo }));
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");

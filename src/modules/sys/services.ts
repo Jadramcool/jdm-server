@@ -1,6 +1,5 @@
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../db";
-import { UserDto } from "./user.dto";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 

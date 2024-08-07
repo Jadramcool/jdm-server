@@ -9,7 +9,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@db/*": ["db/*"],
+      "@jwt/*": ["jwt/*"]
+    }
   },
   "include": ["src/**/*", "src/typings/*.d.ts", "src/typings/global.d.ts"]
 }
