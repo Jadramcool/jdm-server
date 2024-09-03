@@ -1,0 +1,53 @@
+2024-09-03 15:37:16.684 [ExpressApp] [INFO]: HTTP GET /api/user/info | {} | undefined
+2024-09-03 15:37:16.713 [ExpressApp] [INFO]: HTTP GET /api/system/permission/list | {} | undefined
+2024-09-03 15:37:21.301 [ExpressApp] [INFO]: HTTP GET /api/user/info | {} | undefined
+2024-09-03 15:37:25.198 [ExpressApp] [INFO]: HTTP GET /api/user/info | {} | undefined
+2024-09-03 15:37:29.132 [ExpressApp] [INFO]: HTTP POST /api/user/login | {} | undefined
+2024-09-03 15:37:29.166 [ExpressApp] [INFO]: HTTP GET /api/user/info | {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:37:29.188 [ExpressApp] [INFO]: HTTP GET /api/system/permission/list | {} | undefined
+2024-09-03 15:37:32.369 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:37:32.536 [ExpressApp] [INFO]: HTTP GET /api/user/info | {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:38:51.785 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:39:43.615 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | undefined
+2024-09-03 15:39:59.227 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | undefined
+2024-09-03 15:40:55.291 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:41:38.947 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:41:49.852 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | undefined
+2024-09-03 15:41:51.255 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | undefined
+2024-09-03 15:43:39.824 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:44:48.891 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:44:58.038 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:45:55.386 [ExpressApp] [INFO]: HTTP GET /api/system/user/list?pagination=%7B%22page%22:1,%22pageSize%22:10%7D&options=%7B%7D&filters=%7B%22username_in%22:%221%22,%22sex%22:%22OTHER%22%7D | query: {"pagination":"{\"page\":1,\"pageSize\":10}","options":"{}","filters":"{\"username_in\":\"1\",\"sex\":\"OTHER\"}"} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:46:25.313 [ExpressApp] [INFO]: HTTP GET /api/user/info | query: {} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:46:26.317 [ExpressApp] [INFO]: HTTP GET /api/user/info | query: {} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:46:26.445 [ExpressApp] [INFO]: HTTP GET /api/system/permission/list | query: {} | user:  undefined
+2024-09-03 15:46:29.799 [ExpressApp] [INFO]: HTTP GET /api/user/info | query: {} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:17.962 [ExpressApp] [INFO]: HTTP GET /api/user/info | query: {} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:17.987 [ExpressApp] [INFO]: HTTP GET /api/system/permission/list | query: {} | user:  undefined
+2024-09-03 15:55:23.793 [ExpressApp] [INFO]: HTTP GET /api/user/info | query: {} | user:  id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:56.927 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:58.744 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:59.459 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:55:59.817 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:56:00.320 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:56:42.841 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:56:42.866 [ExpressApp] [INFO]: message: HTTP GET /api/system/permission/list | query: {} | user: undefined
+2024-09-03 15:56:46.102 [ExpressApp] [INFO]: message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:57:22.150 [ExpressApp] [INFO]: url: /api/user/info | message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:57:22.166 [ExpressApp] [INFO]: url: /api/system/permission/list | message: HTTP GET /api/system/permission/list | query: {} | user: undefined
+2024-09-03 15:57:25.527 [ExpressApp] [INFO]: url: /api/user/info | message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:58:36.103 [ExpressApp] [INFO]: url: /api/user/info | message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:58:38.798 [ExpressApp] [INFO]: url: /api/user/info | message: HTTP GET /api/user/info | query: {} | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:59:53.236 [ExpressApp] [INFO]: url=/api/user/info, method=GET,query={}, status=200, responseTime=37 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 15:59:53.262 [ExpressApp] [INFO]: url=/api/system/permission/list, method=GET,query={}, status=304, responseTime=3 | message: HTTP GET /api/system/permission/list | user: undefined
+2024-09-03 15:59:56.541 [ExpressApp] [INFO]: url=/api/user/info, method=GET,query={}, status=200, responseTime=10 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:27.442 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 20 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:28.834 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 29 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:29.267 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 34 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:29.604 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 304, responseTime: 25 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:30.084 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 24 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:30.505 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 304, responseTime: 33 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:30.823 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 304, responseTime: 27 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:56.170 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 20 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null
+2024-09-03 16:01:56.207 [ExpressApp] [INFO]: url: /api/system/permission/list, method: GET, query: {}, status: 304, responseTime: 7 | message: HTTP GET /api/system/permission/list | user: undefined
+2024-09-03 16:01:59.515 [ExpressApp] [INFO]: url: /api/user/info, method: GET, query: {}, status: 200, responseTime: 17 | message: HTTP GET /api/user/info | user: id=2, username=jdm, name=null, phone=null

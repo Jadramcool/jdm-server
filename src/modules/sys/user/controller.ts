@@ -1,8 +1,8 @@
 /*
  * @Author: Jay
  * @Date: 2024-05-11 17:56:25
- * @LastEditors: Jay
- * @LastEditTime: 2024-07-24 11:58:50
+ * @LastEditors: jdm
+ * @LastEditTime: 2024-08-21 15:42:05
  * @FilePath: \APP\src\modules\sys\user\controller.ts
  * @Description:
  *
@@ -30,6 +30,8 @@ export class UserManager {
 
   @Get("/list", JWT.middleware())
   public async getUser(req: Request, res: Response) {
+    console.log(JWT.middleware());
+    // console.log("🚀 ~ UserManager ~ getUser ~ req:", req)
     // 将query的key-value value的json参数转换为对象
     const query: any = req.query;
 

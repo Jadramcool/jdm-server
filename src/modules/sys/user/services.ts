@@ -4,6 +4,7 @@ import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import { JWT } from "@jwt/index";
 import { UserDto } from "./user.dto";
+import { FilterHelper } from "@/utils";
 
 // Exclude keys from user
 function exclude<User, K extends keyof User>(
@@ -28,20 +29,22 @@ export class UserManagerService {
     // 过滤条件
 
     filters = filters || {};
+    let sqlFilters = {};
     if (Object.keys(filters).length > 0) {
-      // 用户名
-      filters["username"] = { contains: filters["username"] };
-      // 性别
-      filters["sex"] = { equals: filters["sex"] };
+      sqlFilters = FilterHelper.addFilterCondition(filters, [
+        "username",
+        "sex",
+      ]);
     }
 
+    console.log("sqlFilters", sqlFilters);
     let result = [];
     // 总页数
     let totalPages = 1;
 
     // 查询总数
     const totalRecords = await this.PrismaDB.prisma.user.count({
-      where: filters,
+      where: sqlFilters,
     });
 
     let page = 1;
@@ -50,7 +53,7 @@ export class UserManagerService {
     // 如果不显示分页，则直接返回所有数据
     if (options["showPagination"] && !options["showPagination"]) {
       result = await this.PrismaDB.prisma.user.findMany({
-        where: filters,
+        where: sqlFilters,
       });
     } else {
       page = parseInt(pagination.page as string);
@@ -59,7 +62,7 @@ export class UserManagerService {
       result = await this.PrismaDB.prisma.user.findMany({
         skip: (page - 1) * pageSize || 0,
         take: pageSize || 10,
-        where: filters,
+        where: sqlFilters,
       });
 
       totalPages = Math.ceil(totalRecords / pageSize);

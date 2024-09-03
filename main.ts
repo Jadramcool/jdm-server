@@ -1,3 +1,12 @@
+/*
+ * @Author: jdm
+ * @Date: 2024-04-23 15:44:47
+ * @LastEditors: jdm
+ * @LastEditTime: 2024-08-21 11:28:06
+ * @FilePath: \APP\main.ts
+ * @Description:
+ *
+ */
 // 引入模块别名
 import "module-alias/register";
 import "reflect-metadata"; // 反射元数据功能
@@ -8,6 +17,7 @@ import createContainer from "./config/container";
 import { responseHandler } from "./src/middleware/sendResult";
 import cors from "cors";
 import * as prettyjson from "prettyjson";
+import { logger } from "./src/middleware/logger";
 
 const container = createContainer();
 
@@ -22,6 +32,7 @@ server.setConfig((app) => {
   app.use(container.get(JWT).init());
   app.use(responseHandler);
   app.use(cors());
+  app.use(logger);
 });
 
 // 构建一个Express应用程序

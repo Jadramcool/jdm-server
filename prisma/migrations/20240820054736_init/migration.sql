@@ -9,7 +9,9 @@ CREATE TABLE `user` (
     `birthday` DATETIME(3) NULL,
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NULL,
+    `deleted_time` DATETIME(3) NULL,
     `password` VARCHAR(191) NOT NULL,
+    `deleted` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `user_username_key`(`username`),
     UNIQUE INDEX `user_phone_key`(`phone`),
@@ -53,7 +55,7 @@ CREATE TABLE `type` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `menus` (
+CREATE TABLE `permission` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `code` VARCHAR(191) NOT NULL,
