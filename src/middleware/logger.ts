@@ -2,11 +2,13 @@
  * @Author: jdm
  * @Date: 2024-08-21 10:29:39
  * @LastEditors: jdm
- * @LastEditTime: 2024-09-03 15:59:21
+ * @LastEditTime: 2024-10-26 16:18:37
  * @FilePath: \APP\src\middleware\logger.ts
- * @Description:
+ * @Description: 日志中间件配置文件
  *
  */
+
+// 导入所需模块
 import expressWinston from "express-winston";
 import winston from "winston";
 import "winston-daily-rotate-file";
@@ -38,7 +40,7 @@ const myFormat = winston.format.printf((info) => {
 
   // 用户信息
   let user: string;
-  if (meta.user) {
+  if (meta && meta.user) {
     const { id, username, name, phone } = meta.user;
     user = `id=${id}, username=${username}, name=${name}, phone=${phone}`;
   }

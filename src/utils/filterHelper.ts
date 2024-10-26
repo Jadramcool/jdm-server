@@ -2,10 +2,16 @@
  * @Author: jdm
  * @Date: 2024-08-21 15:59:38
  * @LastEditors: jdm
- * @LastEditTime: 2024-08-21 16:23:49
+ * @LastEditTime: 2024-09-05 14:59:29
  * @FilePath: \APP\src\utils\filterHelper.ts
  * @Description: 添加过滤条件
  *
+ */
+/**
+ * @description: 通过传来的key，解析出对应的过滤条件
+ * @param {Record<string, any>} filters 过滤条件
+ * @param {string | string[]} field 字段名
+ * @return {*}
  */
 export const addFilterCondition = (
   filters: Record<string, any>,

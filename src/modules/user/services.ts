@@ -1,120 +1,12 @@
-import { inject, injectable } from "inversify";
-import { PrismaDB } from "../../db";
-import { LoginDto, UserDto } from "./user.dto";
+import { ErrorInfo } from "@/utils";
+import bcrypt from "bcryptjs";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
+import { inject, injectable } from "inversify";
+import { PrismaDB } from "../../db";
 import { JWT } from "../../jwt";
 import { checkUnique } from "../../utils/checkUnique";
-
-const menu = [
-  {
-    id: 1,
-    name: "默认",
-    code: "Default",
-    type: "MENU",
-    pid: null,
-    path: "/default",
-    redirect: "/default/home",
-    icon: "fe:layout",
-    component: null,
-    layout: "normal",
-    keepAlive: null,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 0,
-  },
-  {
-    id: 2,
-    name: "首页",
-    code: "Home",
-    type: "MENU",
-    pid: 1,
-    path: "/default/home",
-    icon: "fe:layout",
-    component: "/src/views/home/index.vue",
-    layout: "normal",
-    keepAlive: true,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 0,
-  },
-  {
-    id: 9,
-    name: "基础功能",
-    code: "Base",
-    type: "MENU",
-    pid: null,
-    path: "/base",
-    redirect: "/base/components",
-    icon: "fe:layout",
-    component: null,
-    layout: "",
-    keepAlive: null,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 0,
-  },
-  {
-    id: 10,
-    name: "基础组件",
-    code: "BaseComponents",
-    type: "MENU",
-    pid: 9,
-    path: "/base/components",
-    redirect: null,
-    icon: "mdi:ab-testing",
-    component: "/src/views/base/index.vue",
-    layout: null,
-    keepAlive: false,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 2,
-  },
-  {
-    id: 11,
-    name: "Unocss组件",
-    code: "Unocss",
-    type: "MENU",
-    pid: 9,
-    path: "/base/unocss",
-    redirect: null,
-    icon: "mdi:abugida-thai",
-    component: "/src/views/base/unocss.vue",
-    layout: null,
-    keepAlive: false,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 1,
-  },
-  {
-    id: 12,
-    name: "KeepAlive组件",
-    code: "KeepAlive",
-    type: "MENU",
-    pid: 9,
-    path: "/base/keep-alive",
-    redirect: null,
-    icon: "mdi:account-circle-outline",
-    component: "/src/views/base/keep-alive.vue",
-    layout: null,
-    keepAlive: true,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 3,
-  },
-];
+import { LoginDto, UserDto } from "./user.dto";
 
 @injectable()
 export class UserService {
@@ -122,10 +14,6 @@ export class UserService {
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
   ) {}
-
-  public async getList() {
-    return await this.PrismaDB.prisma.user.findMany();
-  }
 
   /**
    * 创建用户
@@ -167,9 +55,15 @@ export class UserService {
         if (isUnique) {
           return {
             code: 400,
-            errMsg: "用户名已存在",
+            errMsg: ErrorInfo.userError.register_username_exist, // 用户名已存在
           };
         }
+        const password = user.password;
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        user.password = hash;
+
         const result = await this.PrismaDB.prisma.user.create({
           data: user,
         });
@@ -193,30 +87,38 @@ export class UserService {
     try {
       let loginDto = plainToClass(LoginDto, user);
       const errors = await validate(loginDto);
+      if (errors.length) {
+        return errors;
+      }
+      // 登录
       const result = await this.PrismaDB.prisma.user.findUnique({
-        where: { username: user.username, password: user.password },
+        where: { username: user.username },
       });
-      // 删除密码
+
       if (!result) {
         return {
           code: 400,
-          errMsg: "用户名或密码错误",
+          errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
         };
-      } else {
-        delete result.password;
       }
-      if (errors.length) {
-        return errors;
-      } else {
+      const isMatch = await bcrypt.compare(user.password, result.password);
+      if (!isMatch) {
         return {
-          data: {
-            ...result,
-            token: this.JWT.createToken(result),
-          },
-          code: 200,
-          message: "登录成功",
+          code: 400,
+          errMsg: ErrorInfo.userError.login_password_error, // 密码错误
         };
       }
+
+      delete result.password;
+
+      return {
+        data: {
+          ...result,
+          token: this.JWT.createToken(result),
+        },
+        code: 200,
+        message: "登录成功",
+      };
     } catch (err) {
       return err;
     }
@@ -234,7 +136,7 @@ export class UserService {
       if (!result) {
         return {
           code: 400,
-          errMsg: "用户不存在",
+          errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
         };
       }
       delete result.password;
@@ -243,20 +145,6 @@ export class UserService {
           ...result,
           token: this.JWT.createToken(result),
         },
-        code: 200,
-        message: "获取用户信息成功",
-      };
-      // 删除密码
-    } catch (err) {
-      console.log(err);
-      return err;
-    }
-  }
-  // 获取权限
-  public async getPermissionMenu(userId: number) {
-    try {
-      return {
-        data: menu,
         code: 200,
         message: "获取用户信息成功",
       };

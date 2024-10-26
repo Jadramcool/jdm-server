@@ -1,7 +1,16 @@
-import { injectable, inject } from "inversify";
-import passport from "passport";
+/*
+ * @Author: jdm
+ * @Date: 2024-04-23 15:44:52
+ * @LastEditors: jdm
+ * @LastEditTime: 2024-10-21 11:17:53
+ * @FilePath: \APP\src\jwt\index.ts
+ * @Description:
+ *
+ */
+import { injectable } from "inversify";
 import jsonwebtoken from "jsonwebtoken";
-import { Strategy, ExtractJwt } from "passport-jwt"; // 他是passport的插件
+import passport from "passport";
+import { ExtractJwt, Strategy } from "passport-jwt"; // 他是passport的插件
 
 @injectable()
 export class JWT {
@@ -34,7 +43,7 @@ export class JWT {
   /**
    * @returns 中间件
    */
-  static middleware() {
+  static authenticateJwt() {
     // 需要经过这个中间件去验证token
     return passport.authenticate("jwt", { session: false });
   }
@@ -44,7 +53,7 @@ export class JWT {
    * @param data Object
    */
   public createToken(data: object) {
-    // 生成token
+    // 生成tokenF
     return jsonwebtoken.sign(data, this.secret, { expiresIn: "7d" });
   }
 
@@ -52,7 +61,6 @@ export class JWT {
     // token = token ? token.split("Bearer ")[1] : null;
     // 验证token
     return jsonwebtoken.verify(token, this.secret);
-    // return jsonwebtoken.verify(token, this.secret);
   }
 
   /**

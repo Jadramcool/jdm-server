@@ -17,9 +17,5 @@ export const checkUnique = async (
     where: { [key]: name },
   });
 
-  if (existing) {
-    return true;
-  } else {
-    return false;
-  }
+  return !!existing;
 };

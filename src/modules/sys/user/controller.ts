@@ -2,21 +2,17 @@
  * @Author: Jay
  * @Date: 2024-05-11 17:56:25
  * @LastEditors: jdm
- * @LastEditTime: 2024-08-21 15:42:05
+ * @LastEditTime: 2024-09-24 11:47:56
  * @FilePath: \APP\src\modules\sys\user\controller.ts
  * @Description:
  *
  */
-import {
-  controller,
-  httpGet as Get,
-  httpPost as Post,
-} from "inversify-express-utils";
-import { UserManagerService } from "./services";
-import { UtilService } from "../../../utils/utils";
-import { inject } from "inversify"; // 装饰器 用于依赖注入
-import { JWT } from "../../../jwt";
+import { JWT } from "@/jwt";
 import type { Request, Response } from "express";
+import { inject } from "inversify"; // 装饰器 用于依赖注入
+import { controller, httpGet as Get } from "inversify-express-utils";
+import { UtilService } from "../../../utils/utils";
+import { UserManagerService } from "./services";
 
 @controller("/system/user")
 export class UserManager {
@@ -28,10 +24,8 @@ export class UserManager {
     private readonly UtilService: UtilService
   ) {}
 
-  @Get("/list", JWT.middleware())
+  @Get("/list", JWT.authenticateJwt())
   public async getUser(req: Request, res: Response) {
-    console.log(JWT.middleware());
-    // console.log("🚀 ~ UserManager ~ getUser ~ req:", req)
     // 将query的key-value value的json参数转换为对象
     const query: any = req.query;
 
@@ -49,7 +43,7 @@ export class UserManager {
     res.sendResult(data, code, message, errMsg);
   }
 
-  @Get("/detail/:id", JWT.middleware())
+  @Get("/detail/:id", JWT.authenticateJwt())
   public async getUserInfo(req: Request, res: Response) {
     const userId = Number(req.params.id);
     let {

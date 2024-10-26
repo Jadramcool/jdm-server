@@ -2,22 +2,23 @@
  * @Author: jdm
  * @Date: 2024-04-23 15:44:47
  * @LastEditors: jdm
- * @LastEditTime: 2024-08-21 11:28:06
+ * @LastEditTime: 2024-10-26 16:19:01
  * @FilePath: \APP\main.ts
  * @Description:
  *
  */
+import "reflect-metadata";
+
 // 引入模块别名
 import "module-alias/register";
-import "reflect-metadata"; // 反射元数据功能
-import { InversifyExpressServer, getRouteInfo } from "inversify-express-utils";
-import { JWT } from "./src/jwt";
-import express from "express";
-import createContainer from "./config/container";
-import { responseHandler } from "./src/middleware/sendResult";
 import cors from "cors";
+import express from "express";
+import { InversifyExpressServer, getRouteInfo } from "inversify-express-utils";
 import * as prettyjson from "prettyjson";
+import createContainer from "./config/container";
+import { JWT } from "./src/jwt";
 import { logger } from "./src/middleware/logger";
+import { responseHandler } from "./src/middleware/sendResult";
 
 const container = createContainer();
 

@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model SysConfig {
+  id          Int      @id @default(autoincrement())
+  name        String
+  value       Boolean
+  description String?
+  createdTime DateTime @default(now()) @map("created_time")
+  updatedTime DateTime @updatedAt @map("updated_time")
+
+  @@map("sys_config")
+}
+
 model User {
   id          Int       @id @default(autoincrement())
   username    String    @unique

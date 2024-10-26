@@ -1,0 +1,7 @@
+{
+  "name": "name接口文档",
+  "title": "title接口文档",
+  "description": "接口文档说明",
+  "url": "http://localhost:3000/api",
+  "version": "1.0.0"
+}
