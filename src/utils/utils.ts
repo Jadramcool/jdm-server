@@ -3,7 +3,8 @@ import { injectable } from "inversify";
 @injectable()
 export class UtilService {
   // 解析查询参数
-  public parseQueryParams(query: any): any {
+  public parseQueryParams(req: any): any {
+    const { query, user = {} } = req;
     const parsedQuery: any = {};
     for (const key in query) {
       if (query.hasOwnProperty(key)) {
@@ -15,6 +16,7 @@ export class UtilService {
         }
       }
     }
+    parsedQuery.user = user;
     return parsedQuery;
   }
 }

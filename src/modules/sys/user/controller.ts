@@ -29,7 +29,7 @@ export class UserManager {
     // 将query的key-value value的json参数转换为对象
     const query: any = req.query;
 
-    const config = this.UtilService.parseQueryParams(query);
+    const config = this.UtilService.parseQueryParams(req);
     console.log("🚀 ~ UserManager ~ getUser ~ config:", config);
     // 打印时间
     console.log("-------", new Date().toLocaleString());

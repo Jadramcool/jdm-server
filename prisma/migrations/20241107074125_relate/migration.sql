@@ -1,4 +1,16 @@
 -- CreateTable
+CREATE TABLE `sys_config` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `value` BOOLEAN NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_time` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `user` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(191) NOT NULL,
@@ -12,6 +24,7 @@ CREATE TABLE `user` (
     `deleted_time` DATETIME(3) NULL,
     `password` VARCHAR(191) NOT NULL,
     `deleted` BOOLEAN NOT NULL DEFAULT false,
+    `status` INTEGER NOT NULL DEFAULT 0,
 
     UNIQUE INDEX `user_username_key`(`username`),
     UNIQUE INDEX `user_phone_key`(`phone`),
@@ -26,31 +39,11 @@ CREATE TABLE `navigation` (
     `content` VARCHAR(191) NULL,
     `url` VARCHAR(191) NOT NULL,
     `order` INTEGER NULL,
-    `authorId` INTEGER NOT NULL,
+    `author_id` INTEGER NOT NULL,
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NOT NULL,
 
-    INDEX `navigation_authorId_fkey`(`authorId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `navigation_on_type` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `navigationId` INTEGER NOT NULL,
-    `typeId` INTEGER NOT NULL,
-
-    INDEX `navigation_on_type_typeId_fkey`(`typeId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `type` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_time` DATETIME(3) NOT NULL,
-
+    INDEX `navigation_authorId_fkey`(`author_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -88,21 +81,31 @@ CREATE TABLE `role` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `role_on_permission` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `roleId` INTEGER NOT NULL,
-    `permissionId` INTEGER NOT NULL,
+CREATE TABLE `_roleToPermission` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
 
-    INDEX `role_on_permission_permissionId_fkey`(`permissionId`),
-    PRIMARY KEY (`id`)
+    UNIQUE INDEX `_roleToPermission_AB_unique`(`A`, `B`),
+    INDEX `_roleToPermission_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `user_on_role` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` INTEGER NOT NULL,
-    `roleId` INTEGER NOT NULL,
+CREATE TABLE `_userToRole` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
 
-    INDEX `user_on_role_roleId_fkey`(`roleId`),
-    PRIMARY KEY (`id`)
+    UNIQUE INDEX `_userToRole_AB_unique`(`A`, `B`),
+    INDEX `_userToRole_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `_roleToPermission` ADD CONSTRAINT `_roleToPermission_A_fkey` FOREIGN KEY (`A`) REFERENCES `permission`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_roleToPermission` ADD CONSTRAINT `_roleToPermission_B_fkey` FOREIGN KEY (`B`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_userToRole` ADD CONSTRAINT `_userToRole_A_fkey` FOREIGN KEY (`A`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_userToRole` ADD CONSTRAINT `_userToRole_B_fkey` FOREIGN KEY (`B`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

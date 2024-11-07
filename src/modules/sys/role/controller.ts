@@ -27,7 +27,7 @@ export class RoleManager {
   public async getUser(req: Request, res: Response) {
     // 将query的key-value value的json参数转换为对象
     const query: any = req.query;
-    const config = this.UtilService.parseQueryParams(query);
+    const config = this.UtilService.parseQueryParams(req);
 
     let {
       data = null,

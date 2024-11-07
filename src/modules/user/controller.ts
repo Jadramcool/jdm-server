@@ -7,15 +7,6 @@
  * @Description:
  *
  */
-/*
- * @Author: jdm
- * @Date: 2024-04-23 15:44:52
- * @LastEditors: jdm
- * @LastEditTime: 2024-09-06 11:18:44
- * @FilePath: \APP\src\modules\user\controller.ts
- * @Description:
- *
- */
 // <reference path="../../global.d.ts" />
 import type { Request, Response } from "express";
 import { inject } from "inversify"; // 装饰器 用于依赖注入
@@ -176,6 +167,7 @@ export class User {
    * @apiSuccess {String} data.birthday 生日
    * @apiSuccess {String} data.createdTime 创建时间
    * @apiSuccess {String} data.updatedTime 更新时间
+   * @apiSuccess {Object} data.roles 角色
    *
    **/
 
@@ -187,6 +179,85 @@ export class User {
       message = "",
       errMsg = "",
     }: Jres = await this.userService.getUserInfo(req.user?.id);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @api {get} /user/info 获取用户角色信息
+   * @apiName GetUserRole
+   * @apiGroup User
+   * @apiVersion 1.0.0
+   * @apiPermission JWT
+   * @apiDescription 获取用户角色信息
+   * @apiHeader {String} Authorization 用户登录凭证，格式为Bearer + 空格 + token
+   * @apiHeaderExample {json} Header-Example:
+   *     {
+   *       "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJqZG0iLCJuYW1lIjpudWxsLCJwaG9uZSI6bnVsbCwiZW1haWwiOm51bGwsInNleCI6Ik9USEVSIiwiYmlydGhkYXkiOm51bGwsImNyZWF0ZWRUaW1lIjoiMjAyNC0wOS0wNFQwOToxNToxNC40NjdaIiwidXBkYXRlZFRpbWUiOiIyMDI0LTA5LTA0VDA5OjE1OjE0LjQ2N1oiLCJkZWxldGVkVGltZSI6bnVsbCwiZGVsZXR
+   *     }
+   * @apiSuccess {Object} data 用户数据
+   * @apiSuccess {String} data.id 用户ID
+   * @apiSuccess {String} data.username 用户名
+   * @apiSuccess {String} data.name 姓名
+   * @apiSuccess {String} data.phone 手机号
+   * @apiSuccess {String} data.email 邮箱
+   * @apiSuccess {String} data.sex 性别
+   * @apiSuccess {String} data.birthday 生日
+   * @apiSuccess {String} data.createdTime 创建时间
+   * @apiSuccess {String} data.updatedTime 更新时间
+   * @apiSuccess {Object} data.roles 角色
+   *
+   **/
+  @Get("/userRole", JWT.authenticateJwt())
+  public async getUserRole(req: Request, res: Response) {
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.userService.getUserRole(req.user?.id);
+
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   *  获取用户权限
+   *  1. 获取用户角色
+   *  2. 获取角色权限
+   *  3. 合并权限
+   *  4. 返回权限列表
+   * @param req
+   * @param res
+   *   @api {get} /user/permissions 获取用户权限
+   * @apiName GetUserPermissions
+   * @apiGroup User
+   *   @apiVersion 1.0.0
+   * @apiPermission JWT
+   * @apiDescription 获取用户权限
+   * @apiHeader {String} Authorization 用户登录凭证，格式为Bearer + 空格 + token
+   * @apiHeaderExample {json} Header-Example:
+   *     {
+   *       "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJqZG0iLCJuYW1lIjpudWxsLCJwaG9uZSI6bnVsbCwiZW1haWwiOm51bGwsInNleCI6Ik9USEVSIiwiYmlydGhkYXkiOm51bGwsImNyZWF0ZWRUaW1lIjoiMjAyNC0wOS0wNFQwOToxNToxNC40NjdaIiwidXBkYXRlZFRpbWUiOiIyMDI0LTA5LTA0VDA5OjE1OjE0LjQ2N1oiLCJkZWxldGVkVGltZSI6bnVsbCwiZGVsZXR
+   * 
+   }
+   * @apiSuccess {Object} data 用户权限列表
+   * @apiSuccess {String} data.id 权限ID
+   * @apiSuccess {String} data.name 权限名称
+   * @apiSuccess {String} data.code 权限代码
+   * @apiSuccess {String} data.type 权限类型
+   * @apiSuccess {String} data.url 权限URL
+   * @apiSuccess {String} data.method 权限请求方法
+   * @apiSuccess {String} data.description 权限描述
+   *     
+   */
+  @Get("/permission", JWT.authenticateJwt())
+  public async getUserPermission(req: Request, res: Response) {
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.userService.getUserPermission(req.user?.id);
+
     res.sendResult(data, code, message, errMsg);
   }
 }

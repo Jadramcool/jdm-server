@@ -1,10 +1,10 @@
-import { inject, injectable } from "inversify";
-import { PrismaDB } from "../../../db";
+import { FilterHelper } from "@/utils";
+import { JWT } from "@jwt/index";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
-import { JWT } from "@jwt/index";
+import { inject, injectable } from "inversify";
+import { PrismaDB } from "../../../db";
 import { UserDto } from "./user.dto";
-import { FilterHelper } from "@/utils";
 
 // Exclude keys from user
 function exclude<User, K extends keyof User>(
@@ -32,8 +32,10 @@ export class UserManagerService {
     let sqlFilters = {};
     if (Object.keys(filters).length > 0) {
       sqlFilters = FilterHelper.addFilterCondition(filters, [
+        "id",
         "username",
         "sex",
+        "status",
       ]);
     }
 

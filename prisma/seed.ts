@@ -55,7 +55,7 @@ const initAdmin = async () => {
   // 检查是否已经初始化过了
   const isHasAdmin = await prisma.user.findFirst({
     where: {
-      name: "admin",
+      username: "admin",
     },
   });
   if (!isHasAdmin) {
@@ -63,9 +63,53 @@ const initAdmin = async () => {
     await prisma.user.create({
       data: {
         username: "admin",
-        password: "123456..",
+        password:
+          "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW", // 123456..
       },
     });
+  }
+};
+
+const initRole = async () => {
+  // 检查是否已经初始化过了
+  const isHasDefaultRole = await prisma.role.findFirst({
+    where: {
+      name: "默认角色",
+    },
+  });
+  if (!isHasDefaultRole) {
+    // 如果没有数据，插入初始数据
+    const defaultRole = await prisma.role.create({
+      data: {
+        name: "默认角色",
+        description: "默认角色，拥有所有权限",
+      },
+    });
+
+    // 给admin用户添加默认角色
+    const admin = await prisma.user.findFirst({
+      where: {
+        username: "admin",
+      },
+    });
+    if (admin) {
+      await prisma.userRole.create({
+        data: {
+          userId: admin.id,
+          roleId: defaultRole.id,
+        },
+      });
+
+      const allPermissions = await prisma.permission.findMany();
+
+      await prisma.rolePermission.createMany({
+        data: allPermissions.map((permission) => ({
+          roleId: defaultRole.id,
+          permissionId: permission.id,
+        })),
+        skipDuplicates: true,
+      });
+    }
   }
 };
 
@@ -73,6 +117,7 @@ const main = async () => {
   await initConfigData();
   await initPermissions();
   await initAdmin();
+  await initRole();
 };
 
 main()

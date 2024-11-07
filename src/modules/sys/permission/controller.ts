@@ -6,6 +6,7 @@ import {
   httpGet as Get,
   interfaces,
 } from "inversify-express-utils";
+import { UtilService } from "../../../utils/utils";
 import { PermissionService } from "./services";
 
 @controller("/system/permission")
@@ -13,7 +14,9 @@ export class Permission implements interfaces.Controller {
   // @param userService @inject(UserService): 这是一个装饰器，用于依赖注入。
   constructor(
     @inject(PermissionService)
-    private readonly PermissionService: PermissionService
+    private readonly PermissionService: PermissionService,
+    @inject(UtilService)
+    private readonly UtilService: UtilService
   ) {}
 
   /**
@@ -55,12 +58,15 @@ export class Permission implements interfaces.Controller {
 
   @Get("/list", JWT.authenticateJwt())
   public async getPermissionMenu(req: Request, res: Response) {
+    const query: Recordable = req.query;
+    console.log(req.user);
+    const config = this.UtilService.parseQueryParams(req);
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.PermissionService.getPermissionList(req.user?.id);
+    }: Jres = await this.PermissionService.getPermissionList(config);
     res.sendResult(data, code, message, errMsg);
   }
 }

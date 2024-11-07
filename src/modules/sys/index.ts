@@ -1,6 +1,6 @@
 import { ContainerModule, interfaces } from "inversify";
-import { Permission } from "./permission/controller";
-import { PermissionService } from "./permission/services";
+import { Permission } from "./menu/controller";
+import { PermissionService } from "./menu/services";
 import { UserManager } from "./user/controller";
 import { UserManagerService } from "./user/services";
 

@@ -31,6 +31,9 @@ model User {
   deletedTime DateTime? @map("deleted_time")
   password    String
   deleted     Boolean   @default(false)
+  status      Int       @default(0) // 0: 未激活, 1: 激活
+
+  roles UserRole[]
 
   @@map("user")
 }
@@ -41,30 +44,12 @@ model Navigation {
   content     String?
   url         String
   order       Int?
-  authorId    Int
+  authorId    Int      @map("author_id")
   createdTime DateTime @default(now()) @map("created_time")
   updatedTime DateTime @updatedAt @map("updated_time")
 
   @@index([authorId], map: "navigation_authorId_fkey")
   @@map("navigation")
-}
-
-model NavigationOnType {
-  id           Int @id @default(autoincrement())
-  navigationId Int
-  typeId       Int
-
-  @@index([typeId], map: "navigation_on_type_typeId_fkey")
-  @@map("navigation_on_type")
-}
-
-model Type {
-  id          Int      @id @default(autoincrement())
-  name        String
-  createdTime DateTime @default(now()) @map("created_time")
-  updatedTime DateTime @updatedAt @map("updated_time")
-
-  @@map("type")
 }
 
 // 枚举
@@ -98,6 +83,7 @@ model Permission {
 
   // // 如果菜单下还有子菜单，也可以添加关联关系
   // children Menu[] @relation("MenuChildren")
+  roles RolePermission[] // 与角色权限表的关系
 
   @@map("permission")
 }
@@ -109,23 +95,32 @@ model Role {
   createdTime DateTime @default(now()) @map("created_time")
   updatedTime DateTime @updatedAt @map("updated_time")
 
+  users       UserRole[]
+  permissions RolePermission[]
+
   @@map("role")
 }
 
-model RoleOnPermission {
-  id           Int @id @default(autoincrement())
-  roleId       Int
-  permissionId Int
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int        @map("role_id")
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId Int        @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  assignedAt   DateTime   @default(now()) @map("assigned_at")
 
-  @@index([permissionId], map: "role_on_permission_permissionId_fkey")
-  @@map("role_on_permission")
+  @@index([permissionId], map: "role_permission_permissionId_fkey")
+  @@map("role_permission")
 }
 
-model UserOnRole {
-  id     Int @id @default(autoincrement())
-  userId Int
-  roleId Int
+model UserRole {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  roleId     Int      @map("role_id")
+  role       Role     @relation(fields: [roleId], references: [id])
+  assignedAt DateTime @default(now()) @map("assigned_at")
 
-  @@index([roleId], map: "user_on_role_roleId_fkey")
-  @@map("user_on_role")
+  @@index([roleId], map: "user_role_roleId_fkey")
+  @@map("user_role")
 }

@@ -16,6 +16,8 @@ declare global {
     }
   }
 
+  type Recordable<T = any> = Record<string, T>; // 类型别名，表示一个对象，其属性名为字符串字面量，属性值可以为任意类型
+
   // 返回结果
   interface Jres {
     data: any;

@@ -131,14 +131,43 @@ export class UserService {
   public async getUserInfo(userId: number) {
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
-        where: { id: userId },
+        where: {
+          id: userId,
+        },
+        include: {
+          roles: {
+            select: {
+              role: {
+                include: {
+                  permissions: {
+                    select: {
+                      permission: true, // 直接选择 permission
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
+
       if (!result) {
         return {
           code: 400,
           errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
         };
       }
+
+      // 获取数据后，平展权限结构,去除多对多中间的部分
+      const flattenedResult = result?.roles.map((role: any) => ({
+        ...role.role,
+        permissions: role.role.permissions.map((rp) => ({
+          ...rp.permission,
+        })),
+      }));
+
+      result.roles = flattenedResult;
+
       delete result.password;
       return {
         data: {
@@ -154,4 +183,86 @@ export class UserService {
       return err;
     }
   }
+
+  /**
+   * 获取用户角色
+   * @param user
+   */
+  public getUserRole = async (userId: number) => {
+    try {
+      const result = await this.PrismaDB.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        include: {
+          roles: {
+            select: {
+              role: true,
+            },
+          },
+        },
+      });
+      if (!result) {
+        return {
+          code: 400,
+          errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
+        };
+      }
+
+      const roles = result.roles.map((role) => role.role.name);
+
+      return {
+        data: {
+          data: roles,
+        },
+        code: 200,
+        message: "获取用户角色成功",
+      };
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  };
+
+  /**
+   * 获取用户权限
+   * @param user
+   */
+  public getUserPermission = async (userId: number) => {
+    try {
+      const result = await this.PrismaDB.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          roles: {
+            select: {
+              role: {
+                select: {
+                  permissions: {
+                    select: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const permissions = result.roles.flatMap((role) =>
+        role.role.permissions.map((permission) => permission.permission)
+      );
+      return {
+        data: {
+          data: permissions,
+        },
+        code: 200,
+        message: "获取用户权限成功",
+      };
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  };
 }
