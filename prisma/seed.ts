@@ -8,7 +8,7 @@
  *
  */
 import { PrismaClient } from "@prisma/client";
-import { Permission, SysConfig } from "./initData";
+import { Menu, SysConfig } from "./initData";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +26,7 @@ const initConfigData = async () => {
   }
 };
 
-const initPermissions = async () => {
+const initMenus = async () => {
   // 检查是否已经初始化过了
   const isInit = await prisma.sysConfig.findFirst({
     where: {
@@ -36,8 +36,8 @@ const initPermissions = async () => {
 
   if (isInit && !isInit.value) {
     // 如果没有数据，插入初始数据
-    await prisma.permission.createMany({
-      data: Permission.permissions,
+    await prisma.menu.createMany({
+      data: Menu.menus,
       skipDuplicates: true,
     });
     await prisma.sysConfig.update({
@@ -82,7 +82,7 @@ const initRole = async () => {
     const defaultRole = await prisma.role.create({
       data: {
         name: "默认角色",
-        description: "默认角色，拥有所有权限",
+        description: "默认角色，拥有所有权限/菜单",
       },
     });
 
@@ -100,12 +100,12 @@ const initRole = async () => {
         },
       });
 
-      const allPermissions = await prisma.permission.findMany();
+      const allMenus = await prisma.menu.findMany();
 
-      await prisma.rolePermission.createMany({
-        data: allPermissions.map((permission) => ({
+      await prisma.roleMenu.createMany({
+        data: allMenus.map((menu) => ({
           roleId: defaultRole.id,
-          permissionId: permission.id,
+          menuId: menu.id,
         })),
         skipDuplicates: true,
       });
@@ -115,7 +115,7 @@ const initRole = async () => {
 
 const main = async () => {
   await initConfigData();
-  await initPermissions();
+  await initMenus();
   await initAdmin();
   await initRole();
 };

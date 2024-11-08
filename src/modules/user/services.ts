@@ -139,9 +139,9 @@ export class UserService {
             select: {
               role: {
                 include: {
-                  permissions: {
+                  menus: {
                     select: {
-                      permission: true, // 直接选择 permission
+                      menu: true, // 直接选择 permission
                     },
                   },
                 },
@@ -161,8 +161,8 @@ export class UserService {
       // 获取数据后，平展权限结构,去除多对多中间的部分
       const flattenedResult = result?.roles.map((role: any) => ({
         ...role.role,
-        permissions: role.role.permissions.map((rp) => ({
-          ...rp.permission,
+        menus: role.role.menus.map((rp) => ({
+          ...rp.menu,
         })),
       }));
 
@@ -225,10 +225,10 @@ export class UserService {
   };
 
   /**
-   * 获取用户权限
+   * 获取用户菜单
    * @param user
    */
-  public getUserPermission = async (userId: number) => {
+  public getUserMenu = async (userId: number) => {
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
         where: {
@@ -239,9 +239,9 @@ export class UserService {
             select: {
               role: {
                 select: {
-                  permissions: {
+                  menus: {
                     select: {
-                      permission: true,
+                      menu: true,
                     },
                   },
                 },
@@ -250,15 +250,15 @@ export class UserService {
           },
         },
       });
-      const permissions = result.roles.flatMap((role) =>
-        role.role.permissions.map((permission) => permission.permission)
+      const menus = result.roles.flatMap((role) =>
+        role.role.menus.map((menu) => menu.menu)
       );
       return {
         data: {
-          data: permissions,
+          data: menus,
         },
         code: 200,
-        message: "获取用户权限成功",
+        message: "获取用户菜单成功",
       };
     } catch (err) {
       console.log(err);

@@ -1,6 +1,6 @@
 import { ContainerModule, interfaces } from "inversify";
-import { Permission } from "./menu/controller";
-import { PermissionService } from "./menu/services";
+import { Menu } from "./menu/controller";
+import { MenuService } from "./menu/services";
 import { UserManager } from "./user/controller";
 import { UserManagerService } from "./user/services";
 
@@ -12,10 +12,10 @@ const systemContainer = new ContainerModule(
     rebind: interfaces.Rebind
   ) => {
     /*
-     * 权限
+     * 菜单
      */
-    bind<Permission>(Permission).toSelf();
-    bind<PermissionService>(PermissionService).toSelf();
+    bind<Menu>(Menu).toSelf();
+    bind<MenuService>(MenuService).toSelf();
     /*
      * 用户
      */

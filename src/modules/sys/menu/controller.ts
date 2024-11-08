@@ -7,23 +7,23 @@ import {
   interfaces,
 } from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
-import { PermissionService } from "./services";
+import { MenuService } from "./services";
 
-@controller("/system/permission")
-export class Permission implements interfaces.Controller {
+@controller("/system/menu")
+export class Menu implements interfaces.Controller {
   // @param userService @inject(UserService): 这是一个装饰器，用于依赖注入。
   constructor(
-    @inject(PermissionService)
-    private readonly PermissionService: PermissionService,
+    @inject(MenuService)
+    private readonly MenuService: MenuService,
     @inject(UtilService)
     private readonly UtilService: UtilService
   ) {}
 
   /**
-   * @api {GET} /system/permission/list 获取权限菜单列表
-   * @apiName GetPermissionMenu
-   * @apiGroup 权限模块
-   * @apiDescription 获取权限菜单列表
+   * @api {GET} /system/menu/list 获取菜单列表
+   * @apiName GetMenu
+   * @apiGroup 菜单模块
+   * @apiDescription 获取菜单列表
    * @apiSuccess {Object} data 返回数据
    * @apiSuccess {Number} code 状态码
    * @apiSuccess {String} message 提示信息
@@ -57,7 +57,7 @@ export class Permission implements interfaces.Controller {
    */
 
   @Get("/list", JWT.authenticateJwt())
-  public async getPermissionMenu(req: Request, res: Response) {
+  public async getMenu(req: Request, res: Response) {
     const query: Recordable = req.query;
     console.log(req.user);
     const config = this.UtilService.parseQueryParams(req);
@@ -66,7 +66,7 @@ export class Permission implements interfaces.Controller {
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.PermissionService.getPermissionList(config);
+    }: Jres = await this.MenuService.getMenuList(config);
     res.sendResult(data, code, message, errMsg);
   }
 }

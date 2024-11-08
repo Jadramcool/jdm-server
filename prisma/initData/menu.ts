@@ -1,11 +1,11 @@
 import { Prisma } from "@prisma/client";
 
-// 自定义权限创建输入
-interface CustomPermissionCreateInput extends Prisma.PermissionCreateInput {
+// 自定义菜单创建输入
+interface CustomMenuCreateInput extends Prisma.MenuCreateInput {
   id: number;
 }
 
-export const permissions: CustomPermissionCreateInput[] = [
+export const menus: CustomMenuCreateInput[] = [
   {
     id: 1,
     name: "默认",
@@ -152,14 +152,14 @@ export const permissions: CustomPermissionCreateInput[] = [
   },
   {
     id: 102,
-    name: "权限管理",
-    code: "Permission",
+    name: "菜单管理",
+    code: "menu",
     type: "MENU",
     pid: 100,
-    path: "/system/permission",
+    path: "/system/menu",
     redirect: null,
     icon: "fe:layout",
-    component: "/src/views/system/permission/index.vue",
+    component: "/src/views/system/menu/index.vue",
     layout: "normal",
     keepAlive: true,
     method: null,

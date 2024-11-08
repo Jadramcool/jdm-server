@@ -38,20 +38,6 @@ model User {
   @@map("user")
 }
 
-model Navigation {
-  id          Int      @id @default(autoincrement())
-  title       String
-  content     String?
-  url         String
-  order       Int?
-  authorId    Int      @map("author_id")
-  createdTime DateTime @default(now()) @map("created_time")
-  updatedTime DateTime @updatedAt @map("updated_time")
-
-  @@index([authorId], map: "navigation_authorId_fkey")
-  @@map("navigation")
-}
-
 // 枚举
 enum Sex {
   MALE
@@ -59,8 +45,8 @@ enum Sex {
   OTHER
 }
 
-// 权限表
-model Permission {
+// 菜单表
+model Menu {
   id          Int      @id @default(autoincrement())
   name        String
   code        String
@@ -83,9 +69,9 @@ model Permission {
 
   // // 如果菜单下还有子菜单，也可以添加关联关系
   // children Menu[] @relation("MenuChildren")
-  roles RolePermission[] // 与角色权限表的关系
+  roles RoleMenu[] // 与角色菜单表的关系
 
-  @@map("permission")
+  @@map("menu")
 }
 
 model Role {
@@ -95,22 +81,22 @@ model Role {
   createdTime DateTime @default(now()) @map("created_time")
   updatedTime DateTime @updatedAt @map("updated_time")
 
-  users       UserRole[]
-  permissions RolePermission[]
+  users UserRole[]
+  menus RoleMenu[]
 
   @@map("role")
 }
 
-model RolePermission {
-  id           Int        @id @default(autoincrement())
-  roleId       Int        @map("role_id")
-  role         Role       @relation(fields: [roleId], references: [id])
-  permissionId Int        @map("permission_id")
-  permission   Permission @relation(fields: [permissionId], references: [id])
-  assignedAt   DateTime   @default(now()) @map("assigned_at")
+model RoleMenu {
+  id         Int      @id @default(autoincrement())
+  roleId     Int      @map("role_id")
+  role       Role     @relation(fields: [roleId], references: [id])
+  menuId     Int      @map("menu_id")
+  menu       Menu     @relation(fields: [menuId], references: [id])
+  assignedAt DateTime @default(now()) @map("assigned_at")
 
-  @@index([permissionId], map: "role_permission_permissionId_fkey")
-  @@map("role_permission")
+  @@index([menuId], map: "role_menu_menuId_fkey")
+  @@map("role_menu")
 }
 
 model UserRole {

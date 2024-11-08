@@ -7,5 +7,5 @@
  * @Description:
  *
  */
-export * as Permission from "./permission";
+export * as Menu from "./menu";
 export * as SysConfig from "./sysConfig";

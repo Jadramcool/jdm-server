@@ -220,43 +220,40 @@ export class User {
   }
 
   /**
-   *  获取用户权限
+   *  获取用户菜单
    *  1. 获取用户角色
-   *  2. 获取角色权限
-   *  3. 合并权限
-   *  4. 返回权限列表
+   *  2. 获取角色菜单
+   *  3. 合并菜单
+   *  4. 返回菜单列表
    * @param req
    * @param res
-   *   @api {get} /user/permissions 获取用户权限
+   *   @api {get} /user/permissions 获取用户菜单
    * @apiName GetUserPermissions
    * @apiGroup User
    *   @apiVersion 1.0.0
    * @apiPermission JWT
-   * @apiDescription 获取用户权限
+   * @apiDescription 获取用户菜单
    * @apiHeader {String} Authorization 用户登录凭证，格式为Bearer + 空格 + token
    * @apiHeaderExample {json} Header-Example:
    *     {
    *       "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJqZG0iLCJuYW1lIjpudWxsLCJwaG9uZSI6bnVsbCwiZW1haWwiOm51bGwsInNleCI6Ik9USEVSIiwiYmlydGhkYXkiOm51bGwsImNyZWF0ZWRUaW1lIjoiMjAyNC0wOS0wNFQwOToxNToxNC40NjdaIiwidXBkYXRlZFRpbWUiOiIyMDI0LTA5LTA0VDA5OjE1OjE0LjQ2N1oiLCJkZWxldGVkVGltZSI6bnVsbCwiZGVsZXR
    * 
    }
-   * @apiSuccess {Object} data 用户权限列表
-   * @apiSuccess {String} data.id 权限ID
-   * @apiSuccess {String} data.name 权限名称
-   * @apiSuccess {String} data.code 权限代码
-   * @apiSuccess {String} data.type 权限类型
-   * @apiSuccess {String} data.url 权限URL
-   * @apiSuccess {String} data.method 权限请求方法
-   * @apiSuccess {String} data.description 权限描述
+   * @apiSuccess {Object} data 用户菜单列表
+   * @apiSuccess {String} data.id 菜单ID
+   * @apiSuccess {String} data.name 菜单名称
+   * @apiSuccess {String} data.code 菜单代码
+   * @apiSuccess {String} data.description 菜单描述
    *     
    */
-  @Get("/permission", JWT.authenticateJwt())
-  public async getUserPermission(req: Request, res: Response) {
+  @Get("/menu", JWT.authenticateJwt())
+  public async getUserMenu(req: Request, res: Response) {
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.userService.getUserPermission(req.user?.id);
+    }: Jres = await this.userService.getUserMenu(req.user?.id);
 
     res.sendResult(data, code, message, errMsg);
   }
