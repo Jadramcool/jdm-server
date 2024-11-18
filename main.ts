@@ -10,10 +10,10 @@
 import "reflect-metadata";
 
 // 引入模块别名
-import "module-alias/register";
 import cors from "cors";
 import express from "express";
 import { InversifyExpressServer, getRouteInfo } from "inversify-express-utils";
+import "module-alias/register";
 import * as prettyjson from "prettyjson";
 import createContainer from "./config/container";
 import { JWT } from "./src/jwt";

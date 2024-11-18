@@ -1,6 +1,8 @@
 import { ContainerModule, interfaces } from "inversify";
 import { Menu } from "./menu/controller";
 import { MenuService } from "./menu/services";
+import { Role } from "./role/controller";
+import { RoleService } from "./role/services";
 import { UserManager } from "./user/controller";
 import { UserManagerService } from "./user/services";
 
@@ -21,6 +23,11 @@ const systemContainer = new ContainerModule(
      */
     bind<UserManager>(UserManager).toSelf();
     bind<UserManagerService>(UserManagerService).toSelf();
+    /*
+     * 角色
+     */
+    bind<Role>(Role).toSelf();
+    bind<RoleService>(RoleService).toSelf();
   }
 );
 

@@ -10,7 +10,12 @@
 import { JWT } from "@/jwt";
 import type { Request, Response } from "express";
 import { inject } from "inversify"; // 装饰器 用于依赖注入
-import { controller, httpGet as Get } from "inversify-express-utils";
+import {
+  controller,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { UserManagerService } from "./services";
 
@@ -30,10 +35,6 @@ export class UserManager {
     const query: any = req.query;
 
     const config = this.UtilService.parseQueryParams(req);
-    console.log("🚀 ~ UserManager ~ getUser ~ config:", config);
-    // 打印时间
-    console.log("-------", new Date().toLocaleString());
-    console.log("🚀 query:", query);
     let {
       data = null,
       code = 200,
@@ -52,6 +53,72 @@ export class UserManager {
       message = "",
       errMsg = "",
     }: Jres = await this.UserManagerService.getUserInfo(userId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 创建用户
+  @Post("/create", JWT.authenticateJwt())
+  public async createUser(req: Request, res: Response) {
+    console.log(req.body);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.UserManagerService.createUser(req.body);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 更新用户
+  @Put("/update", JWT.authenticateJwt())
+  public async updateUser(req: Request, res: Response) {
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.UserManagerService.updateUser(req.body);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 删除用户
+  @Put("/delete/:id", JWT.authenticateJwt())
+  public async deleteUser(req: Request, res: Response) {
+    const userId = Number(req.params.id);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.UserManagerService.deleteUser(userId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 批量删除用户
+  @Put("/batchDelete", JWT.authenticateJwt())
+  public async batchDeleteUser(req: Request, res: Response) {
+    const ids = req.body?.ids ? req.body.ids : [];
+
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.UserManagerService.deleteUser(ids);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 启用/禁用用户
+  @Put("/status/:id", JWT.authenticateJwt())
+  public async updateUserStatus(req: Request, res: Response) {
+    const userId = Number(req.params.id);
+    const status = Number(req.body.status);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.UserManagerService.updateUserStatus(userId, status);
     res.sendResult(data, code, message, errMsg);
   }
 }

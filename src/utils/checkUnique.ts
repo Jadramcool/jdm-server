@@ -8,14 +8,19 @@ import { PrismaDB } from "../db";
  * @return {*}
  */
 export const checkUnique = async (
-  db: PrismaDB,
-  table: string,
-  key: string,
-  name: string
+  db: PrismaDB, // 数据库实例
+  table: string, // 表名
+  key: string, // 字段名
+  name: string // 传值
 ) => {
+  console.log("🚀 ~ key:", key);
+
+  console.log("🚀 ~ name:", name);
+
   const existing = await db.prisma[table].findFirst({
     where: { [key]: name },
   });
+  console.log("🚀 ~ existing:", existing);
 
   return !!existing;
 };

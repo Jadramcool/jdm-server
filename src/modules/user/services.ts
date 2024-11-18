@@ -79,6 +79,7 @@ export class UserService {
       return err;
     }
   }
+
   /**
    * 登录
    * @param user
@@ -92,7 +93,7 @@ export class UserService {
       }
       // 登录
       const result = await this.PrismaDB.prisma.user.findUnique({
-        where: { username: user.username },
+        where: { username: user.username, isDeleted: false },
       });
 
       if (!result) {
@@ -101,6 +102,7 @@ export class UserService {
           errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
         };
       }
+
       const isMatch = await bcrypt.compare(user.password, result.password);
       if (!isMatch) {
         return {

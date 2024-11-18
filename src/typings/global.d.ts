@@ -20,7 +20,7 @@ declare global {
 
   // 返回结果
   interface Jres {
-    data: any;
+    data?: any;
     code?: number;
     message?: string;
     errMsg?: string;

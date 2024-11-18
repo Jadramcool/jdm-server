@@ -53,7 +53,7 @@ const consoleTransport = new winston.transports.Console({
   level: LOG_LEVEL,
   handleExceptions: true,
   format: winston.format.combine(
-    winston.format.label({ label: "ExpressApp" }),
+    winston.format.label({ label: "LOGGER" }),
     winston.format.timestamp({ format: LOG_DATE_FORMAT }),
     myFormat
   ),

@@ -1,7 +1,11 @@
 {
-  "name": "name接口文档",
-  "title": "title接口文档",
-  "description": "接口文档说明",
+  "name": "api-doc",
+  "version": "1.0.0",
+  "description": "接口文档描述",
+  "title": "接口文档标题",
   "url": "http://localhost:3000/api",
-  "version": "1.0.0"
+  "sampleUrl": "http://localhost:3000/api",
+  "template": {
+    "forceLanguage": "zh_cn"
+  }
 }

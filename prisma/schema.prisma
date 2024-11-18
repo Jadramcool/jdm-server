@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi", "relationJoins"]
 }
 
 datasource db {
@@ -25,13 +26,15 @@ model User {
   phone       String?   @unique
   email       String?   @unique
   sex         Sex?      @default(OTHER)
+  avatar      String?
   birthday    DateTime?
   createdTime DateTime  @default(now()) @map("created_time")
   updatedTime DateTime? @updatedAt @map("updated_time")
   deletedTime DateTime? @map("deleted_time")
   password    String
-  deleted     Boolean   @default(false)
+  isDeleted   Boolean   @default(false) @map("is_deleted")
   status      Int       @default(0) // 0: 未激活, 1: 激活
+  roleType    String?   @default("user") @map("role_type") // 角色类型 admin, user, doctor
 
   roles UserRole[]
 
@@ -47,39 +50,39 @@ enum Sex {
 
 // 菜单表
 model Menu {
-  id          Int      @id @default(autoincrement())
-  name        String
-  code        String
-  type        String
-  pid         Int?
-  path        String
-  redirect    String?
-  icon        String
-  component   String?
-  layout      String
-  keepAlive   Boolean? @default(false)
-  method      String?
-  description String?
-  show        Boolean  @default(true)
-  enable      Boolean  @default(true)
-  order       Int
+  id          Int       @id @default(autoincrement())
+  name        String // 菜单名称
+  code        String    @unique // 权限代码
+  type        String // menu: 菜单, button: 按钮 , directory: 目录
+  pid         Int? // 菜单的父id
+  path        String? // 路由路径
+  redirect    String? // 重定向
+  icon        String? // 图标
+  component   String? // 组件路径
+  layout      String // 布局
+  keepAlive   Boolean?  @default(false)
+  method      String? //  TODO 请求方法，暂时不知道干嘛的
+  description String? // 菜单描述
+  show        Boolean   @default(true) // 是否展示
+  enable      Boolean   @default(true) // TODO 暂时不知道干嘛的
+  order       Int // 排序
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime? @updatedAt @map("updated_time")
 
-  // // 如果`pid`字段代表父菜单ID，则可以添加关联关系
-  // parent Menu? @relation("MenuParent", fields: [pid], references: [id])
-
-  // // 如果菜单下还有子菜单，也可以添加关联关系
-  // children Menu[] @relation("MenuChildren")
   roles RoleMenu[] // 与角色菜单表的关系
 
   @@map("menu")
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String    @unique
   description String?
-  createdTime DateTime @default(now()) @map("created_time")
-  updatedTime DateTime @updatedAt @map("updated_time")
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime  @updatedAt @map("updated_time")
+  deletedTime DateTime? @map("deleted_time")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
 
   users UserRole[]
   menus RoleMenu[]
@@ -90,12 +93,12 @@ model Role {
 model RoleMenu {
   id         Int      @id @default(autoincrement())
   roleId     Int      @map("role_id")
-  role       Role     @relation(fields: [roleId], references: [id])
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   menuId     Int      @map("menu_id")
-  menu       Menu     @relation(fields: [menuId], references: [id])
+  menu       Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now()) @map("assigned_at")
 
-  @@index([menuId], map: "role_menu_menuId_fkey")
+  @@unique([roleId, menuId])
   @@map("role_menu")
 }
 

@@ -81,6 +81,7 @@ const initRole = async () => {
     // 如果没有数据，插入初始数据
     const defaultRole = await prisma.role.create({
       data: {
+        code: "DEFAULT",
         name: "默认角色",
         description: "默认角色，拥有所有权限/菜单",
       },
