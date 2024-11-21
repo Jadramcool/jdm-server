@@ -6,7 +6,7 @@ import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../db";
 import { JWT } from "../../jwt";
 import { checkUnique } from "../../utils/checkUnique";
-import { LoginDto, UserDto } from "./user.dto";
+import { LoginDto, UpdateUserDto, UserDto } from "./user.dto";
 
 @injectable()
 export class UserService {
@@ -43,8 +43,19 @@ export class UserService {
     try {
       let registerDto = plainToClass(LoginDto, user);
       const errors = await validate(registerDto);
-      if (errors.length) {
-        return errors;
+      if (errors.length > 0) {
+        const errorMessages = errors.map((error) => {
+          return {
+            property: error.property,
+            value: Object.values(error.constraints),
+          };
+        });
+        return {
+          code: 400,
+          message: "参数验证失败",
+          errMsg: "参数验证失败",
+          data: errorMessages,
+        };
       } else {
         const isUnique: boolean = await checkUnique(
           this.PrismaDB,
@@ -88,8 +99,19 @@ export class UserService {
     try {
       let loginDto = plainToClass(LoginDto, user);
       const errors = await validate(loginDto);
-      if (errors.length) {
-        return errors;
+      if (errors.length > 0) {
+        const errorMessages = errors.map((error) => {
+          return {
+            property: error.property,
+            value: Object.values(error.constraints),
+          };
+        });
+        return {
+          code: 400,
+          message: "参数验证失败",
+          errMsg: "参数验证失败",
+          data: errorMessages,
+        };
       }
       // 登录
       const result = await this.PrismaDB.prisma.user.findUnique({
@@ -267,4 +289,134 @@ export class UserService {
       return err;
     }
   };
+
+  /**
+   * 更新个人信息
+   */
+
+  /**
+   * 更新用户
+   * @param user
+   */
+  public async update(user: UpdateUserDto, userId: number) {
+    try {
+      let updateUserDto = plainToClass(UpdateUserDto, user);
+      const errors = await validate(updateUserDto);
+      if (errors.length > 0) {
+        const errorMessages = errors.map((error) => {
+          return {
+            property: error.property,
+            value: Object.values(error.constraints),
+          };
+        });
+        return {
+          code: 400,
+          message: "参数验证失败",
+          errMsg: "参数验证失败",
+          data: errorMessages,
+        };
+      } else {
+        const { phone } = user;
+        // 检查 phone 是否已存在
+        const existingUser = await this.PrismaDB.prisma.user.findFirst({
+          where: {
+            phone,
+          },
+        });
+        if (existingUser && existingUser.id !== userId) {
+          return {
+            code: 400,
+            message: "用户名或手机号已存在",
+            errMsg: "用户名或手机号已存在",
+          };
+        }
+
+        const { id, ...updateData } = user;
+
+        const result = await this.PrismaDB.prisma.user.update({
+          where: { id: userId },
+          data: updateData,
+        });
+        return {
+          data: result,
+          code: 200,
+          message: "更新个人信息成功",
+        };
+      }
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "更新个人信息失败",
+        errMsg: err,
+      };
+    }
+  }
+  public async checkPassword(user: any, userId: number) {
+    try {
+      const result = await this.PrismaDB.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      const isMatch = await bcrypt.compare(user.password, result.password);
+      if (!isMatch) {
+        return {
+          code: 400,
+          errMsg: "密码错误", // 密码错误
+        };
+      }
+      return {
+        data: true,
+        code: 200,
+        message: "密码正确",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "密码重复",
+        errMsg: err,
+      };
+    }
+  }
+
+  /**
+   * 更新密码
+   */
+
+  public async updatePassword(user: any, userId: number) {
+    try {
+      const password = user.password;
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
+
+      user.password = hash;
+      const result = await this.PrismaDB.prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          password: user.password,
+        },
+        omit: {
+          password: true,
+        },
+      });
+
+      return {
+        data: result,
+        code: 200,
+        message: "修改密码成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "修改密码失败",
+        errMsg: err,
+      };
+    }
+  }
 }

@@ -38,6 +38,8 @@ const myFormat = winston.format.printf((info) => {
 
   const metaData = `url: ${url}, method: ${method}, query: ${query}, status: ${status}, responseTime: ${responseTime}`;
 
+  const body: string = meta?.body ? meta.body : "";
+
   // 用户信息
   let user: string;
   if (meta && meta.user) {
@@ -45,7 +47,7 @@ const myFormat = winston.format.printf((info) => {
     user = `id=${id}, username=${username}, name=${name}, phone=${phone}`;
   }
 
-  return `${timestamp} [${label}] [${levelUp}]: ${metaData} | message: ${message} | user: ${user}`;
+  return `${timestamp} [${label}] [${levelUp}]: ${metaData}, body: ${body} | message: ${message} | user: ${user}`;
 });
 
 // 控制台传输配置
@@ -96,6 +98,7 @@ export const logger = expressWinston.logger({
     // 获取动态相关信息
     const dynamicMeta = {
       user: req.user ? req.user : null,
+      body: req.body ? JSON.stringify(req.body) : null,
     };
     // console.log("Dynamic Meta:", dynamicMeta); // 调试输出
     return dynamicMeta;

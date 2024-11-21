@@ -121,27 +121,36 @@ export class RoleService {
    * @param roleId
    */
   public async getRole(roleId: number) {
-    const roleRes = await this.PrismaDB.prisma.role.findUnique({
-      where: { id: roleId },
-      include: {
-        menus: {
-          select: {
-            menu: true,
+    try {
+      const roleRes = await this.PrismaDB.prisma.role.findUnique({
+        where: { id: roleId },
+        include: {
+          menus: {
+            select: {
+              menu: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // 包含菜单
-    const menus: Menu[] = roleRes.menus.map(
-      (menu: { menu: Menu }): Menu => menu.menu
-    );
-    const role = { ...roleRes, menus };
-    return {
-      data: role,
-      code: 200,
-      message: "获取角色详情成功",
-    };
+      // 包含菜单
+      const menus: Menu[] = roleRes.menus.map(
+        (menu: { menu: Menu }): Menu => menu.menu
+      );
+      const role = { ...roleRes, menus };
+      return {
+        data: role,
+        code: 200,
+        message: "获取角色详情成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "获取角色详情失败",
+        errMsg: err,
+      };
+    }
   }
 
   /**
@@ -195,7 +204,12 @@ export class RoleService {
       };
     } catch (err) {
       console.log(err);
-      return err;
+      return {
+        data: null,
+        code: 400,
+        message: "创建角色失败",
+        errMsg: err,
+      };
     }
   }
 
@@ -216,7 +230,12 @@ export class RoleService {
       };
     } catch (err) {
       console.log(err);
-      return err;
+      return {
+        data: null,
+        code: 400,
+        message: "更新角色失败",
+        errMsg: err,
+      };
     }
   }
 

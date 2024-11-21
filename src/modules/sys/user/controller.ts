@@ -29,6 +29,7 @@ export class UserManager {
     private readonly UtilService: UtilService
   ) {}
 
+  // 获取用户列表
   @Get("/list", JWT.authenticateJwt())
   public async getUser(req: Request, res: Response) {
     // 将query的key-value value的json参数转换为对象
@@ -44,6 +45,7 @@ export class UserManager {
     res.sendResult(data, code, message, errMsg);
   }
 
+  // 获取用户详情
   @Get("/detail/:id", JWT.authenticateJwt())
   public async getUserInfo(req: Request, res: Response) {
     const userId = Number(req.params.id);

@@ -20,21 +20,24 @@ model SysConfig {
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
-  username    String    @unique
-  name        String?
-  phone       String?   @unique
-  email       String?   @unique
-  sex         Sex?      @default(OTHER)
-  avatar      String?
-  birthday    DateTime?
-  createdTime DateTime  @default(now()) @map("created_time")
-  updatedTime DateTime? @updatedAt @map("updated_time")
-  deletedTime DateTime? @map("deleted_time")
-  password    String
-  isDeleted   Boolean   @default(false) @map("is_deleted")
-  status      Int       @default(0) // 0: 未激活, 1: 激活
-  roleType    String?   @default("user") @map("role_type") // 角色类型 admin, user, doctor
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  name          String?
+  phone         String?   @unique
+  email         String?   @unique
+  sex           Sex?      @default(OTHER)
+  avatar        String?
+  birthday      DateTime?
+  createdTime   DateTime  @default(now()) @map("created_time")
+  updatedTime   DateTime? @updatedAt @map("updated_time")
+  deletedTime   DateTime? @map("deleted_time")
+  password      String
+  isDeleted     Boolean   @default(false) @map("is_deleted")
+  status        Int       @default(0) // 0: 未激活, 1: 激活
+  roleType      String?   @default("user") @map("role_type") // 角色类型 admin, user, doctor
+  city          String? // 城市
+  address       String? // 地址
+  addressDetail String?   @map("address_detail") // 详细地址
 
   roles UserRole[]
 
@@ -60,7 +63,7 @@ model Menu {
   icon        String? // 图标
   component   String? // 组件路径
   layout      String // 布局
-  keepAlive   Boolean?  @default(false)
+  keepAlive   Boolean?  @default(false) @map("keep_alive")
   method      String? //  TODO 请求方法，暂时不知道干嘛的
   description String? // 菜单描述
   show        Boolean   @default(true) // 是否展示
@@ -68,6 +71,7 @@ model Menu {
   order       Int // 排序
   createdTime DateTime  @default(now()) @map("created_time")
   updatedTime DateTime? @updatedAt @map("updated_time")
+  extraData   String?   @map("extra_data") // 额外数据
 
   roles RoleMenu[] // 与角色菜单表的关系
 
