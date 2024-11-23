@@ -29,11 +29,12 @@ const server = new InversifyExpressServer(container, null, {
 
 // 配置中间件
 server.setConfig((app) => {
+  app.use(cors());
   app.use(express.json());
   app.use(container.get(JWT).init());
   app.use(responseHandler);
-  app.use(cors());
   app.use(logger);
+  app.use("/uploads", express.static("uploads")); // 静态文件
 });
 
 // 构建一个Express应用程序
