@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { noticeContainer } from "../src/modules/notice/index";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
@@ -17,6 +18,10 @@ const createContainer = () => {
    * 加载system模块
    */
   container.load(systemContainer);
+  /**
+   * 公告模块
+   */
+  container.load(noticeContainer);
 
   /**
    * user模块
@@ -35,7 +40,14 @@ const createContainer = () => {
    * 封装PrismaClient，方便注入
    */
   container.bind<PrismaClient>("PrismaClient").toFactory(() => {
-    return () => new PrismaClient();
+    return () =>
+      new PrismaClient({
+        omit: {
+          user: {
+            password: true,
+          },
+        },
+      });
   });
 
   container.bind(PrismaDB).to(PrismaDB);

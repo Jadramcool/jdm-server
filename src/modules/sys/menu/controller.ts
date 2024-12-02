@@ -72,7 +72,7 @@ export class Menu implements interfaces.Controller {
 
   // 删除菜单 - 批量
   @Put("/batchDelete", JWT.authenticateJwt())
-  public async batchDeleteUser(req: Request, res: Response) {
+  public async batchDeleteMenu(req: Request, res: Response) {
     const ids = req.body?.ids ? req.body.ids : [];
 
     let {

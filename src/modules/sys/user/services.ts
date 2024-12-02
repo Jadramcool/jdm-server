@@ -71,7 +71,6 @@ export class UserManagerService {
 
     sqlFilters["isDeleted"] = false;
 
-    console.log("sqlFilters", sqlFilters);
     let result = [];
     // 总页数
     let totalPages = 1;
@@ -91,9 +90,6 @@ export class UserManagerService {
       !options["showPagination"]
     ) {
       result = await this.PrismaDB.prisma.user.findMany({
-        omit: {
-          password: true,
-        },
         where: sqlFilters,
         include: {
           roles: {
@@ -110,9 +106,6 @@ export class UserManagerService {
       result = await this.PrismaDB.prisma.user.findMany({
         skip: (page - 1) * pageSize || 0,
         take: pageSize || 10,
-        omit: {
-          password: true,
-        },
         where: sqlFilters,
         include: {
           roles: {

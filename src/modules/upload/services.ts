@@ -71,9 +71,6 @@ export class UploadService {
       const file = await this.commonUpload(req);
       const baseUrl = process.env.BASE_URL || "http://localhost:3000";
       const fileUrl = `${baseUrl}/uploads/${file.filename}`;
-      console.log("======================");
-      console.log(req.user.id);
-      console.log("======================");
 
       // 示例：保存文件路径到数据库
       await this.prismaDB.prisma.user.update({
@@ -87,8 +84,6 @@ export class UploadService {
         message: "文件上传成功",
       };
     } catch (err) {
-      console.log("🚀 ~ uploadAvatar ~ err:", err);
-
       return {
         data: null,
         code: 500,

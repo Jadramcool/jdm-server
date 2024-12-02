@@ -8,6 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 系统配置表
 model SysConfig {
   id          Int      @id @default(autoincrement())
   name        String
@@ -19,6 +20,7 @@ model SysConfig {
   @@map("sys_config")
 }
 
+// 用户表
 model User {
   id            Int       @id @default(autoincrement())
   username      String    @unique
@@ -39,12 +41,16 @@ model User {
   address       String? // 地址
   addressDetail String?   @map("address_detail") // 详细地址
 
-  roles UserRole[]
+  roles           UserRole[]
+  noticesAuthored Notice[]   @relation("NoticeAuthor")
+
+  // 通过中间表 UserNotice 引用接收到的公告
+  userNotice UserNotice[]
 
   @@map("user")
 }
 
-// 枚举
+// 性别枚举
 enum Sex {
   MALE
   FEMALE
@@ -78,6 +84,7 @@ model Menu {
   @@map("menu")
 }
 
+// 角色表
 model Role {
   id          Int       @id @default(autoincrement())
   code        String    @unique
@@ -94,6 +101,7 @@ model Role {
   @@map("role")
 }
 
+// 角色菜单表
 model RoleMenu {
   id         Int      @id @default(autoincrement())
   roleId     Int      @map("role_id")
@@ -106,6 +114,7 @@ model RoleMenu {
   @@map("role_menu")
 }
 
+// 用户角色表
 model UserRole {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
@@ -116,4 +125,44 @@ model UserRole {
 
   @@index([roleId], map: "user_role_roleId_fkey")
   @@map("user_role")
+}
+
+// 公告类型枚举
+enum NoticeType {
+  NOTICE // 通知
+  INFO // 消息
+  ACTIVITY // 活动
+}
+
+// 公告表
+model Notice {
+  id          Int        @id @default(autoincrement())
+  title       String
+  content     String?
+  type        NoticeType
+  authorId    Int
+  author      User       @relation("NoticeAuthor", fields: [authorId], references: [id])
+  isDeleted   Boolean    @default(false) @map("is_deleted")
+  createdTime DateTime   @default(now()) @map("created_time")
+  updatedTime DateTime   @updatedAt @map("updated_time")
+  deletedTime DateTime?  @map("deleted_time")
+
+  // 通过中间表 UserNotice 引用接收人
+  receivers UserNotice[]
+
+  @@map("notice")
+}
+
+model UserNotice {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noticeId     Int       @map("notice_id")
+  notice       Notice    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  assignedTime DateTime  @default(now()) @map("assigned_time")
+  readTime     DateTime?
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+
+  @@unique([userId, noticeId])
+  @@map("user_notice")
 }

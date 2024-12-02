@@ -355,6 +355,9 @@ export class UserService {
   public async checkPassword(user: any, userId: number) {
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
+        select: {
+          password: true, // The password field is now selected.
+        },
         where: {
           id: userId,
         },
@@ -399,9 +402,6 @@ export class UserService {
         },
         data: {
           password: user.password,
-        },
-        omit: {
-          password: true,
         },
       });
 
