@@ -116,7 +116,11 @@ export class UserService {
       // 登录
       const result = await this.PrismaDB.prisma.user.findUnique({
         where: { username: user.username, isDeleted: false },
+        omit: {
+          password: false, // The password field is now selected.
+        },
       });
+      console.log("🚀 ~ login ~ result:", result);
 
       if (!result) {
         return {
@@ -133,7 +137,7 @@ export class UserService {
         };
       }
 
-      delete result.password;
+      // delete result.password;
 
       return {
         data: {
@@ -153,6 +157,8 @@ export class UserService {
    * @param user
    */
   public async getUserInfo(userId: number) {
+    console.log("🚀 ~ getUserInfo ~ userId:", userId);
+
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
         where: {
@@ -175,6 +181,8 @@ export class UserService {
         },
       });
 
+      console.log(result);
+
       if (!result) {
         return {
           code: 400,
@@ -192,7 +200,7 @@ export class UserService {
 
       result.roles = flattenedResult;
 
-      delete result.password;
+      // delete result.password;
       return {
         data: {
           ...result,
@@ -355,8 +363,8 @@ export class UserService {
   public async checkPassword(user: any, userId: number) {
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
-        select: {
-          password: true, // The password field is now selected.
+        omit: {
+          password: false, // The password field is now selected.
         },
         where: {
           id: userId,
