@@ -1,6 +1,6 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
-import { Menu, Prisma, Role as RoleModel } from "@prisma/client";
+import { Menu, Prisma, Role as RoleModel, User } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import { inject, injectable } from "inversify";
@@ -8,15 +8,21 @@ import { PrismaDB } from "../../../db";
 import { RoleDto } from "./role.dto";
 import { Role } from "./typings";
 
-interface RoleWithMenus extends RoleModel {
-  menus: Menu[];
+interface RoleWithMenusOrUsers extends RoleModel {
+  menus?: Menu[];
+  users?: User[];
 }
 
-type RoleWithMenusPrisma = Prisma.RoleGetPayload<{
+type RoleWithMenusOrUserPrisma = Prisma.RoleGetPayload<{
   include: {
-    menus: {
+    menus?: {
       select: {
         menu: true;
+      };
+    };
+    users?: {
+      select: {
+        user: true;
       };
     };
   };
@@ -53,27 +59,40 @@ export class RoleService {
       where: sqlFilters,
     });
 
-    const { showPagination = true, with_menu: withMenu = false } =
-      options || {};
+    const {
+      showPagination = true,
+      with_menu: withMenu = false,
+      with_user: withUser = false,
+    } = options || {};
     const page = parseInt(pagination?.page as string) || 1;
     const pageSize = parseInt(pagination?.pageSize as string) || 10;
 
     const commonQuery = {
       where: sqlFilters,
-      include: withMenu
-        ? {
-            menus: {
-              select: { menu: true },
+      include: {
+        ...(withMenu && {
+          menus: {
+            select: {
+              menu: true,
             },
-          }
-        : undefined,
+          },
+        }),
+        ...(withUser && {
+          users: {
+            select: {
+              user: true,
+            },
+          },
+        }),
+      },
     };
 
     // 不显示分页，返回所有数据
     if (!showPagination) {
-      result = withMenu
-        ? await this.PrismaDB.prisma.role.findMany(commonQuery)
-        : await this.PrismaDB.prisma.user.findMany({ where: sqlFilters });
+      result =
+        withMenu || withUser
+          ? await this.PrismaDB.prisma.role.findMany(commonQuery)
+          : await this.PrismaDB.prisma.role.findMany({ where: sqlFilters });
     } else {
       // 分页查询
       result = await this.PrismaDB.prisma.role.findMany({
@@ -86,16 +105,41 @@ export class RoleService {
 
     let res = result;
 
-    // 包含菜单
-    if (withMenu) {
-      const formattedResult: RoleWithMenus[] = result.map(
-        (role: RoleWithMenusPrisma) => ({
+    if (withMenu || withUser) {
+      const formattedResult: RoleWithMenusOrUsers[] = result.map(
+        (role: RoleWithMenusOrUserPrisma) => ({
           ...role,
-          menus: role.menus.map((menu: { menu: Menu }): Menu => menu.menu), // 只保留 role 字段的值
+          ...(withMenu && {
+            menus: role.menus?.map((menu: { menu: Menu }) => menu.menu),
+          }),
+          ...(withUser && {
+            users: role.users?.map((user: { user: User }) => user.user),
+          }),
         })
       );
       res = formattedResult;
     }
+
+    // 包含菜单
+    // if (withMenu) {
+    //   const formattedResult: RoleWithMenusOrUsers[] = result.map(
+    //     (role: RoleWithMenusPrisma) => ({
+    //       ...role,
+    //       menus: role.menus.map((menu: { menu: Menu }): Menu => menu.menu), // 只保留 role 字段的值
+    //     })
+    //   );
+    //   res = formattedResult;
+    // }
+
+    // if (withUser) {
+    //   const formattedResult: RoleWithMenusOrUsers[] = result.map(
+    //     (role: RoleWithUserPrisma) => ({
+    //       ...role,
+    //       users: role.users.map((user: { user: User }): User => user.user),
+    //     })
+    //   );
+    //   res = formattedResult;
+    // }
 
     // 分页信息
     const paginationData =
