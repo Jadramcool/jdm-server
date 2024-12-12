@@ -24,7 +24,7 @@ import {
 
 // 自定义格式化器
 const myFormat = winston.format.printf((info) => {
-  const { timestamp, label, level, message, meta } = info;
+  const { timestamp, label, level, message, meta }: any = info;
 
   const levelUp = level.toUpperCase();
 
