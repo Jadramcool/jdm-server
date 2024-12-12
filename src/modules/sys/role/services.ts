@@ -79,6 +79,11 @@ export class RoleService {
         }),
         ...(withUser && {
           users: {
+            where: {
+              user: {
+                status: 1,
+              },
+            },
             select: {
               user: true,
             },

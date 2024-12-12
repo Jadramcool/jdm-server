@@ -44,6 +44,7 @@ declare global {
     // pageInfo?: PageInfo;
     // page: string | number;
     pagination: Pagination;
+    user?: User;
     [key: string]: string | number;
   }
 }

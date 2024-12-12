@@ -142,6 +142,7 @@ model Notice {
   type        NoticeType
   authorId    Int
   author      User       @relation("NoticeAuthor", fields: [authorId], references: [id])
+  status      Int        @default(0) // 0: 未发送, 1: 已发送
   isDeleted   Boolean    @default(false) @map("is_deleted")
   createdTime DateTime   @default(now()) @map("created_time")
   updatedTime DateTime   @updatedAt @map("updated_time")
@@ -153,6 +154,7 @@ model Notice {
   @@map("notice")
 }
 
+// 用户公告关联表
 model UserNotice {
   id           Int       @id @default(autoincrement())
   userId       Int       @map("user_id")

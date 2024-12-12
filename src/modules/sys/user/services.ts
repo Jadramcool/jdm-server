@@ -373,7 +373,6 @@ export class UserManagerService {
         code: 200,
         message: "获取用户信息成功",
       };
-      // 删除密码
     } catch (err) {
       console.log(err);
       return err;
