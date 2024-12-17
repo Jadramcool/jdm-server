@@ -208,8 +208,8 @@ export class RoleService {
    */
   public async createRole(role: RoleDto) {
     try {
-      let userDto = plainToClass(RoleDto, role);
-      const errors = await validate(userDto);
+      let roleDto = plainToClass(RoleDto, role);
+      const errors = await validate(roleDto);
       if (errors.length > 0) {
         const errorMessages = errors.map((error) => {
           return {
