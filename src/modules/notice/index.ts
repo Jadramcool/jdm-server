@@ -1,6 +1,8 @@
 import { ContainerModule, interfaces } from "inversify";
 import { Notice } from "./notice/controller";
 import { NoticeService } from "./notice/services";
+import { Todo } from "./todo/controller";
+import { TodoService } from "./todo/services";
 
 const noticeContainer = new ContainerModule(
   (
@@ -14,6 +16,12 @@ const noticeContainer = new ContainerModule(
      */
     bind<Notice>(Notice).toSelf();
     bind<NoticeService>(NoticeService).toSelf();
+
+    /*
+     * 待办事项
+     */
+    bind<Todo>(Todo).toSelf();
+    bind<TodoService>(TodoService).toSelf();
   }
 );
 
