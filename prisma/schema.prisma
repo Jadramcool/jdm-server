@@ -46,6 +46,7 @@ model User {
 
   // 通过中间表 UserNotice 引用接收到的公告
   userNotice UserNotice[]
+  Todo       Todo[]
 
   @@map("user")
 }
@@ -167,4 +168,23 @@ model UserNotice {
 
   @@unique([userId, noticeId])
   @@map("user_notice")
+}
+
+// 待办事项
+model Todo {
+  id          Int       @id @default(autoincrement())
+  pid         Int? // 待办事项父级id
+  title       String // 待办事项标题/待办组名称
+  content     String? // 待办事项内容/待办组内容
+  sortOrder   Int?      @default(0) @map("sort_order") // 排序
+  isDone      Boolean   @default(false) // 是否完成
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime? @updatedAt @map("updated_time")
+  doneTime    DateTime? @map("done_time")
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  parent      Todo?     @relation("ParentChild", fields: [pid], references: [id])
+  children    Todo[]    @relation("ParentChild")
+
+  @@map("todo")
 }

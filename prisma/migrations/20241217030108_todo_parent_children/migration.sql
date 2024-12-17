@@ -1,0 +1,2 @@
+-- AddForeignKey
+ALTER TABLE `todo` ADD CONSTRAINT `todo_pid_fkey` FOREIGN KEY (`pid`) REFERENCES `todo`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
