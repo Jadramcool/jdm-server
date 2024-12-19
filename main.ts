@@ -12,12 +12,12 @@ import "reflect-metadata";
 // 引入模块别名
 import cors from "cors";
 import express from "express";
-import { InversifyExpressServer, getRouteInfo } from "inversify-express-utils";
+import { InversifyExpressServer } from "inversify-express-utils";
 import "module-alias/register";
-import * as prettyjson from "prettyjson";
 import createContainer from "./config/container";
 import { JWT } from "./src/jwt";
-import { logger } from "./src/middleware/logger";
+// import { logger } from "./src/middleware/logger";
+// import * as prettyjson from "prettyjson";
 import { responseHandler } from "./src/middleware/sendResult";
 
 const container = createContainer();
@@ -33,15 +33,15 @@ server.setConfig((app) => {
   app.use(express.json());
   app.use(container.get(JWT).init());
   app.use(responseHandler);
-  app.use(logger);
+  // app.use(logger);
   app.use("/uploads", express.static("uploads")); // 静态文件
 });
 
 // 构建一个Express应用程序
 const app = server.build();
 
-const routeInfo = getRouteInfo(container);
-console.log(prettyjson.render({ routes: routeInfo }));
+// const routeInfo = getRouteInfo(container);
+// console.log(prettyjson.render({ routes: routeInfo }));
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");

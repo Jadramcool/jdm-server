@@ -120,8 +120,6 @@ export class UserService {
           password: false, // The password field is now selected.
         },
       });
-      console.log("🚀 ~ login ~ result:", result);
-
       if (!result) {
         return {
           code: 400,
@@ -157,8 +155,6 @@ export class UserService {
    * @param user
    */
   public async getUserInfo(userId: number) {
-    console.log("🚀 ~ getUserInfo ~ userId:", userId);
-
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
         where: {
@@ -181,8 +177,6 @@ export class UserService {
         },
       });
 
-      console.log(result);
-
       if (!result) {
         return {
           code: 400,
@@ -200,7 +194,6 @@ export class UserService {
 
       result.roles = flattenedResult;
 
-      // delete result.password;
       return {
         data: {
           ...result,

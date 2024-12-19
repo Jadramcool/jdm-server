@@ -69,7 +69,6 @@ export class MenuService {
         message: "新增菜单成功",
       };
     } catch (err) {
-      console.log("🚀 ~ createMenu ~ err:", err);
       return {
         data: null,
         code: 404,

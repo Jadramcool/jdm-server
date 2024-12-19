@@ -49,7 +49,6 @@ export class RoleService {
       ]);
     }
 
-    console.log("sqlFilters", sqlFilters);
     let result = [];
     // 总页数
     let totalPages = 1;

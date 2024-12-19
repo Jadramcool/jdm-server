@@ -47,6 +47,8 @@ model User {
   // 通过中间表 UserNotice 引用接收到的公告
   userNotice UserNotice[]
   Todo       Todo[]
+  // 医生
+  doctor     Doctor?
 
   @@map("user")
 }
@@ -187,4 +189,37 @@ model Todo {
   children    Todo[]    @relation("ParentChild")
 
   @@map("todo")
+}
+
+// 科室信息管理表
+model Department {
+  id          Int       @id @default(autoincrement())
+  name        String // 科室名称
+  description String? // 科室描述
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime? @updatedAt @map("updated_time")
+
+  // 医生和科室的关系
+  doctors Doctor[] // 与医生一对多关系
+
+  @@map("department")
+}
+
+// 医生模型
+model Doctor {
+  id           Int         @id @default(autoincrement())
+  userId       Int         @unique @map("user_id") // 医生对应的用户ID
+  user         User        @relation(fields: [userId], references: [id])
+  departmentId Int?        @map("department_id") // 医生所属科室ID
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  introduction    String? // 医生简介
+  registrationFee Int?    @map("registration_fee") // 挂号费
+
+  // 医生的排班信息
+  // schedules     DoctorSchedule[] // 医生排班信息
+
+  createdTime DateTime @default(now()) @map("created_time")
+
+  @@map("doctor")
 }

@@ -46,6 +46,8 @@ export class UserManagerService {
     // 过滤条件
 
     filters = filters || {};
+    // filters["role__in"] = filters["role"];
+
     let sqlFilters = {};
     const keys = Object.keys(filters);
     if (keys.length > 0) {
@@ -56,6 +58,7 @@ export class UserManagerService {
         "sex",
         "status",
         "roleType",
+        "role",
       ]);
 
       // 遍历时间字段并添加范围过滤条件
@@ -71,6 +74,18 @@ export class UserManagerService {
 
     sqlFilters["isDeleted"] = false;
 
+    // 查询中间关联表roleId
+    if (sqlFilters["role"]) {
+      sqlFilters = {
+        ...sqlFilters,
+        roles: {
+          some: {
+            roleId: sqlFilters["role"],
+          },
+        },
+      };
+      delete sqlFilters["role"];
+    }
     let result = [];
     // 总页数
     let totalPages = 1;
@@ -194,7 +209,7 @@ export class UserManagerService {
       let result = null;
 
       await this.PrismaDB.prisma.$transaction(async (prisma) => {
-        const { roles, ...createData } = user;
+        const { roles, roleType, ...createData } = user;
 
         // 创建用户信息
         result = await this.PrismaDB.prisma.user.create({
@@ -202,6 +217,14 @@ export class UserManagerService {
         });
 
         const { id } = result;
+
+        if (roleType === "doctor") {
+          await prisma.doctor.create({
+            data: {
+              userId: id,
+            },
+          });
+        }
 
         // 创建用户角色关系
         if (roles) {
@@ -259,6 +282,21 @@ export class UserManagerService {
           data: updateData,
         });
 
+        // 查询角色关系，如果没有变化，则不做任何操作
+        const existingRoles = await prisma.userRole.findMany({
+          where: {
+            userId: id,
+          },
+          select: { roleId: true },
+        });
+
+        if (
+          existingRoles.length === roles.length &&
+          existingRoles.every((role) => roles.includes(role.roleId))
+        ) {
+          return;
+        }
+
         // 删除用户角色关系
         await prisma.userRole.deleteMany({
           where: {
@@ -283,7 +321,6 @@ export class UserManagerService {
         message: "更新用户成功",
       };
     } catch (err) {
-      console.log(err);
       return err;
     }
   }

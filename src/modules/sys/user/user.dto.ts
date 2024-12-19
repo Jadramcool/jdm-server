@@ -20,6 +20,8 @@ export class UserDto {
   password: string;
 
   roles: string[] | number[] | null | undefined;
+
+  roleType: "admin" | "user" | "doctor";
 }
 
 export class LoginDto {

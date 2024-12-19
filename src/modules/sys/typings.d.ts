@@ -13,4 +13,5 @@ export interface User {
   isDeleted?: boolean; // 是否已删除
   status?: number; // 用户状态 (0: 未激活, 1: 激活)
   roles?: Role[]; // 角色列表
+  roleType?: "admin" | "user" | "doctor";
 }
