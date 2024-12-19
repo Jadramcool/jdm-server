@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `menu` MODIFY `type` INTEGER NOT NULL DEFAULT 1;
