@@ -224,7 +224,6 @@ export class TodoService {
         },
       });
       const parentId = result.pid;
-      console.log("🚀 ~ parentId:", parentId);
       // 如果子级全部完成，则父级也变成已完成
       if (parentId && status) {
         const children = await this.PrismaDB.prisma.todo.findMany({

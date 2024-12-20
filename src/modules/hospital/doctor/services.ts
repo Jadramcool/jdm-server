@@ -97,6 +97,7 @@ export class DoctorService {
             },
           },
         },
+        department: true,
       },
     };
     // 不显示分页，返回所有数据
@@ -362,11 +363,9 @@ export class DoctorService {
               }
             }
             updateData[relation] = { update: userUpdateData };
-          } else if (relation === "department") {
-            // 处理 Department 更新
-            updateData[relation] = {
-              connect: { id: data.id }, // 假设是通过 ID 关联
-            };
+          } else if (relation === "departmentId") {
+            // 将 departmentId 替换为 department 并使用 connect
+            updateData.department = { connect: { id: data } };
           } else {
             // 针对其他关系的默认处理逻辑
             updateData[relation] = data;
@@ -377,6 +376,7 @@ export class DoctorService {
           data: updateData,
           include: {
             user: true,
+            department: true,
           },
         });
       });
@@ -387,6 +387,8 @@ export class DoctorService {
         message: "更新医生成功",
       };
     } catch (err) {
+      console.log("🚀 ~ updateDoctor ~ err:", err);
+
       return {
         data: null,
         code: 400,
