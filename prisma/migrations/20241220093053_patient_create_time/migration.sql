@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `patient` ADD COLUMN `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);

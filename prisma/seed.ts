@@ -64,7 +64,8 @@ const initAdmin = async () => {
       data: {
         username: "admin",
         password:
-          "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW", // 123456..
+          process.env.DEFAULT_PASSWORD ||
+          "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW",
       },
     });
   }
