@@ -55,7 +55,11 @@ export const addFilterCondition = (
   return sqlFilters;
 };
 
-export const addFilterConditionAny = (filters: Record<string, any>) => {
+// 如果不需要特殊的解析，用此函数
+export const addFilterConditionAny = (
+  filters: Record<string, any>,
+  excluded: string[] = []
+) => {
   const sqlFilters: Record<string, any> = {};
 
   const processField = (f: string) => {
@@ -92,9 +96,17 @@ export const addFilterConditionAny = (filters: Record<string, any>) => {
     }
   };
 
-  const allOriginKeys = Object.keys(filters).map((item) => {
-    return item.split("__")[0];
-  });
+  const allOriginKeys = Object.keys(filters)
+
+    .filter((item) => {
+      if (excluded && excluded.includes(item.split("__")[0])) {
+      } else {
+        return true;
+      }
+    })
+    .map((item) => {
+      return item.split("__")[0];
+    });
   if (Array.isArray(allOriginKeys) && allOriginKeys.length > 0) {
     allOriginKeys.forEach(processField);
   }

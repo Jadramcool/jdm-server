@@ -5,6 +5,7 @@ import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
 import { hospitalContainer } from "../src/modules/hospital/index";
 import { noticeContainer } from "../src/modules/notice/index";
+import { scheduleContainer } from "../src/modules/schedule/index";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
@@ -27,6 +28,10 @@ const createContainer = () => {
    * 医院模块
    */
   container.load(hospitalContainer);
+  /**
+   * 预约排班模块
+   */
+  container.load(scheduleContainer);
 
   /**
    * user模块

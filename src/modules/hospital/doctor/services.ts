@@ -149,12 +149,30 @@ export class DoctorService {
       const result = await this.PrismaDB.prisma.doctor.findUnique({
         where: { id: doctorId },
         include: {
-          user: true,
+          user: {
+            include: {
+              roles: {
+                select: {
+                  role: true,
+                },
+              },
+            },
+          },
         },
       });
 
+      const { user } = result;
+
+      const doctorWithRoles = {
+        ...result,
+        user: {
+          ...user,
+          roles: user.roles.map((role: { role: Role }): any => role.role), // 获取角色名称
+        },
+      };
+
       return {
-        data: result,
+        data: doctorWithRoles,
         code: 200,
         message: "获取医生详情成功",
       };
@@ -203,7 +221,7 @@ export class DoctorService {
         },
       });
       if (existingDoctor) {
-        throw new Error("医生用户名/手机号已存在");
+        throw "医生用户名/手机号已存在";
       }
 
       let doctorResult = null;

@@ -201,7 +201,7 @@ export class PatientService {
         },
       });
       if (existingPatient) {
-        throw new Error("患者用户名/手机号已存在");
+        throw "患者用户名/手机号已存在";
       }
 
       let patientResult = null;

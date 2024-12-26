@@ -122,9 +122,9 @@ model RoleMenu {
 model UserRole {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   roleId     Int      @map("role_id")
-  role       Role     @relation(fields: [roleId], references: [id])
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now()) @map("assigned_at")
 
   @@index([roleId], map: "user_role_roleId_fkey")
@@ -215,12 +215,13 @@ model Doctor {
   department   Department? @relation(fields: [departmentId], references: [id])
 
   introduction    String? // 医生简介
-  registrationFee Int?    @map("registration_fee") // 挂号费
+  registrationFee Int?     @map("registration_fee") // 挂号费
+  createdTime     DateTime @default(now()) @map("created_time")
 
   // 医生的排班信息
-  // schedules     DoctorSchedule[] // 医生排班信息
+  doctorSchedule DoctorSchedule[]
 
-  createdTime DateTime @default(now()) @map("created_time")
+  Appointment Appointment[]
 
   @@map("doctor")
 }
@@ -229,7 +230,53 @@ model Doctor {
 model Patient {
   id     Int  @id @default(autoincrement())
   userId Int  @unique @map("user_id")
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdTime DateTime @default(now()) @map("created_time")
+  createdTime DateTime      @default(now()) @map("created_time")
+  Appointment Appointment[]
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum TimePeriod {
+  MORNING
+  AFTERNOON
+  DAY
+}
+
+// 医生排班信息表
+model DoctorSchedule {
+  id          Int         @id @default(autoincrement())
+  doctorId    Int         @map("doctor_id")
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  weekday     Weekday? // 排班的星期几
+  date        DateTime    @db.Date() // 排班日期
+  timePeriod  TimePeriod? @default(DAY) @map("time_period") // 排班时间段  morning：上午，afternoon：下午，day: 全天
+  createdTime DateTime    @default(now()) @map("created_time")
+  updatedTime DateTime    @updatedAt @map("updated_time")
+
+  @@map("doctor_schedule")
+}
+
+// 患者挂号表
+model Appointment {
+  id              Int      @id @default(autoincrement())
+  patientId       Int      @map("patient_id")
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId        Int      @map("doctor_id")
+  doctor          Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointmentDate DateTime // 挂号日期
+  status          Int      @default(0) // 0: 未就诊, 1: 已就诊 ,2: 已取消,3：已叫号
+  createdTime     DateTime @default(now()) @map("created_time")
+  updatedTime     DateTime @updatedAt @map("updated_time")
+
+  @@map("appointment")
 }
