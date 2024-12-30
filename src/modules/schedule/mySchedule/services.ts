@@ -129,7 +129,7 @@ export class MyScheduleService {
         if (!acc[dateKey]) {
           acc[dateKey] = [];
         }
-        acc[dateKey] = schedule;
+        acc[dateKey].push(schedule);
         return acc;
       }, {});
 

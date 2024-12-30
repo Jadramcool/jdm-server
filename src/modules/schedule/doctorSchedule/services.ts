@@ -1,5 +1,6 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
+import { TimePeriod } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import dayjs from "dayjs";
@@ -104,7 +105,6 @@ export class DoctorScheduleService {
 
       totalPages = Math.ceil(totalRecords / pageSize);
     }
-    console.log("result ", result);
 
     // 分页信息
     const paginationData =
@@ -185,35 +185,72 @@ export class DoctorScheduleService {
 
       // 将已有的排班记录按日期存储
       const existingScheduleMap = existingSchedule.reduce((acc, schedule) => {
-        acc[dayjs(schedule.date).format("YYYY-MM-DD")] = schedule;
+        const dayKey = dayjs(schedule.date).format("YYYY-MM-DD");
+        if (!acc[dayKey]) acc[dayKey] = {};
+        _.set(acc[dayKey], [schedule.timePeriod], schedule);
         return acc;
       }, {} as Record<string, any>);
 
       // 3. 处理排班数据
       const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
         if (Array.isArray(date)) {
+          // 数据库中已存在的所有排班记录
+          const allExistingDate = Object.keys(existingScheduleMap);
+          // 前端传来的今天往后的所有排班记录的日期
+          const dateString = date.map((d) => d.date);
+          // 前端传来的排班记录的日期减去数据库中已存在的排班记录的日期，得到需要删除的排班记录的日期
+          const needDeleteDate = _.differenceBy(allExistingDate, dateString);
+          // 删除需要删除的排班记录,因为existingScheduleMap是一个二层对象,所有需要先获取所有需要删除的排班记录的id
+          const needDeleteId = _.flatten(
+            needDeleteDate.map((d: string) => {
+              return Object.values(existingScheduleMap[d]).map(
+                (schedule: Recordable) => {
+                  return schedule.id;
+                }
+              );
+            })
+          );
+          // 首先删除此次更新删掉的排班记录
+          await prisma.doctorSchedule.deleteMany({
+            where: {
+              id: {
+                in: needDeleteId,
+              },
+            },
+          });
+
           for (const dateItem of date) {
             const dateKey = dayjs(dateItem.date).format("YYYY-MM-DD");
 
             if (existingScheduleMap[dateKey]) {
-              // 更新已存在的排班
-              if (
-                existingScheduleMap[dateKey].timePeriod !== dateItem.timePeriod
-              ) {
-                await prisma.doctorSchedule.update({
-                  where: { id: existingScheduleMap[dateKey].id },
-                  data: { timePeriod: dateItem.timePeriod },
+              // 存在日期的排班时间段
+              const existingTimePeriod = Object.keys(
+                existingScheduleMap[dateKey]
+              );
+
+              const needDeleteTimePeriod = existingTimePeriod.filter(
+                (timePeriod) => !dateItem.timePeriod.includes(timePeriod)
+              );
+
+              if (needDeleteTimePeriod.length > 0) {
+                await prisma.doctorSchedule.deleteMany({
+                  where: {
+                    date: new Date(dateKey),
+                    timePeriod: {
+                      in: needDeleteTimePeriod as TimePeriod[],
+                    },
+                  },
                 });
               }
             } else {
               // 创建新的排班
               const localDate = new Date(dayjs(dateKey).format("YYYY-MM-DD"));
-              await prisma.doctorSchedule.create({
-                data: {
-                  doctorId,
+              await prisma.doctorSchedule.createMany({
+                data: dateItem.timePeriod.map((timePeriod: string) => ({
+                  doctorId: doctorId,
+                  timePeriod,
                   date: localDate,
-                  timePeriod: dateItem.timePeriod,
-                },
+                })),
               });
             }
           }
@@ -355,35 +392,72 @@ export class DoctorScheduleService {
 
       // 将已有的排班记录按日期存储
       const existingScheduleMap = existingSchedule.reduce((acc, schedule) => {
-        acc[dayjs(schedule.date).format("YYYY-MM-DD")] = schedule;
+        const dayKey = dayjs(schedule.date).format("YYYY-MM-DD");
+        if (!acc[dayKey]) acc[dayKey] = {};
+        _.set(acc[dayKey], [schedule.timePeriod], schedule);
         return acc;
       }, {} as Record<string, any>);
 
       // 3. 处理排班数据
       const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
         if (Array.isArray(date)) {
+          // 数据库中已存在的所有排班记录
+          const allExistingDate = Object.keys(existingScheduleMap);
+          // 前端传来的今天往后的所有排班记录的日期
+          const dateString = date.map((d) => d.date);
+          // 前端传来的排班记录的日期减去数据库中已存在的排班记录的日期，得到需要删除的排班记录的日期
+          const needDeleteDate = _.differenceBy(allExistingDate, dateString);
+          // 删除需要删除的排班记录,因为existingScheduleMap是一个二层对象,所有需要先获取所有需要删除的排班记录的id
+          const needDeleteId = _.flatten(
+            needDeleteDate.map((d: string) => {
+              return Object.values(existingScheduleMap[d]).map(
+                (schedule: Recordable) => {
+                  return schedule.id;
+                }
+              );
+            })
+          );
+          // 首先删除此次更新删掉的排班记录
+          await prisma.doctorSchedule.deleteMany({
+            where: {
+              id: {
+                in: needDeleteId,
+              },
+            },
+          });
+
           for (const dateItem of date) {
             const dateKey = dayjs(dateItem.date).format("YYYY-MM-DD");
 
             if (existingScheduleMap[dateKey]) {
-              // 更新已存在的排班
-              if (
-                existingScheduleMap[dateKey].timePeriod !== dateItem.timePeriod
-              ) {
-                await prisma.doctorSchedule.update({
-                  where: { id: existingScheduleMap[dateKey].id },
-                  data: { timePeriod: dateItem.timePeriod },
+              // 存在日期的排班时间段
+              const existingTimePeriod = Object.keys(
+                existingScheduleMap[dateKey]
+              );
+
+              const needDeleteTimePeriod = existingTimePeriod.filter(
+                (timePeriod) => !dateItem.timePeriod.includes(timePeriod)
+              );
+
+              if (needDeleteTimePeriod.length > 0) {
+                await prisma.doctorSchedule.deleteMany({
+                  where: {
+                    date: new Date(dateKey),
+                    timePeriod: {
+                      in: needDeleteTimePeriod as TimePeriod[],
+                    },
+                  },
                 });
               }
             } else {
               // 创建新的排班
               const localDate = new Date(dayjs(dateKey).format("YYYY-MM-DD"));
-              await prisma.doctorSchedule.create({
-                data: {
-                  doctorId,
+              await prisma.doctorSchedule.createMany({
+                data: dateItem.timePeriod.map((timePeriod: string) => ({
+                  doctorId: doctorId,
+                  timePeriod,
                   date: localDate,
-                  timePeriod: dateItem.timePeriod,
-                },
+                })),
               });
             }
           }
