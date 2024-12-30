@@ -236,16 +236,6 @@ model Patient {
   Appointment Appointment[]
 }
 
-enum Weekday {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
-
 enum TimePeriod {
   MORNING
   AFTERNOON
@@ -254,14 +244,15 @@ enum TimePeriod {
 
 // 医生排班信息表
 model DoctorSchedule {
-  id          Int         @id @default(autoincrement())
-  doctorId    Int         @map("doctor_id")
-  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  weekday     Weekday? // 排班的星期几
-  date        DateTime    @db.Date() // 排班日期
-  timePeriod  TimePeriod? @default(DAY) @map("time_period") // 排班时间段  morning：上午，afternoon：下午，day: 全天
-  createdTime DateTime    @default(now()) @map("created_time")
-  updatedTime DateTime    @updatedAt @map("updated_time")
+  id           Int         @id @default(autoincrement())
+  doctorId     Int         @map("doctor_id")
+  doctor       Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date         DateTime    @db.Date() // 排班日期
+  timePeriod   TimePeriod? @default(DAY) @map("time_period") // 排班时间段  morning：上午，afternoon：下午，day: 全天
+  createdTime  DateTime    @default(now()) @map("created_time")
+  updatedTime  DateTime    @updatedAt @map("updated_time")
+  appointCount Int         @default(0) @map("appoint_count") // 挂号数量
+  maxCount     Int         @default(100) @map("max_count") // 单条记录最多挂号数量
 
   @@map("doctor_schedule")
 }

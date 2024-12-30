@@ -1,15 +1,12 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
-import { plainToClass } from "class-transformer";
-import { validate } from "class-validator";
 import dayjs from "dayjs";
 import { inject, injectable } from "inversify";
 import * as _ from "lodash";
 import { PrismaDB } from "../../../db";
-import { ScheduleDto } from "./schedule.dto";
 
 @injectable()
-export class DoctorScheduleService {
+export class MyScheduleService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
@@ -17,7 +14,7 @@ export class DoctorScheduleService {
 
   // 获取排班列表
   public async getScheduleList(config: ReqListConfig) {
-    let { filters = {}, options, pagination, sort } = config;
+    let { filters = {}, options, pagination, sort, user } = config;
     let sqlFilters = {};
     const keys = Object.keys(filters);
     if (keys.length > 0) {
@@ -52,6 +49,9 @@ export class DoctorScheduleService {
         }
       }
     });
+
+    const doctorId = user.doctor.id;
+    sqlFilters["doctorId"] = doctorId;
     let result = [];
     // 总页数
     let totalPages = 1;
@@ -104,7 +104,11 @@ export class DoctorScheduleService {
 
       totalPages = Math.ceil(totalRecords / pageSize);
     }
-    console.log("result ", result);
+    console.log(
+      "%c [ result ]-91",
+      "font-size:13px; background:pink; color:#bf2c9f;",
+      result
+    );
 
     // 分页信息
     const paginationData =
@@ -125,14 +129,14 @@ export class DoctorScheduleService {
         if (!acc[dateKey]) {
           acc[dateKey] = [];
         }
-        acc[dateKey].push(schedule);
+        acc[dateKey] = schedule;
         return acc;
       }, {});
 
       // 将分组结果转换为数组
       result = Object.keys(groupedSchedules).map((dateKey) => ({
         date: dateKey,
-        schedules: groupedSchedules[dateKey],
+        schedule: groupedSchedules[dateKey],
       }));
     }
 
@@ -142,99 +146,6 @@ export class DoctorScheduleService {
         pagination: paginationData,
       },
     };
-  }
-
-  /**
-   * 创建排班记录 - 与更新完全相同
-   * @param schedule
-   */
-  public async createSchedule(schedule: ScheduleDto) {
-    try {
-      // 1. 参数验证
-      const userDto = plainToClass(ScheduleDto, schedule);
-      const errors = await validate(userDto);
-      if (errors.length > 0) {
-        const errorMessages = errors.map((error) => ({
-          property: error.property,
-          value: Object.values(error.constraints),
-        }));
-        return {
-          code: 400,
-          message: "参数验证失败",
-          errMsg: "参数验证失败",
-          data: errorMessages,
-        };
-      }
-
-      const { doctorId, date } = schedule;
-      const today = dayjs().startOf("day").toDate(); // 当前日期
-
-      // 2. 查找已存在的排班记录
-      const existingSchedule =
-        await this.PrismaDB.prisma.doctorSchedule.findMany({
-          where: {
-            doctorId,
-            date: { gte: today }, // 只查找当天及之后的排班记录
-          },
-          select: {
-            id: true,
-            date: true,
-            timePeriod: true,
-          },
-        });
-
-      // 将已有的排班记录按日期存储
-      const existingScheduleMap = existingSchedule.reduce((acc, schedule) => {
-        acc[dayjs(schedule.date).format("YYYY-MM-DD")] = schedule;
-        return acc;
-      }, {} as Record<string, any>);
-
-      // 3. 处理排班数据
-      const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
-        if (Array.isArray(date)) {
-          for (const dateItem of date) {
-            const dateKey = dayjs(dateItem.date).format("YYYY-MM-DD");
-
-            if (existingScheduleMap[dateKey]) {
-              // 更新已存在的排班
-              if (
-                existingScheduleMap[dateKey].timePeriod !== dateItem.timePeriod
-              ) {
-                await prisma.doctorSchedule.update({
-                  where: { id: existingScheduleMap[dateKey].id },
-                  data: { timePeriod: dateItem.timePeriod },
-                });
-              }
-            } else {
-              // 创建新的排班
-              const localDate = new Date(dayjs(dateKey).format("YYYY-MM-DD"));
-              await prisma.doctorSchedule.create({
-                data: {
-                  doctorId,
-                  date: localDate,
-                  timePeriod: dateItem.timePeriod,
-                },
-              });
-            }
-          }
-        }
-      });
-
-      // 4. 返回成功响应
-      return {
-        data: result,
-        code: 200,
-        message: "创建排班记录成功",
-      };
-    } catch (err) {
-      // 5. 错误处理
-      return {
-        data: null,
-        code: 400,
-        message: "创建排班记录失败",
-        errMsg: err instanceof Error ? err.message : err,
-      };
-    }
   }
 
   /**
@@ -310,99 +221,6 @@ export class DoctorScheduleService {
         code: 400,
         message: "创建排班记录失败",
         errMsg: err,
-      };
-    }
-  }
-
-  /**
-   * 更新排班记录-其实在前端新增约等于更新了，因为要处理未来所有的数据
-   * @param schedule
-   */
-  public async updateSchedule(schedule: any) {
-    try {
-      // 1. 参数验证
-      const userDto = plainToClass(ScheduleDto, schedule);
-      const errors = await validate(userDto);
-      if (errors.length > 0) {
-        const errorMessages = errors.map((error) => ({
-          property: error.property,
-          value: Object.values(error.constraints),
-        }));
-        return {
-          code: 400,
-          message: "参数验证失败",
-          errMsg: "参数验证失败",
-          data: errorMessages,
-        };
-      }
-
-      const { doctorId, date } = schedule;
-      const today = dayjs().startOf("day").toDate(); // 当前日期
-
-      // 2. 查找已存在的排班记录
-      const existingSchedule =
-        await this.PrismaDB.prisma.doctorSchedule.findMany({
-          where: {
-            doctorId,
-            date: { gte: today }, // 只查找当天及之后的排班记录
-          },
-          select: {
-            id: true,
-            date: true,
-            timePeriod: true,
-          },
-        });
-
-      // 将已有的排班记录按日期存储
-      const existingScheduleMap = existingSchedule.reduce((acc, schedule) => {
-        acc[dayjs(schedule.date).format("YYYY-MM-DD")] = schedule;
-        return acc;
-      }, {} as Record<string, any>);
-
-      // 3. 处理排班数据
-      const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
-        if (Array.isArray(date)) {
-          for (const dateItem of date) {
-            const dateKey = dayjs(dateItem.date).format("YYYY-MM-DD");
-
-            if (existingScheduleMap[dateKey]) {
-              // 更新已存在的排班
-              if (
-                existingScheduleMap[dateKey].timePeriod !== dateItem.timePeriod
-              ) {
-                await prisma.doctorSchedule.update({
-                  where: { id: existingScheduleMap[dateKey].id },
-                  data: { timePeriod: dateItem.timePeriod },
-                });
-              }
-            } else {
-              // 创建新的排班
-              const localDate = new Date(dayjs(dateKey).format("YYYY-MM-DD"));
-              await prisma.doctorSchedule.create({
-                data: {
-                  doctorId,
-                  date: localDate,
-                  timePeriod: dateItem.timePeriod,
-                },
-              });
-            }
-          }
-        }
-      });
-
-      // 4. 返回成功响应
-      return {
-        data: result,
-        code: 200,
-        message: "创建排班记录成功",
-      };
-    } catch (err) {
-      // 5. 错误处理
-      return {
-        data: null,
-        code: 400,
-        message: "创建排班记录失败",
-        errMsg: err instanceof Error ? err.message : err,
       };
     }
   }
