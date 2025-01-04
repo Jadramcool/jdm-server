@@ -8,7 +8,7 @@
  *
  */
 import { PrismaClient } from "@prisma/client";
-import { Menu, SysConfig } from "./initData";
+import { Menu, Role, SysConfig } from "./initData";
 
 const prisma = new PrismaClient();
 
@@ -52,7 +52,6 @@ const initMenus = async () => {
 };
 
 const initAdmin = async () => {
-  // 检查是否已经初始化过了
   const isHasAdmin = await prisma.user.findFirst({
     where: {
       username: "admin",
@@ -64,7 +63,8 @@ const initAdmin = async () => {
       data: {
         username: "admin",
         password:
-          "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW", // 123456..
+          process.env.DEFAULT_PASSWORD ||
+          "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW",
       },
     });
   }
@@ -74,17 +74,22 @@ const initRole = async () => {
   // 检查是否已经初始化过了
   const isHasDefaultRole = await prisma.role.findFirst({
     where: {
-      name: "默认角色",
+      code: "ADMIN",
     },
   });
   if (!isHasDefaultRole) {
     // 如果没有数据，插入初始数据
-    const defaultRole = await prisma.role.create({
-      data: {
-        code: "DEFAULT",
-        name: "默认角色",
-        description: "默认角色，拥有所有权限/菜单",
-      },
+    // const defaultRole = await prisma.role.create({
+    //   data: {
+    //     code: "DEFAULT",
+    //     name: "默认角色",
+    //     description: "默认角色，拥有所有权限/菜单",
+    //   },
+    // });
+
+    await prisma.role.createMany({
+      data: Role.roles,
+      skipDuplicates: true,
     });
 
     // 给admin用户添加默认角色
@@ -97,7 +102,7 @@ const initRole = async () => {
       await prisma.userRole.create({
         data: {
           userId: admin.id,
-          roleId: defaultRole.id,
+          roleId: 1,
         },
       });
 
@@ -105,7 +110,7 @@ const initRole = async () => {
 
       await prisma.roleMenu.createMany({
         data: allMenus.map((menu) => ({
-          roleId: defaultRole.id,
+          roleId: 1,
           menuId: menu.id,
         })),
         skipDuplicates: true,

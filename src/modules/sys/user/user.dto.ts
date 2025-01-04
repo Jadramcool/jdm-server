@@ -21,7 +21,7 @@ export class UserDto {
 
   roles: string[] | number[] | null | undefined;
 
-  roleType: "admin" | "user" | "doctor";
+  roleType: "admin" | "user" | "doctor" | "patient";
 }
 
 export class LoginDto {

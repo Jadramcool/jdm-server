@@ -45,7 +45,12 @@ declare global {
     // page: string | number;
     pagination: Pagination;
     user?: User;
+    sort?: Recordable;
     [key: string]: string | number;
+  }
+
+  interface UserWithDoctor extends PrismaUser {
+    doctor: Doctor;
   }
 }
 

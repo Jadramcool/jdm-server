@@ -47,7 +47,7 @@ export class DepartmentService {
     const commonQuery: any = {
       where: sqlFilters,
       orderBy: {
-        createdTime: "desc",
+        id: "asc",
       },
     };
 
@@ -145,7 +145,7 @@ export class DepartmentService {
           },
         });
       if (existingDepartment) {
-        throw new Error("科室名称已存在");
+        throw "科室名称已存在";
       }
 
       const result = await this.PrismaDB.prisma.department.create({

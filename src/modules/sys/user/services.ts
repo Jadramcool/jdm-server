@@ -203,9 +203,6 @@ export class UserManagerService {
         };
       }
 
-      user.password =
-        "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW";
-
       let result = null;
 
       await this.PrismaDB.prisma.$transaction(async (prisma) => {
@@ -213,13 +210,25 @@ export class UserManagerService {
 
         // 创建用户信息
         result = await this.PrismaDB.prisma.user.create({
-          data: createData,
+          data: {
+            ...createData,
+            roleType: roleType,
+            password: process.env.DEFAULT_PASSWORD,
+          },
         });
 
         const { id } = result;
 
         if (roleType === "doctor") {
           await prisma.doctor.create({
+            data: {
+              userId: id,
+            },
+          });
+        }
+
+        if (roleType === "patient") {
+          await prisma.patient.create({
             data: {
               userId: id,
             },

@@ -1,19 +1,18 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
-import { Doctor, Prisma, Role, User } from "@prisma/client";
+import { Patient, Prisma, Role, User } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
-import dayjs from "dayjs";
 import { inject, injectable } from "inversify";
 import * as _ from "lodash";
 import { PrismaDB } from "../../../db";
-import { DoctorDto } from "./doctor.dto";
+import { PatientDto } from "./patient.dto";
 
-interface DoctorWithUser extends Doctor {
+interface PatientWithUser extends Patient {
   user: User;
 }
 
-type DoctorWithUsersPrisma = Prisma.DoctorGetPayload<{
+type PatientWithUsersPrisma = Prisma.PatientGetPayload<{
   include: {
     user: {
       include: {
@@ -28,14 +27,14 @@ type DoctorWithUsersPrisma = Prisma.DoctorGetPayload<{
 }>;
 
 @injectable()
-export class DoctorService {
+export class PatientService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
   ) {}
 
-  // 获取医生列表
-  public async getDoctorList(config: ReqListConfig) {
+  // 获取患者列表
+  public async getPatientList(config: ReqListConfig) {
     let { filters, options, pagination } = config;
     filters = filters || {};
 
@@ -69,13 +68,12 @@ export class DoctorService {
       sqlFilters["user"] = {};
     }
     sqlFilters["user"]["isDeleted"] = false;
-
     let result = [];
     // 总页数
     let totalPages = 1;
 
     // 查询总数
-    const totalRecords = await this.PrismaDB.prisma.doctor.count({
+    const totalRecords = await this.PrismaDB.prisma.patient.count({
       where: sqlFilters,
     });
 
@@ -98,15 +96,14 @@ export class DoctorService {
             },
           },
         },
-        department: true,
       },
     };
     // 不显示分页，返回所有数据
     if (!showPagination) {
-      result = await this.PrismaDB.prisma.doctor.findMany(commonQuery);
+      result = await this.PrismaDB.prisma.patient.findMany(commonQuery);
     } else {
       // 分页查询
-      result = await this.PrismaDB.prisma.doctor.findMany({
+      result = await this.PrismaDB.prisma.patient.findMany({
         ...commonQuery,
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -116,10 +113,10 @@ export class DoctorService {
 
     let res = result;
 
-    result.forEach((doctor: DoctorWithUsersPrisma) => {
-      doctor.user = {
-        ...doctor.user,
-        roles: doctor.user.roles.map((role: { role: Role }): any => role.role),
+    result.forEach((patient: PatientWithUsersPrisma) => {
+      patient.user = {
+        ...patient.user,
+        roles: patient.user.roles.map((role: { role: Role }): any => role.role),
       };
     });
     // 分页信息
@@ -142,13 +139,13 @@ export class DoctorService {
   }
 
   /**
-   * 获取医生详情
-   * @param doctorId
+   * 获取患者详情
+   * @param patientId
    */
-  public async getDoctor(doctorId: number) {
+  public async getPatient(patientId: number) {
     try {
-      const result = await this.PrismaDB.prisma.doctor.findUnique({
-        where: { id: doctorId },
+      const result = await this.PrismaDB.prisma.patient.findUnique({
+        where: { id: patientId },
         include: {
           user: {
             include: {
@@ -164,7 +161,7 @@ export class DoctorService {
 
       const { user } = result;
 
-      const doctorWithRoles = {
+      const patientWithRoles = {
         ...result,
         user: {
           ...user,
@@ -173,113 +170,32 @@ export class DoctorService {
       };
 
       return {
-        data: doctorWithRoles,
+        data: patientWithRoles,
         code: 200,
-        message: "获取医生详情成功",
+        message: "获取患者详情成功",
       };
     } catch (err) {
       return {
         data: null,
         code: 400,
-        message: "获取医生详情失败",
+        message: "获取患者详情失败",
         errMsg: err,
       };
     }
   }
 
   /**
-   * 获取医生个人详情
+   * 创建患者
+   * @param patient
    */
-  public async getDoctorInfo(userInfo: UserWithDoctor) {
+  public async createPatient(patient: PatientDto) {
     try {
-      const doctorId = userInfo.doctor.id;
-      const result = await this.PrismaDB.prisma.doctor.findUnique({
-        where: { id: doctorId },
-        include: {
-          user: {
-            include: {
-              roles: {
-                select: {
-                  role: true,
-                },
-              },
-            },
-          },
-          department: true,
-          doctorSchedule: {
-            where: {
-              date: {
-                gte: new Date(dayjs().format("YYYY-MM-DD")),
-              },
-            },
-            include: {
-              appointment: {
-                include: {
-                  patient: {
-                    include: {
-                      user: true,
-                    },
-                  },
-                },
-              },
-              _count: {
-                select: {
-                  appointment: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              doctorSchedule: {
-                where: {
-                  date: {
-                    gte: new Date(dayjs().format("YYYY-MM-DD")),
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const { user } = result;
-
-      const doctorWithRoles = {
-        ...result,
-        user: {
-          ...user,
-          roles: user.roles.map((role: { role: Role }): any => role.role), // 获取角色名称
-        },
-      };
-
-      return {
-        data: doctorWithRoles,
-        code: 200,
-        message: "获取医生详情成功",
-      };
-    } catch (err) {
-      return {
-        data: null,
-        code: 400,
-        message: "获取医生详情失败",
-        errMsg: err,
-      };
-    }
-  }
-
-  /**
-   * 创建医生
-   * @param doctor
-   */
-  public async createDoctor(doctor: DoctorDto) {
-    try {
-      const newDoctor: Recordable = {};
-      for (const [key, value] of Object.entries(doctor)) {
-        _.set(newDoctor, key, value);
+      const newPatient: Recordable = {};
+      for (const [key, value] of Object.entries(patient)) {
+        _.set(newPatient, key, value);
       }
-      let doctorDto = plainToClass(DoctorDto, newDoctor);
-      const errors = await validate(doctorDto);
+      let patientDto = plainToClass(PatientDto, newPatient);
+      const errors = await validate(patientDto);
       if (errors.length > 0) {
         const errorMessages = errors.map((error) => {
           return {
@@ -295,23 +211,23 @@ export class DoctorService {
         };
       }
 
-      const { username, phone } = newDoctor.user;
+      const { username, phone } = newPatient.user;
       // 检查 username 是否已存在
-      const existingDoctor = await this.PrismaDB.prisma.user.findFirst({
+      const existingPatient = await this.PrismaDB.prisma.user.findFirst({
         where: {
           OR: [{ username, phone }],
         },
       });
-      if (existingDoctor) {
-        throw "医生用户名/手机号已存在";
+      if (existingPatient) {
+        throw "患者用户名/手机号已存在";
       }
 
-      let doctorResult = null;
+      let patientResult = null;
 
       await this.PrismaDB.prisma.$transaction(async (prisma) => {
-        const createData: DoctorWithUser | any = {};
+        const createData: PatientWithUser | any = {};
 
-        for (const [relation, data] of Object.entries(newDoctor)) {
+        for (const [relation, data] of Object.entries(newPatient)) {
           if (!data) continue;
           if (relation === "user") {
             const { roles, ...userCreateData } = data;
@@ -319,7 +235,7 @@ export class DoctorService {
             const createdUser = await prisma.user.create({
               data: {
                 ...userCreateData,
-                roleType: "doctor",
+                roleType: "patient",
                 password: process.env.DEFAULT_PASSWORD,
               },
             });
@@ -335,16 +251,13 @@ export class DoctorService {
 
             // 关联 User
             createData[relation] = { connect: { id: createdUser.id } };
-          } else if (relation === "departmentId") {
-            // 将 departmentId 替换为 department 并使用 connect
-            createData.department = { connect: { id: data } };
           } else {
             // 针对其他关系的默认处理逻辑
             createData[relation] = data;
           }
         }
 
-        doctorResult = await prisma.doctor.create({
+        patientResult = await prisma.patient.create({
           data: createData,
           include: {
             user: true,
@@ -354,34 +267,34 @@ export class DoctorService {
 
       return {
         data: {
-          ...doctorResult,
+          ...patientResult,
         },
         code: 200,
-        message: "创建医生成功",
+        message: "创建患者成功",
       };
     } catch (err) {
       console.error(err);
       return {
         data: null,
         code: 400,
-        message: "创建医生失败",
+        message: "创建患者失败",
         errMsg: err,
       };
     }
   }
 
   /**
-   * 更新医生
-   * @param doctor
+   * 更新患者
+   * @param patient
    */
-  public async updateDoctor(doctor: Doctor) {
+  public async updatePatient(patient: Patient) {
     try {
-      const newDoctor: Recordable = {};
+      const newPatient: Recordable = {};
 
-      for (const [key, value] of Object.entries(doctor)) {
-        _.set(newDoctor, key, value);
+      for (const [key, value] of Object.entries(patient)) {
+        _.set(newPatient, key, value);
       }
-      const { phone } = newDoctor.user;
+      const { phone } = newPatient.user;
       if (phone) {
         // 检查 phone 是否已存在
         const existingUser = await this.PrismaDB.prisma.user.findFirst({
@@ -389,14 +302,14 @@ export class DoctorService {
             phone,
           },
           include: {
-            doctor: true,
+            patient: true,
           },
         });
 
         if (
           existingUser &&
-          existingUser.doctor &&
-          existingUser.doctor["id"] !== newDoctor.id
+          existingUser.patient &&
+          existingUser.patient["id"] !== newPatient.id
         ) {
           return {
             code: 400,
@@ -405,9 +318,9 @@ export class DoctorService {
           };
         }
       }
-      let doctorResult = null;
+      let patientResult = null;
 
-      const { id, ...relations } = newDoctor;
+      const { id, ...relations } = newPatient;
       await this.PrismaDB.prisma.$transaction(async (prisma) => {
         // 构建更新数据
         const updateData: Record<string, any> = {};
@@ -420,12 +333,12 @@ export class DoctorService {
             const userUpdateData: Record<string, any> = {};
             for (const key of Object.keys(data)) {
               if (key === "roles") {
-                const doctorUser = await prisma.doctor.findUnique({
+                const patientUser = await prisma.patient.findUnique({
                   where: { id },
                   select: { userId: true },
                 });
 
-                const { userId } = doctorUser;
+                const { userId } = patientUser;
                 // 查询角色关系，如果没有变化，则不做任何操作
                 const existingRoles = await prisma.userRole.findMany({
                   where: {
@@ -462,77 +375,73 @@ export class DoctorService {
               }
             }
             updateData[relation] = { update: userUpdateData };
-          } else if (relation === "departmentId") {
-            // 将 departmentId 替换为 department 并使用 connect
-            updateData.department = { connect: { id: data } };
           } else {
             // 针对其他关系的默认处理逻辑
             updateData[relation] = data;
           }
         }
-        doctorResult = await prisma.doctor.update({
+        patientResult = await prisma.patient.update({
           where: { id: id },
           data: updateData,
           include: {
             user: true,
-            department: true,
           },
         });
       });
 
       return {
-        data: doctorResult,
+        data: patientResult,
         code: 200,
-        message: "更新医生成功",
+        message: "更新患者成功",
       };
     } catch (err) {
       return {
         data: null,
         code: 400,
-        message: "更新医生失败",
+        message: "更新患者失败",
         errMsg: err,
       };
     }
   }
 
   /**
-   * 删除医生
-   * @param doctorId
+   * 删除患者
+   * @param patientId
    */
-  public async deleteDoctor(doctorId: number) {
+  public async deletePatient(patientId: number) {
     try {
       let deleteResult = null;
-      if (Array.isArray(doctorId)) {
+      if (Array.isArray(patientId)) {
         await this.PrismaDB.prisma.$transaction(async (prisma) => {
-          // 找到要删除的医生，并获取对应的 userId
-          const needDeleteDoctor = await prisma.doctor.findMany({
+          // 找到要删除的患者，并获取对应的 userId
+          const needDeletePatient = await prisma.patient.findMany({
             where: {
               id: {
-                in: doctorId,
+                in: patientId,
               },
             },
             select: {
               userId: true,
             },
           });
-          // 删除医生记录
-          deleteResult = await prisma.doctor.deleteMany({
+          // 删除患者记录
+          deleteResult = await prisma.patient.deleteMany({
             where: {
               id: {
-                in: doctorId,
+                in: patientId,
               },
             },
           });
           // 删除对应的用户记录
-          const deleteDoctorUserId: number[] = needDeleteDoctor.map(
-            (deleteDoctor: any) => deleteDoctor.userId
+          const deletePatientUserId: number[] = needDeletePatient.map(
+            (deletePatient: any) => deletePatient.userId
           );
 
           // 删除对应的用户记录-=>逻辑删除
           await prisma.user.updateMany({
             where: {
               id: {
-                in: deleteDoctorUserId,
+                in: deletePatientUserId,
               },
             },
             data: {
@@ -542,8 +451,8 @@ export class DoctorService {
         });
       } else {
         await this.PrismaDB.prisma.$transaction(async (prisma) => {
-          deleteResult = await prisma.doctor.delete({
-            where: { id: doctorId },
+          deleteResult = await prisma.patient.delete({
+            where: { id: patientId },
           });
           await prisma.user.update({
             where: { id: deleteResult.userId },
@@ -556,7 +465,7 @@ export class DoctorService {
       return {
         data: deleteResult,
         code: 200,
-        message: "删除医生成功",
+        message: "删除患者成功",
       };
     } catch (err) {
       console.error(err);
@@ -566,13 +475,13 @@ export class DoctorService {
 
   /**
    * 启用/禁用用户
-   * @param doctorId
+   * @param patientId
    * @param status  1:启用 0:禁用
    */
-  public async updateDoctorStatus(doctorId: number, status: number) {
+  public async updatePatientStatus(patientId: number, status: number) {
     try {
-      await this.PrismaDB.prisma.doctor.update({
-        where: { id: doctorId },
+      await this.PrismaDB.prisma.patient.update({
+        where: { id: patientId },
         data: {
           user: {
             update: {
@@ -585,7 +494,7 @@ export class DoctorService {
       return {
         data: {},
         code: 200,
-        message: status === 1 ? "启用医生成功" : "禁用医生成功",
+        message: status === 1 ? "启用患者成功" : "禁用患者成功",
       };
     } catch (err) {
       console.error(err);
