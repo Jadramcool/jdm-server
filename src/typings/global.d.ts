@@ -48,6 +48,10 @@ declare global {
     sort?: Recordable;
     [key: string]: string | number;
   }
+
+  interface UserWithDoctor extends PrismaUser {
+    doctor: Doctor;
+  }
 }
 
 export {};

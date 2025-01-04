@@ -47,7 +47,7 @@ export class DepartmentService {
     const commonQuery: any = {
       where: sqlFilters,
       orderBy: {
-        createdTime: "desc",
+        id: "asc",
       },
     };
 

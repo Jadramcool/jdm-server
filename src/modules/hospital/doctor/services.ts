@@ -3,6 +3,7 @@ import { JWT } from "@jwt/index";
 import { Doctor, Prisma, Role, User } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
+import dayjs from "dayjs";
 import { inject, injectable } from "inversify";
 import * as _ from "lodash";
 import { PrismaDB } from "../../../db";
@@ -154,6 +155,87 @@ export class DoctorService {
               roles: {
                 select: {
                   role: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const { user } = result;
+
+      const doctorWithRoles = {
+        ...result,
+        user: {
+          ...user,
+          roles: user.roles.map((role: { role: Role }): any => role.role), // 获取角色名称
+        },
+      };
+
+      return {
+        data: doctorWithRoles,
+        code: 200,
+        message: "获取医生详情成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "获取医生详情失败",
+        errMsg: err,
+      };
+    }
+  }
+
+  /**
+   * 获取医生个人详情
+   */
+  public async getDoctorInfo(userInfo: UserWithDoctor) {
+    try {
+      const doctorId = userInfo.doctor.id;
+      const result = await this.PrismaDB.prisma.doctor.findUnique({
+        where: { id: doctorId },
+        include: {
+          user: {
+            include: {
+              roles: {
+                select: {
+                  role: true,
+                },
+              },
+            },
+          },
+          department: true,
+          doctorSchedule: {
+            where: {
+              date: {
+                gte: new Date(dayjs().format("YYYY-MM-DD")),
+              },
+            },
+            include: {
+              appointment: {
+                include: {
+                  patient: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+              _count: {
+                select: {
+                  appointment: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              doctorSchedule: {
+                where: {
+                  date: {
+                    gte: new Date(dayjs().format("YYYY-MM-DD")),
+                  },
                 },
               },
             },

@@ -147,12 +147,30 @@ export class PatientService {
       const result = await this.PrismaDB.prisma.patient.findUnique({
         where: { id: patientId },
         include: {
-          user: true,
+          user: {
+            include: {
+              roles: {
+                select: {
+                  role: true,
+                },
+              },
+            },
+          },
         },
       });
 
+      const { user } = result;
+
+      const patientWithRoles = {
+        ...result,
+        user: {
+          ...user,
+          roles: user.roles.map((role: { role: Role }): any => role.role), // 获取角色名称
+        },
+      };
+
       return {
-        data: result,
+        data: patientWithRoles,
         code: 200,
         message: "获取患者详情成功",
       };

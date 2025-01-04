@@ -80,6 +80,12 @@ export class MyScheduleService {
               department: true,
             },
           },
+          appointment: true,
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
         },
         orderBy: orderBy ? orderBy : { date: "desc" },
       });
@@ -98,17 +104,25 @@ export class MyScheduleService {
               department: true,
             },
           },
+          appointment: true,
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
         },
         orderBy: orderBy ? orderBy : { date: "desc" },
       });
 
       totalPages = Math.ceil(totalRecords / pageSize);
     }
-    console.log(
-      "%c [ result ]-91",
-      "font-size:13px; background:pink; color:#bf2c9f;",
-      result
-    );
+
+    // 格式化结果，将 appointmentCount 放到最外层
+    result = result.map((schedule) => ({
+      ...schedule,
+      appointCount: schedule._count.appointment,
+      _count: undefined, // 移除 _count 字段
+    }));
 
     // 分页信息
     const paginationData =

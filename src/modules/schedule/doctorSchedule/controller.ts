@@ -68,13 +68,13 @@ export class DoctorSchedule {
 
   @Delete("/delete/:id", JWT.authenticateJwt())
   public async deleteSchedule(req: Request, res: Response) {
-    const roleId = Number(req.params.id);
+    const scheduleId = Number(req.params.id);
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.DoctorScheduleService.deleteSchedule(roleId);
+    }: Jres = await this.DoctorScheduleService.deleteSchedule(scheduleId);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -92,15 +92,28 @@ export class DoctorSchedule {
     res.sendResult(data, code, message, errMsg);
   }
 
-  // @Get("/detail/:id", JWT.authenticateJwt())
-  // public async getRole(req: Request, res: Response) {
-  //   const roleId = Number(req.params.id);
-  //   let {
-  //     data = null,
-  //     code = 200,
-  //     message = "",
-  //     errMsg = "",
-  //   }: Jres = await this.DoctorScheduleService.getRole(roleId);
-  //   res.sendResult(data, code, message, errMsg);
-  // }
+  @Get("/detail/:id", JWT.authenticateJwt())
+  public async getSchedule(req: Request, res: Response) {
+    const scheduleId = Number(req.params.id);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.DoctorScheduleService.getSchedule(scheduleId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 获取当前的排班信息
+  @Get("/current", JWT.authenticateJwt())
+  public async getCurrentSchedule(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.DoctorScheduleService.getCurrentSchedule(config);
+    res.sendResult(data, code, message, errMsg);
+  }
 }

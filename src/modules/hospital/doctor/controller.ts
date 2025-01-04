@@ -102,6 +102,19 @@ export class Doctor {
     res.sendResult(data, code, message, errMsg);
   }
 
+  @Get("/info", JWT.authenticateJwt())
+  public async getDoctorInfo(req: Request, res: Response) {
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.DoctorService.getDoctorInfo(
+      req.user as UserWithDoctor
+    );
+    res.sendResult(data, code, message, errMsg);
+  }
+
   // 启用/禁用用户
   @Put("/status/:id", JWT.authenticateJwt())
   public async updateDoctorStatus(req: Request, res: Response) {

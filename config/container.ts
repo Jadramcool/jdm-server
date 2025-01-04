@@ -3,7 +3,9 @@ import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { appointmentContainer } from "../src/modules/appointment/index";
 import { hospitalContainer } from "../src/modules/hospital/index";
+import { medicalRecordContainer } from "../src/modules/medicalRecord/index";
 import { noticeContainer } from "../src/modules/notice/index";
 import { scheduleContainer } from "../src/modules/schedule/index";
 import { systemContainer } from "../src/modules/sys/index";
@@ -32,6 +34,14 @@ const createContainer = () => {
    * 预约排班模块
    */
   container.load(scheduleContainer);
+  /**
+   * 患者挂号模块
+   */
+  container.load(appointmentContainer);
+  /**
+   * 病例模块
+   */
+  container.load(medicalRecordContainer);
 
   /**
    * user模块

@@ -81,6 +81,12 @@ export class DoctorScheduleService {
               department: true,
             },
           },
+          appointment: true,
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
         },
         orderBy: orderBy ? orderBy : { date: "desc" },
       });
@@ -99,12 +105,25 @@ export class DoctorScheduleService {
               department: true,
             },
           },
+          appointment: true,
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
         },
         orderBy: orderBy ? orderBy : { date: "desc" },
       });
 
       totalPages = Math.ceil(totalRecords / pageSize);
     }
+
+    // 格式化结果，将 appointmentCount 放到最外层
+    result = result.map((schedule) => ({
+      ...schedule,
+      appointCount: schedule._count.appointment,
+      _count: undefined, // 移除 _count 字段
+    }));
 
     // 分页信息
     const paginationData =
@@ -397,7 +416,6 @@ export class DoctorScheduleService {
         _.set(acc[dayKey], [schedule.timePeriod], schedule);
         return acc;
       }, {} as Record<string, any>);
-
       // 3. 处理排班数据
       const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
         if (Array.isArray(date)) {
@@ -439,6 +457,10 @@ export class DoctorScheduleService {
                 (timePeriod) => !dateItem.timePeriod.includes(timePeriod)
               );
 
+              const needAddTimePeriod = dateItem.timePeriod.filter(
+                (timePeriod) => !existingTimePeriod.includes(timePeriod)
+              );
+
               if (needDeleteTimePeriod.length > 0) {
                 await prisma.doctorSchedule.deleteMany({
                   where: {
@@ -447,6 +469,15 @@ export class DoctorScheduleService {
                       in: needDeleteTimePeriod as TimePeriod[],
                     },
                   },
+                });
+              }
+              if (needAddTimePeriod.length > 0) {
+                await prisma.doctorSchedule.createMany({
+                  data: needAddTimePeriod.map((timePeriod: string) => ({
+                    doctorId,
+                    timePeriod,
+                    date: new Date(dateKey),
+                  })),
                 });
               }
             } else {
@@ -514,6 +545,125 @@ export class DoctorScheduleService {
     } catch (err) {
       console.log(err);
       return err;
+    }
+  }
+
+  /**
+   * 获取排班的挂号详情
+   * @param scheduleId
+   */
+  public async getSchedule(scheduleId: number) {
+    try {
+      let result;
+      result = await this.PrismaDB.prisma.doctorSchedule.findUnique({
+        where: { id: scheduleId },
+        include: {
+          appointment: {
+            include: {
+              patient: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            include: {
+              user: true,
+              department: true,
+            },
+          },
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
+        },
+      });
+      // 格式化结果，将 appointmentCount 放到最外层
+      result = {
+        ...result,
+        appointCount: result._count.appointment,
+        _count: undefined, // 移除 _count 字段
+      };
+
+      return {
+        data: result,
+        code: 200,
+        message: "获取医生挂号详情成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "获取医生挂号详情成失败",
+        errMsg: err,
+      };
+    }
+  }
+
+  /**
+   * 获取当前的排班信息
+   * @param scheduleId
+   */
+  public async getCurrentSchedule(config) {
+    try {
+      const doctorId = config.user.doctor.id;
+      const today = new Date(dayjs().format("YYYY-MM-DD"));
+      const timePeriod: "MORNING" | "AFTERNOON" =
+        dayjs().hour() < 12 ? "MORNING" : "AFTERNOON";
+
+      const queryParams = {
+        doctorId,
+        date: today,
+        timePeriod,
+      };
+
+      let result;
+      result = await this.PrismaDB.prisma.doctorSchedule.findFirst({
+        where: queryParams,
+        include: {
+          appointment: {
+            include: {
+              patient: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            include: {
+              user: true,
+              department: true,
+            },
+          },
+          _count: {
+            select: {
+              appointment: true,
+            },
+          },
+        },
+      });
+      // 格式化结果，将 appointmentCount 放到最外层
+      result = {
+        ...result,
+        appointCount: result._count.appointment,
+        _count: undefined, // 移除 _count 字段
+      };
+
+      return {
+        data: result,
+        code: 200,
+        message: "获取医生挂号详情成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "获取医生挂号详情成失败",
+        errMsg: err,
+      };
     }
   }
 }
