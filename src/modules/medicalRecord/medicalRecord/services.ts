@@ -28,7 +28,7 @@ export class MedicalRecordService {
       sqlFilters = newFilters;
     }
 
-    ["date"].forEach((timeField) => {
+    ["appointment.doctorSchedule.date"].forEach((timeField) => {
       if (keys.includes(timeField)) {
         const filterValue = filters[timeField];
         if (Array.isArray(filters[timeField])) {

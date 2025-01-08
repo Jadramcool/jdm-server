@@ -143,11 +143,6 @@ export class PatientService {
    * @param patientId
    */
   public async getPatient(patientId: number, options: any) {
-    console.log(
-      "%c [ query ]-146",
-      "font-size:13px; background:#6b204b; color:#af648f;",
-      options
-    );
     try {
       const result = await this.PrismaDB.prisma.patient.findUnique({
         where: { id: patientId },

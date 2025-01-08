@@ -179,6 +179,7 @@ export class UserService {
             },
           },
           doctor: true,
+          patient: true,
         },
       });
 
@@ -322,23 +323,25 @@ export class UserService {
           data: errorMessages,
         };
       } else {
-        const { phone } = user;
+        const { phone, email } = user;
+
         // 检查 phone 是否已存在
-        const existingUser = await this.PrismaDB.prisma.user.findFirst({
-          where: {
-            phone,
-          },
+        const existingUserPhone = await this.PrismaDB.prisma.user.findFirst({
+          where: { phone },
         });
-        if (existingUser && existingUser.id !== userId) {
-          return {
-            code: 400,
-            message: "用户名或手机号已存在",
-            errMsg: "用户名或手机号已存在",
-          };
+
+        const existingUserEmail = await this.PrismaDB.prisma.user.findFirst({
+          where: { email },
+        });
+
+        if (existingUserPhone && existingUserPhone.id !== userId) {
+          throw "手机号已存在";
+        }
+        if (existingUserEmail && existingUserEmail.id !== userId) {
+          throw "邮箱已存在";
         }
 
         const { id, ...updateData } = user;
-
         const result = await this.PrismaDB.prisma.user.update({
           where: { id: userId },
           data: updateData,
