@@ -20,18 +20,18 @@ export class MedicalRecord {
   ) {}
 
   @Get("/list", JWT.authenticateJwt())
-  public async getAppointmentList(req: Request, res: Response) {
+  public async getMedicalRecordList(req: Request, res: Response) {
     const config = this.UtilService.parseQueryParams(req);
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.MedicalRecordService.getAppointmentList(config);
+    }: Jres = await this.MedicalRecordService.getMedicalRecordList(config);
     res.sendResult(data, code, message, errMsg);
   }
 
-  // 挂号
+  // 新建病例
   @Post("/create", JWT.authenticateJwt())
   public async createMedicalRecord(req: Request, res: Response) {
     let {
@@ -57,6 +57,18 @@ export class MedicalRecord {
       req.body,
       req.user
     );
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  @Get("/detail/:id", JWT.authenticateJwt())
+  public async getMedicalRecord(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.MedicalRecordService.getMedicalRecord(id);
     res.sendResult(data, code, message, errMsg);
   }
 }

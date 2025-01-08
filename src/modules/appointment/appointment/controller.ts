@@ -92,6 +92,18 @@ export class Appointment {
     res.sendResult(data, code, message, errMsg);
   }
 
+  @Post("/expired/:id", JWT.authenticateJwt())
+  public async expired(req: Request, res: Response) {
+    const appointmentId = Number(req.params.id);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.AppointmentService.expired(appointmentId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
   @Get("/detail/:id", JWT.authenticateJwt())
   public async getAppointment(req: Request, res: Response) {
     const appointmentId = Number(req.params.id);

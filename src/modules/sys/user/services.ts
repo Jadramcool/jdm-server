@@ -4,6 +4,7 @@ import { Prisma, Role, User as UserModel } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import { inject, injectable } from "inversify";
+import _ from "lodash";
 import { PrismaDB } from "../../../db";
 import type { User } from "../typings";
 import { UserDto } from "./user.dto";
@@ -64,10 +65,10 @@ export class UserManagerService {
       // 遍历时间字段并添加范围过滤条件
       ["createdTime", "updatedTime"].forEach((timeField) => {
         if (keys.includes(timeField)) {
-          sqlFilters[timeField] = {
+          _.set(sqlFilters, timeField, {
             gte: new Date(filters[timeField][0]),
             lte: new Date(filters[timeField][1]),
-          };
+          });
         }
       });
     }

@@ -142,7 +142,7 @@ export class PatientService {
    * 获取患者详情
    * @param patientId
    */
-  public async getPatient(patientId: number) {
+  public async getPatient(patientId: number, options: any) {
     try {
       const result = await this.PrismaDB.prisma.patient.findUnique({
         where: { id: patientId },
@@ -156,6 +156,38 @@ export class PatientService {
               },
             },
           },
+          // 如果options.with_appointment 为 true，则查询关联的预约记录
+          appointment: options?.with_appointment
+            ? {
+                where: {
+                  status: "FINISHED",
+                },
+                orderBy: {
+                  appointmentDate: "desc",
+                },
+              }
+            : undefined,
+          medicalRecord: options?.with_medicalRecord
+            ? {
+                include: {
+                  appointment: {
+                    include: {
+                      doctorSchedule: true,
+                    },
+                  },
+                  doctor: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  appointment: {
+                    appointmentDate: "desc",
+                  },
+                },
+              }
+            : undefined,
         },
       });
 
