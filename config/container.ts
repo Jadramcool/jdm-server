@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { aiChatContainer } from "../src/modules/aiChat/index";
 import { appointmentContainer } from "../src/modules/appointment/index";
 import { hospitalContainer } from "../src/modules/hospital/index";
 import { medicalRecordContainer } from "../src/modules/medicalRecord/index";
@@ -42,6 +43,7 @@ const createContainer = () => {
    * 病例模块
    */
   container.load(medicalRecordContainer);
+  container.load(aiChatContainer);
 
   /**
    * user模块

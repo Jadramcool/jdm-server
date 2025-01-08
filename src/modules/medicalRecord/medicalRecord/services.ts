@@ -12,8 +12,8 @@ export class MedicalRecordService {
     @inject(JWT) private readonly JWT: JWT
   ) {}
 
-  // 获取挂号列表
-  public async getAppointmentList(config: ReqListConfig) {
+  // 获取病例列表
+  public async getMedicalRecordList(config: ReqListConfig) {
     let { filters = {}, options, pagination } = config;
     let sqlFilters = {};
     const keys = Object.keys(filters);
@@ -32,17 +32,19 @@ export class MedicalRecordService {
       if (keys.includes(timeField)) {
         const filterValue = filters[timeField];
         if (Array.isArray(filters[timeField])) {
-          sqlFilters[timeField] = {
+          _.set(sqlFilters, timeField, {
             gte: new Date(filters[timeField][0]),
             lte: new Date(filters[timeField][1]),
-          };
+          });
         } else if (
           typeof filterValue === "string" ||
           typeof filterValue === "number" ||
           filterValue instanceof Date
         ) {
-          sqlFilters[timeField] = new Date(
-            dayjs(filterValue).format("YYYY-MM-DD")
+          _.set(
+            sqlFilters,
+            timeField,
+            new Date(dayjs(filterValue).format("YYYY-MM-DD"))
           );
         } else {
           throw new Error(`Invalid date format for field ${timeField}`);
@@ -65,25 +67,21 @@ export class MedicalRecordService {
             user: true,
           },
         },
-        doctorSchedule: {
+        appointment: {
           include: {
-            doctor: {
-              include: {
-                user: true,
-                department: true,
-              },
-            },
+            doctorSchedule: true,
           },
         },
-      },
-      orderBy: {
-        doctorSchedule: {
-          date: "desc" as const,
+        doctor: {
+          include: {
+            user: true,
+            department: true,
+          },
         },
       },
     };
 
-    const totalRecords = await this.PrismaDB.prisma.appointment.count({
+    const totalRecords = await this.PrismaDB.prisma.medicalRecord.count({
       where: sqlFilters,
     });
 
@@ -93,14 +91,14 @@ export class MedicalRecordService {
       options.hasOwnProperty("showPagination") &&
       !options["showPagination"]
     ) {
-      result = await this.PrismaDB.prisma.appointment.findMany({
+      result = await this.PrismaDB.prisma.medicalRecord.findMany({
         ...commonQuery,
       });
     } else {
       page = parseInt(pagination?.page as string) || 1;
       pageSize = parseInt(pagination?.pageSize as string) || 10;
 
-      result = await this.PrismaDB.prisma.appointment.findMany({
+      result = await this.PrismaDB.prisma.medicalRecord.findMany({
         skip: (page - 1) * pageSize || 0,
         take: pageSize || 10,
         ...commonQuery,
@@ -126,6 +124,50 @@ export class MedicalRecordService {
         pagination: paginationData,
       },
     };
+  }
+
+  /**
+   * 获取病例详情
+   * @param id
+   */
+  public async getMedicalRecord(id: number) {
+    try {
+      const result = await this.PrismaDB.prisma.medicalRecord.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          patient: {
+            include: {
+              user: true,
+            },
+          },
+          appointment: {
+            include: {
+              doctorSchedule: true,
+            },
+          },
+          doctor: {
+            include: {
+              user: true,
+              department: true,
+            },
+          },
+        },
+      });
+      return {
+        data: result,
+        code: 200,
+        message: "获取病例详情成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "获取病例详情失败",
+        errMsg: err,
+      };
+    }
   }
 
   /**

@@ -36,17 +36,19 @@ export class DoctorScheduleService {
       if (keys.includes(timeField)) {
         const filterValue = filters[timeField];
         if (Array.isArray(filters[timeField])) {
-          sqlFilters[timeField] = {
+          _.set(sqlFilters, timeField, {
             gte: new Date(filters[timeField][0]),
             lte: new Date(filters[timeField][1]),
-          };
+          });
         } else if (
           typeof filterValue === "string" ||
           typeof filterValue === "number" ||
           filterValue instanceof Date
         ) {
-          sqlFilters[timeField] = new Date(
-            dayjs(filterValue).format("YYYY-MM-DD")
+          _.set(
+            sqlFilters,
+            timeField,
+            new Date(dayjs(filterValue).format("YYYY-MM-DD"))
           );
         } else {
           throw new Error(`Invalid date format for field ${timeField}`);

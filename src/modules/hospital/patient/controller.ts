@@ -84,12 +84,13 @@ export class Patient {
   @Get("/detail/:id", JWT.authenticateJwt())
   public async getPatient(req: Request, res: Response) {
     const patientId = Number(req.params.id);
+    const query = req.query;
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.PatientService.getPatient(patientId);
+    }: Jres = await this.PatientService.getPatient(patientId, query);
     res.sendResult(data, code, message, errMsg);
   }
 

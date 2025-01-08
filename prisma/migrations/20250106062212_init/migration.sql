@@ -188,7 +188,6 @@ CREATE TABLE `doctor_schedule` (
     `time_period` ENUM('MORNING', 'AFTERNOON') NULL,
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NOT NULL,
-    `appoint_count` INTEGER NOT NULL DEFAULT 0,
     `max_count` INTEGER NOT NULL DEFAULT 100,
 
     PRIMARY KEY (`id`)
@@ -198,13 +197,32 @@ CREATE TABLE `doctor_schedule` (
 CREATE TABLE `appointment` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `patient_id` INTEGER NOT NULL,
+    `doctor_id` INTEGER NOT NULL,
     `appointment_date` DATETIME(3) NOT NULL,
-    `status` INTEGER NOT NULL DEFAULT 0,
+    `status` ENUM('UNFINISHED', 'FINISHED', 'CANCELED', 'CALLED', 'EXPIRED') NOT NULL DEFAULT 'UNFINISHED',
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NOT NULL,
     `doctor_schedule_id` INTEGER NULL,
 
-    INDEX `appointment_patient_id_doctor_schedule_id_idx`(`patient_id`, `doctor_schedule_id`),
+    INDEX `appointment_patient_id_doctor_schedule_id_doctor_id_idx`(`patient_id`, `doctor_schedule_id`, `doctor_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `medical_record` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `appointment_id` INTEGER NOT NULL,
+    `patient_id` INTEGER NOT NULL,
+    `doctor_id` INTEGER NOT NULL,
+    `main_complaint` VARCHAR(191) NOT NULL,
+    `now_sickness` VARCHAR(191) NOT NULL,
+    `diagnostic` VARCHAR(191) NOT NULL,
+    `treatment` VARCHAR(191) NULL,
+    `notes` VARCHAR(191) NULL,
+    `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_time` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `medical_record_appointment_id_key`(`appointment_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -251,4 +269,16 @@ ALTER TABLE `doctor_schedule` ADD CONSTRAINT `doctor_schedule_doctor_id_fkey` FO
 ALTER TABLE `appointment` ADD CONSTRAINT `appointment_patient_id_fkey` FOREIGN KEY (`patient_id`) REFERENCES `Patient`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `appointment` ADD CONSTRAINT `appointment_doctor_id_fkey` FOREIGN KEY (`doctor_id`) REFERENCES `doctor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `appointment` ADD CONSTRAINT `appointment_doctor_schedule_id_fkey` FOREIGN KEY (`doctor_schedule_id`) REFERENCES `doctor_schedule`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `medical_record` ADD CONSTRAINT `medical_record_appointment_id_fkey` FOREIGN KEY (`appointment_id`) REFERENCES `appointment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `medical_record` ADD CONSTRAINT `medical_record_patient_id_fkey` FOREIGN KEY (`patient_id`) REFERENCES `Patient`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `medical_record` ADD CONSTRAINT `medical_record_doctor_id_fkey` FOREIGN KEY (`doctor_id`) REFERENCES `doctor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

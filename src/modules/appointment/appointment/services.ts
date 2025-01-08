@@ -18,7 +18,9 @@ export class AppointmentService {
     let sqlFilters = {};
     const keys = Object.keys(filters);
     if (keys.length > 0) {
-      const tempFilters = FilterHelper.addFilterConditionAny(filters, ["date"]);
+      const tempFilters = FilterHelper.addFilterConditionAny(filters, [
+        "doctorSchedule.date",
+      ]);
       const newFilters: Recordable = {};
 
       for (const [key, value] of Object.entries(tempFilters)) {
@@ -28,21 +30,23 @@ export class AppointmentService {
       sqlFilters = newFilters;
     }
 
-    ["date"].forEach((timeField) => {
+    ["doctorSchedule.date"].forEach((timeField) => {
       if (keys.includes(timeField)) {
         const filterValue = filters[timeField];
         if (Array.isArray(filters[timeField])) {
-          sqlFilters[timeField] = {
+          _.set(sqlFilters, timeField, {
             gte: new Date(filters[timeField][0]),
             lte: new Date(filters[timeField][1]),
-          };
+          });
         } else if (
           typeof filterValue === "string" ||
           typeof filterValue === "number" ||
           filterValue instanceof Date
         ) {
-          sqlFilters[timeField] = new Date(
-            dayjs(filterValue).format("YYYY-MM-DD")
+          _.set(
+            sqlFilters,
+            timeField,
+            new Date(dayjs(filterValue).format("YYYY-MM-DD"))
           );
         } else {
           throw new Error(`Invalid date format for field ${timeField}`);
@@ -151,6 +155,7 @@ export class AppointmentService {
       if (!patientAppoint) {
         await this.PrismaDB.prisma.appointment.create({
           data: {
+            doctorId: scheduleInfo.doctorId,
             patientId: patientId,
             doctorScheduleId: scheduleId,
             appointmentDate: scheduleInfo.date,
@@ -204,9 +209,9 @@ export class AppointmentService {
     }
   }
 
-  // 医生当日当前时间段挂号列表
+  // 医生的挂号列表
   public async getDoctorAppointmentList(config: ReqListConfig) {
-    let { filters = {}, options, pagination } = config;
+    let { filters = {}, options, pagination, user } = config;
     let sqlFilters = {};
     const keys = Object.keys(filters);
     if (keys.length > 0) {
@@ -224,23 +229,33 @@ export class AppointmentService {
       if (keys.includes(timeField)) {
         const filterValue = filters[timeField];
         if (Array.isArray(filters[timeField])) {
-          sqlFilters[timeField] = {
+          _.set(sqlFilters, timeField, {
             gte: new Date(filters[timeField][0]),
             lte: new Date(filters[timeField][1]),
-          };
+          });
         } else if (
           typeof filterValue === "string" ||
           typeof filterValue === "number" ||
           filterValue instanceof Date
         ) {
-          sqlFilters[timeField] = new Date(
-            dayjs(filterValue).format("YYYY-MM-DD")
+          _.set(
+            sqlFilters,
+            timeField,
+            new Date(dayjs(filterValue).format("YYYY-MM-DD"))
           );
         } else {
           throw new Error(`Invalid date format for field ${timeField}`);
         }
       }
     });
+
+    const doctorId = user?.doctor?.id;
+
+    // 只查询当前医生的挂号记录
+    if (doctorId) {
+      sqlFilters["doctorId"] = doctorId;
+    }
+
     let result = [];
     // 总页数
     let totalPages = 1;
@@ -366,6 +381,38 @@ export class AppointmentService {
         data: null,
         code: 400,
         message: "叫号失败",
+        errMsg: err,
+      };
+    }
+  }
+
+  // 完成就诊
+  public async expired(appointmentId: number) {
+    try {
+      const result = await this.PrismaDB.prisma.appointment.findUnique({
+        where: { id: appointmentId },
+      });
+      if (result.status !== "CALLED") {
+        throw "当前状态不是已叫号，无法过期";
+      }
+      await this.PrismaDB.prisma.appointment.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          status: "EXPIRED",
+        },
+      });
+      return {
+        data: null,
+        code: 200,
+        message: "过号成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 400,
+        message: "过号失败",
         errMsg: err,
       };
     }
