@@ -23,9 +23,9 @@ export class AiChatService {
    * AI问答
    * @param content
    */
-  public async aiChatZhiPu(content: { content: string }) {
+  public async aiChatZhiPu(content: any) {
     try {
-      const data = content.content;
+      const data = content;
       const result = await ai.createCompletions({
         model: "glm-4",
         messages: [
@@ -34,7 +34,8 @@ export class AiChatService {
             content:
               "你是一个医学方面全科的专家，可以通过患者所描述的病状，简单的分析可能的病症，并且推荐其去哪个科室，告诫用户一些注意事项。并且回答不超过100个字",
           },
-          { role: "user", content: data },
+          // { role: "user", content: data },
+          ...data,
         ],
         stream: false,
       });

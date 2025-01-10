@@ -10,3 +10,4 @@
 export * as Menu from "./menu";
 export * as Role from "./role";
 export * as SysConfig from "./sysConfig";
+export * as User from "./user";

@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-// 自定义菜单创建输入
 interface CustomRoleCreateInput extends Prisma.RoleCreateInput {
   id: number;
 }

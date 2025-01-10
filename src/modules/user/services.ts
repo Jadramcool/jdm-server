@@ -1,4 +1,5 @@
 import { ErrorInfo } from "@/utils";
+import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
@@ -6,7 +7,7 @@ import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../db";
 import { JWT } from "../../jwt";
 import { checkUnique } from "../../utils/checkUnique";
-import { LoginDto, UpdateUserDto, UserDto } from "./user.dto";
+import { LoginDto, RegisterDto, UpdateUserDto, UserDto } from "./user.dto";
 
 @injectable()
 export class UserService {
@@ -39,9 +40,9 @@ export class UserService {
    * 注册用户
    * @param user
    */
-  public async registerUser(user: LoginDto) {
+  public async registerUser(user: RegisterDto) {
     try {
-      let registerDto = plainToClass(LoginDto, user);
+      let registerDto = plainToClass(RegisterDto, user);
       const errors = await validate(registerDto);
       if (errors.length > 0) {
         const errorMessages = errors.map((error) => {
@@ -69,14 +70,43 @@ export class UserService {
             errMsg: ErrorInfo.userError.register_username_exist, // 用户名已存在
           };
         }
+
+        const isPhoneUnique: boolean = await checkUnique(
+          this.PrismaDB,
+          "user",
+          "phone",
+          user.phone
+        );
+        if (isPhoneUnique) {
+          throw "手机号已存在";
+        }
         const password = user.password;
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(password, salt);
 
         user.password = hash;
 
-        const result = await this.PrismaDB.prisma.user.create({
-          data: user,
+        let result: User;
+
+        await this.PrismaDB.prisma.$transaction(async (prisma) => {
+          result = await this.PrismaDB.prisma.user.create({
+            data: user,
+          });
+
+          // 如果roleType为patient，则分配角色为patient
+          if (user.roleType === "patient") {
+            const patientRole = await prisma.role.findUnique({
+              where: {
+                code: "PATIENT",
+              },
+            });
+            await prisma.userRole.create({
+              data: {
+                userId: result.id,
+                roleId: patientRole.id,
+              },
+            });
+          }
         });
         return {
           data: {
@@ -87,7 +117,12 @@ export class UserService {
         };
       }
     } catch (err) {
-      return err;
+      return {
+        data: null,
+        code: 400,
+        message: "注册失败",
+        errMsg: err,
+      };
     }
   }
 
