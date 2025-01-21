@@ -12,7 +12,7 @@ export class UserDto {
 
   @IsNotEmpty({ message: "邮箱是必填的" })
   @IsEmail({}, { message: "邮箱格式不正确" })
-  email: string;
+  email?: string;
 
   @IsNotEmpty({ message: "手机号是必填的" })
   @IsMobilePhone("zh-CN", {}, { message: "手机号格式不正确" })
@@ -20,6 +20,12 @@ export class UserDto {
 
   @IsNotEmpty({ message: "密码是必填的" })
   password: string;
+
+  @IsNotEmpty({ message: "姓名是必填的" })
+  @Transform((name) => name.value.trim())
+  name: string;
+
+  roleType?: string;
 }
 
 export class UpdateUserDto {
@@ -49,4 +55,24 @@ export class LoginDto {
   @IsNotEmpty({ message: "密码是必填的" })
   @Transform((password) => password.value.trim())
   password: string;
+}
+
+export class RegisterDto {
+  @IsNotEmpty({ message: "用户名是必填的" })
+  @Transform((user) => user.value.trim())
+  username: string;
+
+  @IsNotEmpty({ message: "密码是必填的" })
+  @Transform((password) => password.value.trim())
+  password: string;
+
+  @IsNotEmpty({ message: "姓名是必填的" })
+  @Transform((name) => name.value.trim())
+  name: string;
+
+  @IsNotEmpty({ message: "手机号是必填的" })
+  @IsMobilePhone("zh-CN", {}, { message: "手机号格式不正确" })
+  phone: string;
+
+  roleType?: string;
 }

@@ -8,7 +8,7 @@
  *
  */
 import { PrismaClient } from "@prisma/client";
-import { Menu, Role, SysConfig } from "./initData";
+import { Menu, Role, SysConfig, User } from "./initData";
 
 const prisma = new PrismaClient();
 
@@ -62,12 +62,44 @@ const initAdmin = async () => {
     await prisma.user.create({
       data: {
         username: "admin",
+        roleType: "admin",
         password:
           process.env.DEFAULT_PASSWORD ||
           "$2a$10$XhLYUx71gN8lnXBpD33k6Og15FE5ojbzTiK9KnqPupmRhfuAXCJMW",
       },
     });
   }
+};
+
+const initUser = async () => {
+  await prisma.$transaction(async (tx) => {
+    const res = await prisma.user.createMany({
+      data: User.users,
+      skipDuplicates: true,
+    });
+    if (res.count) {
+      // 使用 Promise.all 并行处理每个用户的角色分配
+      await Promise.all(
+        User.users.map(async (user) => {
+          const roleId = user?.roleType === "patient" ? 3 : 2;
+          const userData = await tx.user.findFirst({
+            where: {
+              username: user.username,
+            },
+          });
+
+          if (userData) {
+            await tx.userRole.create({
+              data: {
+                userId: userData.id,
+                roleId: roleId,
+              },
+            });
+          }
+        })
+      );
+    }
+  });
 };
 
 const initRole = async () => {
@@ -124,6 +156,7 @@ const main = async () => {
   await initMenus();
   await initAdmin();
   await initRole();
+  await initUser();
 };
 
 main()

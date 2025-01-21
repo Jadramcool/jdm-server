@@ -13,14 +13,9 @@ export const checkUnique = async (
   key: string, // 字段名
   name: string // 传值
 ) => {
-  console.log("🚀 ~ key:", key);
-
-  console.log("🚀 ~ name:", name);
-
   const existing = await db.prisma[table].findFirst({
     where: { [key]: name },
   });
-  console.log("🚀 ~ existing:", existing);
 
   return !!existing;
 };

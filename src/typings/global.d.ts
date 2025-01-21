@@ -7,7 +7,7 @@ declare global {
         data: any,
         code: number,
         message?: string,
-        errMsg?: string
+        errMsg?: string | Object
       ): void;
     }
   }
@@ -19,7 +19,7 @@ declare global {
     data?: any;
     code?: number;
     message?: string;
-    errMsg?: string;
+    errMsg?: string | Object;
   }
 
   interface Filters {
