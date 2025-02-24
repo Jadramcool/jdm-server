@@ -154,10 +154,6 @@ export class UserService {
         omit: {
           password: false, // The password field is now selected.
         },
-        include: {
-          doctor: true,
-          patient: true,
-        },
       });
       if (!result) {
         return {
@@ -213,8 +209,11 @@ export class UserService {
               },
             },
           },
+<<<<<<< Updated upstream
           doctor: true,
           patient: true,
+=======
+>>>>>>> Stashed changes
         },
       });
 

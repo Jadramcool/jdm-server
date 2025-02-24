@@ -196,6 +196,7 @@ export const menus: CustomMenuCreateInput[] = [
     order: 0,
     extraData: '{"withContentCard": false}',
   },
+<<<<<<< Updated upstream
   {
     id: 11,
     name: "医院管理",
@@ -539,4 +540,6 @@ export const menus: CustomMenuCreateInput[] = [
     order: 0,
     extraData: '{"withContentCard":true}',
   },
+=======
+>>>>>>> Stashed changes
 ];

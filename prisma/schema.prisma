@@ -36,7 +36,11 @@ model User {
   password      String
   isDeleted     Boolean   @default(false) @map("is_deleted")
   status        Int       @default(0) // 0: 未激活, 1: 激活
+<<<<<<< Updated upstream
   roleType      String?   @default("patient") @map("role_type") // 角色类型 admin, user, doctor, patient
+=======
+  roleType      String?   @default("user") @map("role_type") // 角色类型 admin, user
+>>>>>>> Stashed changes
   city          String? // 城市
   address       String? // 地址
   addressDetail String?   @map("address_detail") // 详细地址
@@ -47,9 +51,6 @@ model User {
   // 通过中间表 UserNotice 引用接收到的公告
   userNotice UserNotice[]
   Todo       Todo[]
-  // 医生
-  doctor     Doctor?
-  patient    Patient?
 
   @@map("user")
 }
@@ -191,6 +192,7 @@ model Todo {
 
   @@map("todo")
 }
+<<<<<<< Updated upstream
 
 // 科室信息管理表
 model Department {
@@ -305,3 +307,5 @@ model MedicalRecord {
 
   @@map("medical_record")
 }
+=======
+>>>>>>> Stashed changes
