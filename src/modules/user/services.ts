@@ -209,11 +209,6 @@ export class UserService {
               },
             },
           },
-<<<<<<< Updated upstream
-          doctor: true,
-          patient: true,
-=======
->>>>>>> Stashed changes
         },
       });
 
