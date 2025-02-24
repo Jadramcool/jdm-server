@@ -220,22 +220,6 @@ export class UserManagerService {
 
         const { id } = result;
 
-        if (roleType === "doctor") {
-          await prisma.doctor.create({
-            data: {
-              userId: id,
-            },
-          });
-        }
-
-        if (roleType === "patient") {
-          await prisma.patient.create({
-            data: {
-              userId: id,
-            },
-          });
-        }
-
         // 创建用户角色关系
         if (roles) {
           await prisma.userRole.createMany({

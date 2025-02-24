@@ -12,12 +12,7 @@ export const roles: CustomRoleCreateInput[] = [
   },
   {
     id: 2,
-    name: "医生",
-    code: "DOCTOR",
-  },
-  {
-    id: 3,
-    name: "患者",
-    code: "PATIENT",
+    name: "用户",
+    code: "USER",
   },
 ];

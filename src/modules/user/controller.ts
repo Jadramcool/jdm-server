@@ -19,11 +19,41 @@ import {
 import { JWT } from "../../jwt";
 import { UserService } from "./services";
 
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: 用户管理
+ */
+
 @controller("/user")
 export class User {
   // @param UserService @inject(UserService): 这是一个装饰器，用于依赖注入。
   constructor(@inject(UserService) private readonly UserService: UserService) {}
 
+  /**
+   * @swagger
+   * /user/register:
+   *   post:
+   *     summary: 注册
+   *     tags: [User]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               username:
+   *                 type: string
+   *               password:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: User registered successfully
+   *       400:
+   *         description: Invalid input
+   */
   @Post("/register")
   public async registerUser(req: Request, res: Response) {
     let {
@@ -34,6 +64,32 @@ export class User {
     }: Jres = await this.UserService.registerUser(req.body);
     res.sendResult(data, code, message, errMsg);
   }
+
+  /**
+   * @swagger
+   * /user/login:
+   *   post:
+   *     summary: 登录
+   *     tags: [User]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               username:
+   *                 type: string
+   *                 default: admin
+   *               password:
+   *                 type: string
+   *                 default: 123456..
+   *     responses:
+   *       200:
+   *         description: User logged in successfully
+   *       401:
+   *         description: Unauthorized
+   */
 
   @Post("/login")
   public async login(req: Request, res: Response) {

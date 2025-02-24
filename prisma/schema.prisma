@@ -36,7 +36,7 @@ model User {
   password      String
   isDeleted     Boolean   @default(false) @map("is_deleted")
   status        Int       @default(0) // 0: 未激活, 1: 激活
-  roleType      String?   @default("patient") @map("role_type") // 角色类型 admin, user, doctor, patient
+  roleType      String?   @default("user") @map("role_type") // 角色类型 admin, user
   city          String? // 城市
   address       String? // 地址
   addressDetail String?   @map("address_detail") // 详细地址
@@ -47,9 +47,6 @@ model User {
   // 通过中间表 UserNotice 引用接收到的公告
   userNotice UserNotice[]
   Todo       Todo[]
-  // 医生
-  doctor     Doctor?
-  patient    Patient?
 
   @@map("user")
 }
@@ -190,118 +187,4 @@ model Todo {
   children    Todo[]    @relation("ParentChild")
 
   @@map("todo")
-}
-
-// 科室信息管理表
-model Department {
-  id          Int       @id @default(autoincrement())
-  name        String // 科室名称
-  description String? // 科室描述
-  createdTime DateTime  @default(now()) @map("created_time")
-  updatedTime DateTime? @updatedAt @map("updated_time")
-
-  // 医生和科室的关系
-  doctors Doctor[] // 与医生一对多关系
-
-  @@map("department")
-}
-
-// 医生模型
-model Doctor {
-  id           Int         @id @default(autoincrement())
-  userId       Int         @unique @map("user_id") // 医生对应的用户ID
-  user         User        @relation(fields: [userId], references: [id])
-  departmentId Int?        @map("department_id") // 医生所属科室ID
-  department   Department? @relation(fields: [departmentId], references: [id])
-
-  introduction    String? // 医生简介
-  registrationFee Int?     @map("registration_fee") // 挂号费
-  createdTime     DateTime @default(now()) @map("created_time")
-
-  // 医生的排班信息
-  doctorSchedule DoctorSchedule[]
-  medicalRecord  MedicalRecord[]
-  appointment    Appointment[]
-
-  @@map("doctor")
-}
-
-// 患者模型
-model Patient {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique @map("user_id")
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdTime   DateTime        @default(now()) @map("created_time")
-  appointment   Appointment[]
-  medicalRecord MedicalRecord[]
-}
-
-enum TimePeriod {
-  MORNING
-  AFTERNOON
-  // DAY
-}
-
-// 医生排班信息表
-model DoctorSchedule {
-  id          Int           @id @default(autoincrement())
-  doctorId    Int           @map("doctor_id")
-  doctor      Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  date        DateTime      @db.Date() // 排班日期
-  timePeriod  TimePeriod?   @map("time_period") // 排班时间段  morning：上午，afternoon：下午
-  createdTime DateTime      @default(now()) @map("created_time")
-  updatedTime DateTime      @updatedAt @map("updated_time")
-  // appointCount Int           @default(0) @map("appoint_count") // 挂号数量
-  maxCount    Int           @default(100) @map("max_count") // 单条记录最多挂号数量
-  appointment Appointment[]
-
-  @@map("doctor_schedule")
-}
-
-enum AppointmentStatus {
-  UNFINISHED // 未就诊
-  FINISHED // 已就诊
-  CANCELED // 已取消
-  CALLED // 已叫号
-  EXPIRED // 已过期
-}
-
-// 患者挂号表
-model Appointment {
-  id               Int               @id @default(autoincrement())
-  patientId        Int               @map("patient_id")
-  patient          Patient?          @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctorId         Int               @map("doctor_id")
-  doctor           Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  appointmentDate  DateTime          @map("appointment_date") // 挂号日期
-  status           AppointmentStatus @default(UNFINISHED) // UNFINISHED: 未就诊, FINISHED: 已就诊 ,CANCELED: 已取消,CALLED：已叫号
-  createdTime      DateTime          @default(now()) @map("created_time")
-  updatedTime      DateTime          @updatedAt @map("updated_time")
-  doctorScheduleId Int?              @map("doctor_schedule_id")
-  doctorSchedule   DoctorSchedule?   @relation(fields: [doctorScheduleId], references: [id], onDelete: Cascade)
-  medicalRecord    MedicalRecord?
-
-  @@index([patientId, doctorScheduleId, doctorId])
-  @@map("appointment")
-}
-
-// 病历表
-model MedicalRecord {
-  id            Int         @id @default(autoincrement())
-  appointmentId Int         @unique @map("appointment_id")
-  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  patientId     Int         @map("patient_id")
-  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctorId      Int         @map("doctor_id")
-  doctor        Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  mainComplaint String      @map("main_complaint") // 主诉 
-  nowSickness   String      @map("now_sickness") // 现病史
-  diagnostic    String // 诊断结果
-  treatment     String? // 治疗方案
-  notes         String? // 备注
-  createdTime   DateTime    @default(now()) @map("created_time")
-  updatedTime   DateTime    @updatedAt @map("updated_time")
-
-  @@map("medical_record")
 }
