@@ -10,4 +10,9 @@ export const roles: CustomRoleCreateInput[] = [
     name: "管理员",
     code: "ADMIN",
   },
+  {
+    id: 2,
+    name: "用户",
+    code: "USER",
+  },
 ];

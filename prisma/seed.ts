@@ -81,7 +81,7 @@ const initUser = async () => {
       // 使用 Promise.all 并行处理每个用户的角色分配
       await Promise.all(
         User.users.map(async (user) => {
-          const roleId = user?.roleType === "patient" ? 3 : 2;
+          const roleId = 2;
           const userData = await tx.user.findFirst({
             where: {
               username: user.username,
