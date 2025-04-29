@@ -9,7 +9,10 @@ import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
 import { User } from "../src/modules/user/controller";
 import { UserService } from "../src/modules/user/services";
+import { XiaoChengService } from "../src/modules/xiaocheng/services";
+import { HttpService } from "../src/utils/http";
 import { UtilService } from "../src/utils/utils";
+import { XiaoCheng } from "./../src/modules/xiaocheng/controller";
 
 const createContainer = () => {
   // 创建了一个InversifyExpressServer实例
@@ -28,6 +31,12 @@ const createContainer = () => {
    */
   container.bind(User).to(User);
   container.bind(UserService).to(UserService);
+
+  /**
+   * 小诚模块
+   */
+  container.bind(XiaoCheng).to(XiaoCheng);
+  container.bind(XiaoChengService).to(XiaoChengService);
   /**
    * upload模块
    */
@@ -35,6 +44,7 @@ const createContainer = () => {
   container.bind(UploadService).to(UploadService);
 
   container.bind(UtilService).to(UtilService);
+  container.bind(HttpService).to(HttpService);
 
   /**
    * 封装PrismaClient，方便注入

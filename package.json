@@ -15,6 +15,7 @@
     "@prisma/client": "^6.4.1",
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.12",
+    "alova": "^3.2.8",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -45,8 +46,10 @@
     "zhipuai-sdk-nodejs-v4": "^0.1.12"
   },
   "devDependencies": {
+    "@alova/wormhole": "^1.0.6",
     "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/lodash": "^4.17.15",
     "@types/module-alias": "^2.0.4",
     "@types/node": "^22.5.3",
     "@types/passport": "^1.0.16",
