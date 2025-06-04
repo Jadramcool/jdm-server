@@ -78,6 +78,7 @@ model Menu {
   order       Int // 排序
   createdTime DateTime  @default(now()) @map("created_time")
   updatedTime DateTime? @updatedAt @map("updated_time")
+  needLogin   Boolean?  @default(true) @map("need_login") // 是否需要登录的页面
   extraData   String?   @map("extra_data") // 额外数据
 
   roles RoleMenu[] // 与角色菜单表的关系

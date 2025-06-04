@@ -83,4 +83,16 @@ export class Menu implements interfaces.Controller {
     }: Jres = await this.MenuService.deleteMenu(ids);
     res.sendResult(data, code, message, errMsg);
   }
+
+  @Get("/onlineMenus")
+  public async getOnlineMenus(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.MenuService.getOnlineMenuList(config);
+    res.sendResult(data, code, message, errMsg);
+  }
 }

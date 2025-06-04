@@ -156,4 +156,37 @@ export class MenuService {
       };
     }
   }
+
+  // 获取在线菜单
+  public async getOnlineMenuList(config: ReqListConfig) {
+    let { filters, options, pagination } = config;
+
+    filters = filters || {};
+    let sqlFilters = {};
+    if (Object.keys(filters).length > 0) {
+      sqlFilters = FilterHelper.addFilterCondition(filters, ["id", "name"]);
+    }
+
+    const result = await this.PrismaDB.prisma.menu.findMany({
+      where: {
+        ...sqlFilters,
+        needLogin: false,
+      },
+    });
+
+    try {
+      return {
+        data: result,
+        code: 200,
+        message: "获取菜单成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 500,
+        message: "获取菜单失败",
+        errMsg: err,
+      };
+    }
+  }
 }
