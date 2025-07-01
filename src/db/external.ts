@@ -2,7 +2,7 @@
  * @Author: jdm
  * @Date: 2025-06-06 16:01:30
  * @LastEditors: jdm 1051780106@qq.com
- * @LastEditTime: 2025-06-27 10:09:57
+ * @LastEditTime: 2025-06-30 13:15:34
  * @FilePath: \jdm-server\src\db\external.ts
  * @Description: 外部数据库原生MySQL连接 - 高性能优化版本
  *
@@ -17,6 +17,16 @@
  */
 import mysql from "mysql2/promise";
 import { inject, injectable } from "inversify";
+
+/**
+ * 查询日志配置类
+ * 用于控制查询模块的日志输出
+ */
+export class QueryLogConfig {
+  // 全局日志开关，控制所有查询相关日志
+  // static enableLog: boolean = process.env.NODE_ENV !== "production";
+  static enableLog: boolean = false;
+}
 
 /**
  * 缓存项接口
@@ -76,8 +86,7 @@ class QueryCache {
       timestamp: Date.now(),
       ttl,
     });
-    // 生产环境下减少日志输出
-    if (process.env.NODE_ENV !== "production") {
+    if (QueryLogConfig.enableLog) {
       console.log(`[缓存] 设置缓存: ${key.substring(0, 50)}... TTL: ${ttl}ms`);
     }
   }
@@ -91,7 +100,7 @@ class QueryCache {
     const item = this.cache.get(key);
     if (!item) {
       this.stats.cacheMisses++;
-      if (process.env.NODE_ENV !== "production") {
+      if (QueryLogConfig.enableLog) {
         console.log(`[缓存] 缓存未命中: ${key.substring(0, 50)}...`);
       }
       return null;
@@ -100,14 +109,14 @@ class QueryCache {
     if (Date.now() - item.timestamp > item.ttl) {
       this.cache.delete(key);
       this.stats.cacheMisses++;
-      if (process.env.NODE_ENV !== "production") {
+      if (QueryLogConfig.enableLog) {
         console.log(`[缓存] 缓存已过期: ${key.substring(0, 50)}...`);
       }
       return null;
     }
 
     this.stats.cacheHits++;
-    if (process.env.NODE_ENV !== "production") {
+    if (QueryLogConfig.enableLog) {
       console.log(`[缓存] 缓存命中: ${key.substring(0, 50)}...`);
     }
     return item.data;
@@ -201,6 +210,8 @@ export interface QueryParams {
   date?: string; // 日期过滤(支持完整日期或部分匹配)
   startTime?: string; // 开始时间(范围查询)
   endTime?: string; // 结束时间(范围查询)
+  sortBy?: string; // 排序字段，默认为'date'
+  sortOrder?: "ASC" | "DESC"; // 排序方向，默认为'DESC'
 }
 
 /**
@@ -355,6 +366,52 @@ export class ExternalDB {
   }
 
   /**
+   * 构建ORDER BY子句
+   * 支持动态排序字段和排序方向，包含安全性验证
+   * @param params - 查询参数对象
+   * @param tableName - 表名，用于字段验证
+   * @returns ORDER BY子句字符串
+   */
+  private buildOrderByClause(params: QueryParams, tableName: string): string {
+    const sortBy = params.sortBy || "date"; // 默认按日期排序
+    const sortOrder = params.sortOrder || "DESC"; // 默认降序
+
+    // 安全性验证：防止SQL注入，只允许特定字段排序
+    const allowedSortFields = {
+      u3c3: [
+        "id",
+        "title",
+        "type",
+        "date",
+        "created_at",
+        "updated_at",
+        "size_format",
+      ],
+      execution_logs: ["id", "title", "date", "status"],
+    };
+
+    const validFields = allowedSortFields[tableName] || ["id", "date"];
+    const safeSortBy = validFields.includes(sortBy) ? sortBy : "date";
+    const safeSortOrder = ["ASC", "DESC"].includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
+
+    // 记录排序策略
+    if (QueryLogConfig.enableLog) {
+      console.log(
+        `[排序策略] 表: ${tableName}, 字段: ${safeSortBy}, 方向: ${safeSortOrder}`
+      );
+      if (safeSortBy !== sortBy) {
+        console.warn(
+          `[排序安全] 字段 "${sortBy}" 不在允许列表中，已替换为 "${safeSortBy}"`
+        );
+      }
+    }
+
+    return `ORDER BY ${safeSortBy} ${safeSortOrder}`;
+  }
+
+  /**
    * 构建WHERE子句 - 高度优化版本
    * 支持全文搜索、类型过滤、日期范围、时间范围等多种查询条件
    * 全文搜索自动选择最优模式(布尔模式 vs 自然语言模式)
@@ -454,9 +511,11 @@ export class ExternalDB {
             hasFullTextSearch = true;
             searchStrategy = "英文多词全文搜索(ngram自然语言模式)";
 
-            console.log(
-              `[ngram优化] 英文多词: "${naturalQuery}" - 使用自然语言模式提升性能`
-            );
+            if (QueryLogConfig.enableLog) {
+              console.log(
+                `[ngram优化] 英文多词: "${naturalQuery}" - 使用自然语言模式提升性能`
+              );
+            }
           } else {
             // 降级到LIKE搜索的AND组合
             const titleConditions = words
@@ -492,9 +551,11 @@ export class ExternalDB {
           hasFullTextSearch = true;
           searchStrategy = "英文长词全文搜索(ngram自然语言模式)";
 
-          console.log(
-            `[ngram优化] 英文词: "${title}" - 使用自然语言模式提升性能`
-          );
+          if (QueryLogConfig.enableLog) {
+            console.log(
+              `[ngram优化] 英文词: "${title}" - 使用自然语言模式提升性能`
+            );
+          }
         } else {
           searchCondition = "title LIKE ?";
           searchValues = [`%${title}%`];
@@ -520,30 +581,44 @@ export class ExternalDB {
 
       // ========== 搜索日志记录 ==========
       // 记录选择的搜索策略和关键参数
-      if (
-        searchFeatures.hasSpaces &&
-        (searchFeatures.hasChinese || !searchFeatures.hasChinese)
-      ) {
-        const words = title.split(" ").filter((w) => w.length > 0);
-        console.log(
-          `[搜索策略] ${searchStrategy} - 词组: [${words.join(", ")}]${
-            hasFullTextSearch ? ` - 布尔查询: "${searchValues[0]}"` : ""
-          }`
-        );
-      } else {
-        console.log(
-          `[搜索策略] ${searchStrategy} - 关键词: "${title}"${
-            searchFeatures.length > 1 ? ` (长度: ${searchFeatures.length})` : ""
-          }`
-        );
-      }
+      if (QueryLogConfig.enableLog) {
+        if (
+          searchFeatures.hasSpaces &&
+          (searchFeatures.hasChinese || !searchFeatures.hasChinese)
+        ) {
+          const words = title.split(" ").filter((w) => w.length > 0);
+          console.log(
+            `[搜索策略] ${searchStrategy} - 词组: [${words.join(", ")}]${
+              hasFullTextSearch ? ` - 布尔查询: "${searchValues[0]}"` : ""
+            }`
+          );
+        } else {
+          console.log(
+            `[搜索策略] ${searchStrategy} - 关键词: "${title}"${
+              searchFeatures.length > 1
+                ? ` (长度: ${searchFeatures.length})`
+                : ""
+            }`
+          );
+        }
 
-      // 详细特征分析日志（仅调试模式）
-      if (this.enableDebugLog) {
+        // 详细特征分析日志
         console.log(
           `[搜索分析] 表: ${tableName}, 特征: 中文=${searchFeatures.hasChinese}, 英文=${searchFeatures.hasEnglish}, 数字=${searchFeatures.hasNumbers}, 空格=${searchFeatures.hasSpaces}, 引号=${searchFeatures.isQuoted}, 通配符=${searchFeatures.hasWildcard}, 词数=${searchFeatures.wordCount}`
         );
       }
+    }
+
+    // 添加软删除过滤条件（排除已删除的数据）
+    if (tableName === "u3c3") {
+      // 方案1：如果数据已标准化，使用简单条件
+      // conditions.push("is_deleted = 0");
+
+      // 方案2：如果需要兼容NULL值，优化OR条件
+      conditions.push("is_deleted = 0");
+
+      // 方案3：使用COALESCE函数
+      // conditions.push("COALESCE(is_deleted, 0) = 0");
     }
 
     // u3c3表特有的type查询（需要type字段索引）
@@ -586,23 +661,25 @@ export class ExternalDB {
 
     // ========== SQL语句打印 ==========
     // 打印完整的WHERE子句和参数，便于调试和分析
-    if (whereClause) {
-      console.log(`[SQL构建] WHERE子句: ${whereClause}`);
-      console.log(
-        `[SQL参数] 参数值: [${values
-          .map((v) => (typeof v === "string" ? `"${v}"` : v))
-          .join(", ")}]`
-      );
+    if (QueryLogConfig.enableLog) {
+      if (whereClause) {
+        console.log(`[SQL构建] WHERE子句: ${whereClause}`);
+        console.log(
+          `[SQL参数] 参数值: [${values
+            .map((v) => (typeof v === "string" ? `"${v}"` : v))
+            .join(", ")}]`
+        );
 
-      // 构建完整的示例SQL语句（用于调试）
-      let debugSql = whereClause;
-      values.forEach((value, index) => {
-        const placeholder = typeof value === "string" ? `'${value}'` : value;
-        debugSql = debugSql.replace("?", placeholder);
-      });
-      console.log(`[完整WHERE] ${debugSql}`);
-    } else {
-      console.log(`[SQL构建] 无WHERE条件，查询所有记录`);
+        // 构建完整的示例SQL语句（用于调试）
+        let debugSql = whereClause;
+        values.forEach((value, index) => {
+          const placeholder = typeof value === "string" ? `'${value}'` : value;
+          debugSql = debugSql.replace("?", placeholder);
+        });
+        console.log(`[完整WHERE] ${debugSql}`);
+      } else {
+        console.log(`[SQL构建] 无WHERE条件，查询所有记录`);
+      }
     }
 
     return { whereClause, values, hasFullTextSearch };
@@ -631,9 +708,11 @@ export class ExternalDB {
 
     // 对于无条件查询，强制使用表统计信息（百万级数据绝对不能全表扫描）
     if (!whereClause) {
-      console.log(
-        `[数据库] 检测到无条件COUNT查询，强制使用统计信息避免全表扫描`
-      );
+      if (QueryLogConfig.enableLog) {
+        console.log(
+          `[数据库] 检测到无条件COUNT查询，强制使用统计信息避免全表扫描`
+        );
+      }
 
       try {
         // 方法1：使用SHOW TABLE STATUS（最快最准确）
@@ -671,7 +750,9 @@ export class ExternalDB {
 
       // 方法3：使用索引估算（最后的备选方案）
       try {
-        console.log(`[数据库] 统计信息不可用，使用索引估算`);
+        if (QueryLogConfig.enableLog) {
+          console.log(`[数据库] 统计信息不可用，使用索引估算`);
+        }
         // 使用AUTO_INCREMENT值估算（如果表有自增主键）
         const [autoIncResult] = (await pool.query(
           `SHOW TABLE STATUS LIKE '${tableName}'`
@@ -719,7 +800,9 @@ export class ExternalDB {
       }
 
       // 如果所有估算方法都失败，返回一个合理的默认值
-      console.warn(`[数据库] 所有COUNT估算方法失败，返回默认值`);
+      if (QueryLogConfig.enableLog) {
+        console.warn(`[数据库] 所有COUNT估算方法失败，返回默认值`);
+      }
       return 1000000; // 返回一个合理的默认值，避免全表扫描
     }
 
@@ -777,10 +860,10 @@ export class ExternalDB {
     ); // 限制最大页面大小为1000
     const offset = (page - 1) * pageSize; // 计算偏移量
 
-    console.log(
-      `[数据库] 开始分页查询 - 表: ${tableName}, 页码: ${page}, 页大小: ${pageSize}, 偏移: ${offset}`
-    );
-    if (this.enableDebugLog) {
+    if (QueryLogConfig.enableLog) {
+      console.log(
+        `[数据库] 开始分页查询 - 表: ${tableName}, 页码: ${page}, 页大小: ${pageSize}, 偏移: ${offset}`
+      );
       console.log(`[数据库] 查询参数:`, JSON.stringify(params, null, 2));
     }
 
@@ -812,7 +895,7 @@ export class ExternalDB {
       tableName
     );
 
-    if (this.enableDebugLog) {
+    if (QueryLogConfig.enableLog) {
       console.log(`[数据库] WHERE条件: ${whereClause}`);
       console.log(`[数据库] 参数值:`, values);
       console.log(`[数据库] 全文搜索: ${hasFullTextSearch}`);
@@ -829,7 +912,9 @@ export class ExternalDB {
       Date.now() - cachedCount.timestamp < this.countCacheTTL
     ) {
       total = cachedCount.count;
-      console.log(`[数据库] COUNT缓存命中: ${total}`);
+      if (QueryLogConfig.enableLog) {
+        console.log(`[数据库] COUNT缓存命中: ${total}`);
+      }
     } else {
       total = await this.getOptimizedCount(
         tableName,
@@ -841,7 +926,9 @@ export class ExternalDB {
         count: total,
         timestamp: Date.now(),
       });
-      console.log(`[数据库] COUNT查询完成: ${total} 条记录`);
+      if (QueryLogConfig.enableLog) {
+        console.log(`[数据库] COUNT查询完成: ${total} 条记录`);
+      }
     }
 
     // 如果请求的页面超出范围，返回空结果 - 避免不必要的数据查询
@@ -876,9 +963,11 @@ export class ExternalDB {
     if (selectFields === "*") {
       // 避免SELECT *，明确指定需要的字段（这里保持兼容性暂时使用*）
       optimizedSelectFields = "*";
-      console.log(
-        `[数据库] 字段优化: ${selectFields} -> ${optimizedSelectFields}`
-      );
+      if (QueryLogConfig.enableLog) {
+        console.log(
+          `[数据库] 字段优化: ${selectFields} -> ${optimizedSelectFields}`
+        );
+      }
     }
 
     // 超级优化的数据查询 - 针对大数据表性能优化
@@ -891,39 +980,60 @@ export class ExternalDB {
     const limitClause = `LIMIT ${parseInt(String(pageSize))}`;
     const offsetClause = offset > 0 ? `OFFSET ${parseInt(String(offset))}` : "";
 
+    // 构建ORDER BY子句
+    const orderByClause = this.buildOrderByClause(params, tableName);
+    const sortBy = params.sortBy || "date";
+
     // 智能查询策略选择 - 根据查询条件和分页位置选择最优策略
     if (hasFullTextSearch) {
       // 全文搜索查询 - 使用MySQL全文索引和相关性排序
       queryType = "fulltext";
       dataQuery =
-        `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ORDER BY date DESC ${limitClause} ${offsetClause}`.trim();
+        `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ${orderByClause} ${limitClause} ${offsetClause}`.trim();
     } else {
       // 无条件查询的超级优化
       if (!whereClause) {
         if (offset === 0) {
           // 第一页：使用索引直接获取最新记录 - 最常见的查询场景
           queryType = "first_page_optimized";
-          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} USE INDEX (idx_date_desc) ORDER BY date DESC ${limitClause}`;
+          // 只有按date DESC排序时才使用特定索引优化
+          const indexHint =
+            sortBy === "date" && params.sortOrder !== "ASC"
+              ? "USE INDEX (idx_date_desc)"
+              : "";
+          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${indexHint} ${orderByClause} ${limitClause}`;
         } else if (offset < 10000) {
           // 浅分页：直接使用LIMIT OFFSET - OFFSET较小，性能影响不大
           queryType = "shallow_pagination";
-          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} USE INDEX (idx_date_desc) ORDER BY date DESC ${limitClause} ${offsetClause}`;
+          const indexHint =
+            sortBy === "date" && params.sortOrder !== "ASC"
+              ? "USE INDEX (idx_date_desc)"
+              : "";
+          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${indexHint} ${orderByClause} ${limitClause} ${offsetClause}`;
         } else {
-          // 深分页：使用游标分页（基于date） - 避免大OFFSET性能问题
+          // 深分页：使用游标分页（仅支持date字段） - 避免大OFFSET性能问题
           queryType = "cursor_pagination";
-          // 先获取offset位置的date值
-          const [cursorResult] = (await pool.execute(
-            `SELECT date FROM ${tableName} USE INDEX (idx_date_desc) ORDER BY date DESC LIMIT 1 OFFSET ${offset}`
-          )) as any;
+          if (sortBy === "date") {
+            // 先获取offset位置的date值
+            const [cursorResult] = (await pool.execute(
+              `SELECT date FROM ${tableName} USE INDEX (idx_date_desc) ${orderByClause} LIMIT 1 OFFSET ${offset}`
+            )) as any;
 
-          if (cursorResult[0]?.date) {
-            const cursorTime = cursorResult[0].date;
-            dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} WHERE date <= ? ORDER BY date DESC, id DESC ${limitClause}`;
-            queryValues = [cursorTime];
+            if (cursorResult[0]?.date) {
+              const cursorTime = cursorResult[0].date;
+              const operator = params.sortOrder === "ASC" ? ">=" : "<=";
+              const secondarySort = params.sortOrder === "ASC" ? "ASC" : "DESC";
+              dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} WHERE date ${operator} ? ORDER BY date ${secondarySort}, id ${secondarySort} ${limitClause}`;
+              queryValues = [cursorTime];
+            } else {
+              // 如果游标查询失败，回退到普通查询
+              queryType = "fallback_deep_pagination";
+              dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${orderByClause} ${limitClause} ${offsetClause}`;
+            }
           } else {
-            // 如果游标查询失败，回退到普通查询
-            queryType = "fallback_deep_pagination";
-            dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ORDER BY date DESC ${limitClause} ${offsetClause}`;
+            // 非date字段的深分页直接使用LIMIT OFFSET
+            queryType = "deep_pagination_non_date";
+            dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${orderByClause} ${limitClause} ${offsetClause}`;
           }
         }
       } else {
@@ -931,24 +1041,24 @@ export class ExternalDB {
         if (offset === 0) {
           // 第一页查询优化 - 去除OFFSET提升性能
           queryType = "first_page_with_condition";
-          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ORDER BY date DESC ${limitClause}`;
+          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ${orderByClause} ${limitClause}`;
         } else {
           // 深度分页优化 - 直接使用LIMIT OFFSET
           queryType = "deep_pagination_with_condition";
-          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ORDER BY date DESC ${limitClause} ${offsetClause}`;
+          dataQuery = `SELECT ${optimizedSelectFields} FROM ${tableName} ${whereClause} ${orderByClause} ${limitClause} ${offsetClause}`;
         }
       }
     }
 
     // 调试日志 - 开发环境下输出详细的查询信息
-    if (this.enableDebugLog) {
+    if (QueryLogConfig.enableLog) {
       console.log(`[数据库] 查询类型: ${queryType}`);
       console.log(`[数据库] SQL语句: ${dataQuery}`);
       console.log(`[数据库] 查询参数: ${JSON.stringify(queryValues)}`);
     }
 
     // 执行查询前先分析查询计划（仅在调试模式下） - 帮助识别性能瓶颈
-    if (this.enableDebugLog && !hasFullTextSearch) {
+    if (QueryLogConfig.enableLog && !hasFullTextSearch) {
       try {
         const [explainResult] = (await pool.execute(
           `EXPLAIN ${dataQuery}`,
@@ -1004,8 +1114,6 @@ export class ExternalDB {
   private getOptimizedFields(tableName: string): string {
     const fieldMaps: Record<string, string> = {
       crawler: "id, title, type, date",
-      sykb: "id, title, date",
-      kb: "id, title, date",
       execution_logs: "id, title, date",
     };
     return fieldMaps[tableName] || "id, title, date";
@@ -1017,31 +1125,11 @@ export class ExternalDB {
    * @param params - 查询参数，支持搜索、分页、过滤等
    * @returns 分页的爬虫数据结果
    */
-  async getScrapedData(
+  async getU3C3Data(
     tableName: string = "u3c3",
     params: QueryParams = {}
   ): Promise<PaginatedResult<any>> {
     return this.queryWithPagination(tableName, params);
-  }
-
-  /**
-   * 获取SYKB数据
-   * 专门用于查询sykb表的便捷方法
-   * @param params - 查询参数，支持搜索、分页、过滤等
-   * @returns 分页的SYKB数据结果
-   */
-  async getSykbData(params: QueryParams = {}): Promise<PaginatedResult<any>> {
-    return this.queryWithPagination("sykb", params);
-  }
-
-  /**
-   * 获取KB数据
-   * 专门用于查询kb表的便捷方法
-   * @param params - 查询参数，支持搜索、分页、过滤等
-   * @returns 分页的KB数据结果
-   */
-  async getKbData(params: QueryParams = {}): Promise<PaginatedResult<any>> {
-    return this.queryWithPagination("kb", params);
   }
 
   /**
@@ -1064,7 +1152,9 @@ export class ExternalDB {
   clearCache(): void {
     this.cache.clear();
     this.countCache.clear();
-    console.log("[数据库] 缓存已清除");
+    if (QueryLogConfig.enableLog) {
+      console.log("[数据库] 缓存已清除");
+    }
   }
 
   /**
@@ -1090,18 +1180,316 @@ export class ExternalDB {
    * 用于性能分析和优化决策
    */
   printPerformanceReport(): void {
-    const stats = this.getCacheStats();
-    console.log("\n=== 数据库性能报告 ===");
-    console.log(`总查询次数: ${stats.totalQueries}`);
-    console.log(`缓存命中率: ${stats.hitRate}%`);
-    console.log(`缓存命中次数: ${stats.cacheHits}`);
-    console.log(`缓存未命中次数: ${stats.cacheMisses}`);
-    console.log(`平均查询时间: ${stats.avgQueryTime.toFixed(2)}ms`);
-    console.log(`慢查询次数: ${stats.slowQueries}`);
-    console.log(`总查询时间: ${stats.totalQueryTime}ms`);
-    console.log(`查询缓存大小: ${stats.queryCache}`);
-    console.log(`COUNT缓存大小: ${stats.countCache}`);
-    console.log("========================\n");
+    if (QueryLogConfig.enableLog) {
+      const stats = this.getCacheStats();
+      console.log("\n=== 数据库性能报告 ===");
+      console.log(`总查询次数: ${stats.totalQueries}`);
+      console.log(`缓存命中率: ${stats.hitRate}%`);
+      console.log(`缓存命中次数: ${stats.cacheHits}`);
+      console.log(`缓存未命中次数: ${stats.cacheMisses}`);
+      console.log(`平均查询时间: ${stats.avgQueryTime.toFixed(2)}ms`);
+      console.log(`慢查询次数: ${stats.slowQueries}`);
+      console.log(`总查询时间: ${stats.totalQueryTime}ms`);
+      console.log(`查询缓存大小: ${stats.queryCache}`);
+      console.log(`COUNT缓存大小: ${stats.countCache}`);
+      console.log("========================\n");
+    }
+  }
+
+  /**
+   * 通用新增数据方法
+   * @param tableName 表名
+   * @param data 要新增的数据对象
+   * @returns 新增结果，包含插入的ID和影响行数
+   */
+  async createData(
+    tableName: string,
+    data: any
+  ): Promise<{ id: number; affectedRows: number }> {
+    const startTime = Date.now();
+    const pool = await this.getPool();
+
+    try {
+      // 过滤掉undefined的字段
+      const fields = Object.keys(data).filter((key) => data[key] !== undefined);
+      const values = fields.map((field) => data[field]);
+
+      if (fields.length === 0) {
+        throw new Error("没有要插入的字段");
+      }
+
+      // 添加创建时间和更新时间
+      if (!fields.includes("created_at")) {
+        fields.push("created_at");
+        values.push(new Date());
+      }
+      if (!fields.includes("updated_at")) {
+        fields.push("updated_at");
+        values.push(new Date());
+      }
+
+      const insertQuery = `INSERT INTO ${tableName} (${fields.join(
+        ", "
+      )}) VALUES (${fields.map(() => "?").join(", ")})`;
+
+      if (QueryLogConfig.enableLog) {
+        console.log(`[数据库] 新增SQL: ${insertQuery}`);
+        console.log(`[数据库] 新增参数:`, values);
+      }
+
+      const [result] = (await pool.execute(insertQuery, values)) as any;
+
+      this.logPerformance(`新增${tableName}数据`, startTime, {
+        insertId: result.insertId,
+        affectedRows: result.affectedRows,
+      });
+
+      return {
+        id: result.insertId,
+        affectedRows: result.affectedRows,
+      };
+    } catch (error) {
+      console.error(`[数据库] 新增${tableName}数据失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 新增u3c3数据（兼容性方法）
+   * @param data 要新增的数据对象
+   * @returns 新增结果，包含插入的ID和影响行数
+   */
+  async createU3C3Data(
+    data: any
+  ): Promise<{ id: number; affectedRows: number }> {
+    return this.createData("u3c3", data);
+  }
+
+  /**
+   * 通用更新数据方法
+   * @param tableName 表名
+   * @param id 数据ID
+   * @param data 要更新的数据对象
+   * @param enableSoftDelete 是否启用软删除检查，默认true
+   * @returns 更新结果
+   */
+  async updateData(
+    tableName: string,
+    id: number,
+    data: any,
+    enableSoftDelete: boolean = true
+  ): Promise<{ affectedRows: number }> {
+    const startTime = Date.now();
+    const pool = await this.getPool();
+
+    try {
+      // 过滤掉undefined的字段
+      const fields = Object.keys(data).filter((key) => data[key] !== undefined);
+      const values = fields.map((field) => data[field]);
+
+      if (fields.length === 0) {
+        throw new Error("没有要更新的字段");
+      }
+
+      // 添加更新时间
+      if (!fields.includes("updated_at")) {
+        fields.push("updated_at");
+        values.push(new Date());
+      }
+
+      const setClause = fields.map((field) => `${field} = ?`).join(", ");
+      const whereClause = enableSoftDelete
+        ? `WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)`
+        : `WHERE id = ?`;
+      const updateQuery = `UPDATE ${tableName} SET ${setClause} ${whereClause}`;
+      values.push(id);
+
+      if (QueryLogConfig.enableLog) {
+        console.log(`[数据库] 更新SQL: ${updateQuery}`);
+        console.log(`[数据库] 更新参数:`, values);
+      }
+
+      const [result] = (await pool.execute(updateQuery, values)) as any;
+
+      this.logPerformance(`更新${tableName}数据`, startTime, {
+        id,
+        affectedRows: result.affectedRows,
+      });
+
+      if (result.affectedRows === 0) {
+        throw new Error("数据不存在或已被删除");
+      }
+
+      return {
+        affectedRows: result.affectedRows,
+      };
+    } catch (error) {
+      console.error(`[数据库] 更新${tableName}数据失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新u3c3数据（兼容性方法）
+   * @param id 数据ID
+   * @param data 要更新的数据对象
+   * @returns 更新结果
+   */
+  async updateU3C3Data(
+    id: number,
+    data: any
+  ): Promise<{ affectedRows: number }> {
+    return this.updateData("u3c3", id, data);
+  }
+
+  /**
+   * 通用软删除数据方法
+   * @param tableName 表名
+   * @param id 数据ID
+   * @param hardDelete 是否硬删除，默认false（软删除）
+   * @returns 删除结果
+   */
+  async deleteData(
+    tableName: string,
+    id: number,
+    hardDelete: boolean = false
+  ): Promise<{ affectedRows: number }> {
+    const startTime = Date.now();
+    const pool = await this.getPool();
+
+    try {
+      let deleteQuery: string;
+      let values: any[];
+
+      if (hardDelete) {
+        // 硬删除
+        deleteQuery = `DELETE FROM ${tableName} WHERE id = ?`;
+        values = [id];
+      } else {
+        // 软删除
+        deleteQuery = `UPDATE ${tableName} SET is_deleted = 1 WHERE id = ?`;
+        values = [id];
+      }
+      console.log("🚀 ~ ExternalDB ~ deleteQuery:", deleteQuery, values);
+
+      if (QueryLogConfig.enableLog) {
+        console.log(
+          `[数据库] ${hardDelete ? "硬" : "软"}删除SQL: ${deleteQuery}`
+        );
+        console.log(`[数据库] 删除参数:`, values);
+      }
+
+      const [result] = (await pool.execute(deleteQuery, values)) as any;
+      console.log("🚀 ~ ExternalDB ~ result:", result);
+
+      this.logPerformance(
+        `${hardDelete ? "硬" : "软"}删除${tableName}数据`,
+        startTime,
+        {
+          id,
+          affectedRows: result.affectedRows,
+        }
+      );
+
+      if (result.affectedRows === 0) {
+        throw new Error("数据不存在或已被删除");
+      }
+
+      return {
+        affectedRows: result.affectedRows,
+      };
+    } catch (error) {
+      console.error(
+        `[数据库] ${hardDelete ? "硬" : "软"}删除${tableName}数据失败:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 软删除u3c3数据（兼容性方法）
+   * @param id 数据ID
+   * @returns 删除结果
+   */
+  async deleteU3C3Data(id: number): Promise<{ affectedRows: number }> {
+    return this.deleteData("u3c3", id);
+  }
+
+  /**
+   * 通用根据ID获取数据方法
+   * @param tableName 表名
+   * @param id 数据ID
+   * @param enableSoftDelete 是否启用软删除检查，默认true
+   * @param selectFields 要查询的字段，默认为*
+   * @param cacheTTL 缓存时间（毫秒），默认10分钟
+   * @returns 查询结果
+   */
+  async getDataById(
+    tableName: string,
+    id: number,
+    enableSoftDelete: boolean = true,
+    selectFields: string = "*",
+    cacheTTL: number = 600000
+  ): Promise<any> {
+    const startTime = Date.now();
+    const pool = await this.getPool();
+
+    try {
+      // 生成缓存键
+      const cacheKey = `${tableName}:single:${id}:${selectFields}`;
+
+      // 检查缓存
+      const cachedResult = this.cache.get(cacheKey);
+      if (cachedResult) {
+        this.logPerformance(`根据ID获取${tableName}数据(缓存)`, startTime, {
+          id,
+          cached: true,
+        });
+        return cachedResult;
+      }
+
+      const whereClause = enableSoftDelete
+        ? `WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)`
+        : `WHERE id = ?`;
+      const selectQuery = `SELECT ${selectFields} FROM ${tableName} ${whereClause}`;
+      const values = [id];
+
+      if (QueryLogConfig.enableLog) {
+        console.log(`[数据库] 根据ID查询SQL: ${selectQuery}`);
+        console.log(`[数据库] 查询参数:`, values);
+      }
+
+      const [rows] = (await pool.execute(selectQuery, values)) as any;
+
+      this.logPerformance(`根据ID获取${tableName}数据`, startTime, {
+        id,
+        found: rows.length > 0,
+      });
+
+      const result = rows.length > 0 ? rows[0] : null;
+
+      // 缓存结果
+      this.cache.set(cacheKey, result, cacheTTL);
+
+      if (!result) {
+        throw new Error("数据不存在或已被删除");
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`[数据库] 根据ID获取${tableName}数据失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 根据ID获取u3c3数据（兼容性方法）
+   * @param id 数据ID
+   * @returns 查询结果
+   */
+  async getU3C3DataById(id: number): Promise<any> {
+    return this.getDataById("u3c3", id);
   }
 
   /**
@@ -1117,7 +1505,9 @@ export class ExternalDB {
     if (this.pool) {
       await this.pool.end();
       this.pool = null;
-      console.log("[数据库] 连接池已关闭");
+      if (QueryLogConfig.enableLog) {
+        console.log("[数据库] 连接池已关闭");
+      }
     }
 
     // 清理缓存
