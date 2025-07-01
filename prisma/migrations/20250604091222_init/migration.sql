@@ -57,6 +57,7 @@ CREATE TABLE `menu` (
     `order` INTEGER NOT NULL,
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NULL,
+    `need_login` BOOLEAN NULL DEFAULT true,
     `extra_data` VARCHAR(191) NULL,
 
     UNIQUE INDEX `menu_code_key`(`code`),
