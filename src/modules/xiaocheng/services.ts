@@ -131,8 +131,6 @@ export class XiaoChengService {
   }
 
   private handleError(error: any) {
-    console.log("🚀 ~ handleError ~ error:", error);
-
     console.error("[ThirdParty Error]", {
       url: error.request?.url,
       status: error.response?.status,

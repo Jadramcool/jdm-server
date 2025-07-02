@@ -13,9 +13,9 @@ export class HttpService {
         const data = await response.json();
         return data;
       },
-      beforeRequest(method) {
-        console.log(method.config);
-      },
+      // beforeRequest(method) {
+      //   console.log(method.config);
+      // },
     });
   }
 
