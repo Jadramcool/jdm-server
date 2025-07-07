@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { createOptimizedPrismaClient, type OptimizedPrismaClient } from "../src/config/database";
 import { noticeContainer } from "../src/modules/notice/index";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
@@ -37,20 +38,23 @@ const createContainer = () => {
   container.bind(UtilService).to(UtilService);
 
   /**
-   * 封装PrismaClient，方便注入
+   * 封装PrismaClient，使用单例模式避免连接池耗尽
+   * 优化配置：
+   * 1. 使用单例模式，避免多个实例导致连接池耗尽
+   * 2. 配置合适的日志级别和连接参数
+   * 3. 优化omit配置，提高安全性
+   * 4. 支持环境变量配置
    */
-  container.bind<PrismaClient>("PrismaClient").toFactory(() => {
-    return () =>
-      new PrismaClient({
-        omit: {
-          user: {
-            password: true,
-          },
-        },
-      });
-  });
+  container.bind<OptimizedPrismaClient>("PrismaClient").toConstantValue(
+    createOptimizedPrismaClient({
+      enableQueryLog: process.env.NODE_ENV === 'development',
+      connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
+      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || '20000'),
+      queryTimeout: parseInt(process.env.DB_QUERY_TIMEOUT || '60000'),
+    })
+  );
 
-  container.bind(PrismaDB).to(PrismaDB);
+  container.bind(PrismaDB).to(PrismaDB).inSingletonScope();
 
   /**
    * JWT

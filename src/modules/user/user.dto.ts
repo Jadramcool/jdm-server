@@ -66,9 +66,9 @@ export class RegisterDto {
   @Transform((password) => password.value.trim())
   password: string;
 
-  @IsNotEmpty({ message: "姓名是必填的" })
-  @Transform((name) => name.value.trim())
-  name: string;
+  // @IsNotEmpty({ message: "姓名是必填的" })
+  // @Transform((name) => name.value.trim())
+  // name: string;
 
   @IsNotEmpty({ message: "手机号是必填的" })
   @IsMobilePhone("zh-CN", {}, { message: "手机号格式不正确" })

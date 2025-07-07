@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["omitApi", "relationJoins"]
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
