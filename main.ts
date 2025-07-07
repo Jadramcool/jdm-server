@@ -44,6 +44,111 @@ const swaggerOptions: any = {
         description: "Local server",
       },
     ],
+    components: {
+      schemas: {
+        BlogUser: {
+          type: "object",
+          properties: {
+            id: {
+              type: "integer",
+              description: "用户ID",
+              example: 1
+            },
+            username: {
+              type: "string",
+              description: "用户名",
+              example: "bloguser"
+            },
+            email: {
+              type: "string",
+              description: "邮箱地址",
+              example: "blog@example.com"
+            },
+            avatar: {
+              type: "string",
+              description: "头像URL",
+              example: "https://example.com/avatar.jpg"
+            },
+            isBlogUser: {
+              type: "boolean",
+              description: "是否为博客用户",
+              example: true
+            },
+            createdAt: {
+              type: "string",
+              format: "date-time",
+              description: "创建时间",
+              example: "2024-01-01T00:00:00.000Z"
+            },
+            updatedAt: {
+              type: "string",
+              format: "date-time",
+              description: "更新时间",
+              example: "2024-01-01T00:00:00.000Z"
+            }
+          }
+        },
+        ApiResponse: {
+          type: "object",
+          properties: {
+            data: {
+              oneOf: [
+                { "$ref": "#/components/schemas/BlogUser" },
+                { "type": "null" }
+              ],
+              description: "响应数据"
+            },
+            code: {
+              type: "integer",
+              description: "状态码",
+              example: 200
+            },
+            message: {
+              type: "string",
+              description: "响应消息",
+              example: ""
+            },
+            errMsg: {
+              type: "string",
+              description: "错误信息",
+              example: ""
+            }
+          }
+        },
+        ErrorResponse: {
+          type: "object",
+          properties: {
+            data: {
+              type: "null",
+              description: "响应数据"
+            },
+            code: {
+              type: "integer",
+              description: "错误状态码",
+              example: 404
+            },
+            message: {
+              type: "string",
+              description: "错误消息",
+              example: "博客用户不存在"
+            },
+            errMsg: {
+              type: "string",
+              description: "详细错误信息",
+              example: ""
+            }
+          }
+        }
+      },
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT认证，请在请求头中添加 Authorization: Bearer <token>"
+        }
+      }
+    }
   },
   apis: ["./src/modules/**/controller.ts"], // 指定控制器文件路径
 };

@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { BlogContainer } from "../src/modules/blog/index";
 import { noticeContainer } from "../src/modules/notice/index";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
@@ -33,6 +34,10 @@ const createContainer = () => {
    */
   container.bind(Upload).to(Upload);
   container.bind(UploadService).to(UploadService);
+  /**
+   * blog模块
+   */
+  container.load(BlogContainer);
 
   container.bind(UtilService).to(UtilService);
 

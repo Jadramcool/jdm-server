@@ -41,12 +41,20 @@ model User {
   address       String? // 地址
   addressDetail String?   @map("address_detail") // 详细地址
 
+  isBlogUser Boolean @default(false) @map("is_blog_user") // 是否是博客用户
+
   roles           UserRole[]
   noticesAuthored Notice[]   @relation("NoticeAuthor")
 
   // 通过中间表 UserNotice 引用接收到的公告
   userNotice UserNotice[]
   Todo       Todo[]
+
+  // 博客相关关系
+  blogPosts        BlogPost[] // 用户发布的博客文章
+  blogComments     BlogComment[] // 用户发表的评论
+  blogPostLikes    BlogPostLike[] // 用户的文章点赞
+  blogCommentLikes BlogCommentLike[] // 用户的评论点赞
 
   @@map("user")
 }
@@ -188,4 +196,222 @@ model Todo {
   children    Todo[]    @relation("ParentChild")
 
   @@map("todo")
+}
+
+// ==================== 博客系统相关模型 ====================
+
+// 博客文章状态枚举
+enum BlogPostStatus {
+  DRAFT // 草稿
+  PUBLISHED // 已发布
+  ARCHIVED // 已归档
+}
+
+// 评论状态枚举
+enum BlogCommentStatus {
+  PENDING // 待审核
+  APPROVED // 已通过
+  REJECTED // 已拒绝
+}
+
+// 博客分类表
+model BlogCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // 分类名称
+  slug        String    @unique // URL友好的标识符
+  description String? // 分类描述
+  icon        String? // 分类图标
+  color       String? // 分类颜色
+  parentId    Int?      @map("parent_id") // 父分类ID
+  sortOrder   Int       @default(0) @map("sort_order") // 排序
+  postCount   Int       @default(0) @map("post_count") // 文章数量（冗余字段）
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime  @updatedAt @map("updated_time")
+  deletedTime DateTime? @map("deleted_time")
+
+  // 关系
+  parent   BlogCategory?  @relation("CategoryParentChild", fields: [parentId], references: [id])
+  children BlogCategory[] @relation("CategoryParentChild")
+  posts    BlogPost[]
+
+  @@index([parentId])
+  @@index([sortOrder])
+  @@map("blog_category")
+}
+
+// 博客标签表
+model BlogTag {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // 标签名称
+  slug        String    @unique // URL友好的标识符
+  description String? // 标签描述
+  color       String? // 标签颜色
+  useCount    Int       @default(0) @map("use_count") // 使用次数（冗余字段）
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime  @updatedAt @map("updated_time")
+  deletedTime DateTime? @map("deleted_time")
+
+  // 关系
+  postTags BlogPostTag[]
+
+  @@index([useCount])
+  @@map("blog_tag")
+}
+
+// 博客文章表
+model BlogPost {
+  id           Int            @id @default(autoincrement())
+  title        String // 文章标题
+  slug         String         @unique // URL友好的标识符
+  summary      String?        @db.Text // 文章摘要
+  content      String         @db.LongText // Markdown内容
+  coverImage   String?        @map("cover_image") // 封面图片
+  status       BlogPostStatus @default(DRAFT) // 文章状态
+  isTop        Boolean        @default(false) @map("is_top") // 是否置顶
+  allowComment Boolean        @default(true) @map("allow_comment") // 是否允许评论
+  viewCount    Int            @default(0) @map("view_count") // 浏览次数
+  likeCount    Int            @default(0) @map("like_count") // 点赞次数
+  commentCount Int            @default(0) @map("comment_count") // 评论次数
+  authorId     Int            @map("author_id") // 作者ID
+  categoryId   Int?           @map("category_id") // 分类ID
+  publishedAt  DateTime?      @map("published_at") // 发布时间
+  isDeleted    Boolean        @default(false) @map("is_deleted")
+  createdTime  DateTime       @default(now()) @map("created_time")
+  updatedTime  DateTime       @updatedAt @map("updated_time")
+  deletedTime  DateTime?      @map("deleted_time")
+  headImage    String?        @map("head_image") // 文章头图
+
+  // 关系
+  author   User           @relation(fields: [authorId], references: [id])
+  category BlogCategory?  @relation(fields: [categoryId], references: [id])
+  tags     BlogPostTag[]
+  comments BlogComment[]
+  likes    BlogPostLike[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status, publishedAt])
+  @@index([isTop, publishedAt])
+  @@index([slug])
+  @@map("blog_post")
+}
+
+// 博客文章标签关联表
+model BlogPostTag {
+  id     Int @id @default(autoincrement())
+  postId Int @map("post_id")
+  tagId  Int @map("tag_id")
+
+  // 关系
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@map("blog_post_tag")
+}
+
+// 博客评论表
+model BlogComment {
+  id          Int               @id @default(autoincrement())
+  content     String            @db.Text // 评论内容
+  authorName  String?           @map("author_name") // 游客姓名
+  authorEmail String?           @map("author_email") // 游客邮箱
+  authorUrl   String?           @map("author_url") // 游客网站
+  authorIp    String?           @map("author_ip") // 评论者IP
+  userAgent   String?           @map("user_agent") // 用户代理
+  status      BlogCommentStatus @default(PENDING) // 评论状态
+  likeCount   Int               @default(0) @map("like_count") // 点赞次数
+  postId      Int               @map("post_id") // 文章ID
+  userId      Int?              @map("user_id") // 用户ID（注册用户）
+  parentId    Int?              @map("parent_id") // 父评论ID
+  isDeleted   Boolean           @default(false) @map("is_deleted")
+  createdTime DateTime          @default(now()) @map("created_time")
+  updatedTime DateTime          @updatedAt @map("updated_time")
+  deletedTime DateTime?         @map("deleted_time")
+
+  // 关系
+  post     BlogPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User?             @relation(fields: [userId], references: [id])
+  parent   BlogComment?      @relation("CommentParentChild", fields: [parentId], references: [id])
+  children BlogComment[]     @relation("CommentParentChild")
+  likes    BlogCommentLike[]
+
+  @@index([postId, status])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdTime])
+  @@map("blog_comment")
+}
+
+// 博客文章点赞表
+model BlogPostLike {
+  id          Int      @id @default(autoincrement())
+  postId      Int      @map("post_id")
+  userId      Int?     @map("user_id") // 用户ID（注册用户）
+  guestId     String?  @map("guest_id") // 游客标识（如IP+UserAgent的hash）
+  ipAddress   String?  @map("ip_address") // IP地址
+  createdTime DateTime @default(now()) @map("created_time")
+
+  // 关系
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User?    @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId]) // 注册用户每篇文章只能点赞一次
+  @@unique([postId, guestId]) // 游客每篇文章只能点赞一次
+  @@index([postId])
+  @@map("blog_post_like")
+}
+
+// 博客评论点赞表
+model BlogCommentLike {
+  id          Int      @id @default(autoincrement())
+  commentId   Int      @map("comment_id")
+  userId      Int?     @map("user_id") // 用户ID（注册用户）
+  guestId     String?  @map("guest_id") // 游客标识
+  ipAddress   String?  @map("ip_address") // IP地址
+  createdTime DateTime @default(now()) @map("created_time")
+
+  // 关系
+  comment BlogComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User?       @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId]) // 注册用户每条评论只能点赞一次
+  @@unique([commentId, guestId]) // 游客每条评论只能点赞一次
+  @@index([commentId])
+  @@map("blog_comment_like")
+}
+
+// 博客配置表
+model BlogConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique // 配置键
+  value       String?  @db.Text // 配置值（JSON格式）
+  description String? // 配置描述
+  category    String? // 配置分类
+  createdTime DateTime @default(now()) @map("created_time")
+  updatedTime DateTime @updatedAt @map("updated_time")
+
+  @@index([category])
+  @@map("blog_config")
+}
+
+// 友情链接表
+model BlogFriendLink {
+  id          Int       @id @default(autoincrement())
+  name        String // 链接名称
+  url         String // 链接地址
+  description String? // 链接描述
+  avatar      String? // 链接头像
+  sortOrder   Int       @default(0) @map("sort_order") // 排序
+  isVisible   Boolean   @default(true) @map("is_visible") // 是否显示
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime  @updatedAt @map("updated_time")
+  deletedTime DateTime? @map("deleted_time")
+
+  @@index([sortOrder])
+  @@index([isVisible])
+  @@map("blog_friend_link")
 }

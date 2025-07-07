@@ -9,6 +9,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { Menu, Role, SysConfig, User } from "./initData";
+import { initBlogData, createSampleBlogPost } from "./initData/blog";
 
 const prisma = new PrismaClient();
 
@@ -157,6 +158,12 @@ const main = async () => {
   await initAdmin();
   await initRole();
   await initUser();
+  
+  // 初始化博客系统数据
+  console.log('\n=== 开始初始化博客系统 ===');
+  await initBlogData();
+  await createSampleBlogPost();
+  console.log('=== 博客系统初始化完成 ===\n');
 };
 
 main()
