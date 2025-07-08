@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2015",
-    "typeRoots": ["node_modules/@types", "src/typings"],
+    "typeRoots": ["node_modules/@types", "src/typings", "src/types"],
     "types": ["global.d.ts", "node"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -17,5 +17,5 @@
       "@jwt/*": ["jwt/*"]
     }
   },
-  "include": ["src/**/*", "src/typings/*.d.ts", "src/typings/global.d.ts"]
+  "include": ["src/**/*", "src/typings/*.d.ts", "src/typings/global.d.ts", "src/types/*.ts"]
 }

@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["omitApi", "relationJoins"]
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -281,7 +281,6 @@ model BlogPost {
   createdTime  DateTime       @default(now()) @map("created_time")
   updatedTime  DateTime       @updatedAt @map("updated_time")
   deletedTime  DateTime?      @map("deleted_time")
-  headImage    String?        @map("head_image") // 文章头图
 
   // 关系
   author   User           @relation(fields: [authorId], references: [id])

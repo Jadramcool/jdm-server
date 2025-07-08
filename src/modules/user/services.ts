@@ -1,5 +1,4 @@
 import { ErrorInfo } from "@/utils";
-import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
@@ -86,7 +85,7 @@ export class UserService {
 
         user.password = hash;
 
-        let result: User;
+        let result: any; // 使用any类型避免omit配置导致的类型冲突
 
         await this.PrismaDB.prisma.$transaction(async (prisma) => {
           result = await this.PrismaDB.prisma.user.create({
@@ -148,12 +147,10 @@ export class UserService {
           data: errorMessages,
         };
       }
-      // 登录
+      // 登录 - 需要获取password字段进行验证，临时覆盖omit配置
       const result = await this.PrismaDB.prisma.user.findUnique({
         where: { username: user.username, isDeleted: false },
-        omit: {
-          password: false, // The password field is now selected.
-        },
+        omit: { password: false }, // 临时允许获取password字段
       });
       if (!result) {
         return {
@@ -170,7 +167,8 @@ export class UserService {
         };
       }
 
-      // delete result.password;
+      // 删除密码字段，确保安全性
+      delete result.password;
 
       return {
         data: {
@@ -393,12 +391,10 @@ export class UserService {
   public async checkPassword(user: any, userId: number) {
     try {
       const result = await this.PrismaDB.prisma.user.findUnique({
-        omit: {
-          password: false, // The password field is now selected.
-        },
         where: {
           id: userId,
         },
+        omit: { password: false }, // 临时允许获取password字段进行验证
       });
 
       const isMatch = await bcrypt.compare(user.password, result.password);
