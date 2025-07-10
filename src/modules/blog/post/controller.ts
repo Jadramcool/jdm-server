@@ -1,16 +1,21 @@
 import type { Request, Response } from "express";
 import { inject } from "inversify";
-import { controller, httpGet as Get, httpPost as Post, httpPut as Put, httpDelete as Delete } from "inversify-express-utils";
+import {
+  controller,
+  httpDelete as Delete,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { BlogPostService } from "./services";
-import { BlogPostStatus } from "@prisma/client";
 
 /**
  * @swagger
  * tags:
  *   - name: 博客文章管理
  *     description: 博客文章相关接口
- * 
+ *
  * components:
  *   schemas:
  *     BlogPost:
@@ -105,7 +110,7 @@ import { BlogPostStatus } from "@prisma/client";
  *                     type: string
  *                   color:
  *                     type: string
- * 
+ *
  *     CreatePostRequest:
  *       type: object
  *       required:
@@ -160,7 +165,7 @@ import { BlogPostStatus } from "@prisma/client";
  *           type: integer
  *           description: 作者ID
  *           example: 1
- * 
+ *
  *     UpdatePostRequest:
  *       type: object
  *       properties:
@@ -197,7 +202,7 @@ import { BlogPostStatus } from "@prisma/client";
  *           items:
  *             type: integer
  *           description: 标签ID数组
- * 
+ *
  *     PostListResponse:
  *       type: object
  *       properties:
@@ -232,7 +237,7 @@ import { BlogPostStatus } from "@prisma/client";
  *         errMsg:
  *           type: string
  *           example: ""
- * 
+ *
  *     PostStatsResponse:
  *       type: object
  *       properties:
@@ -499,12 +504,13 @@ export class BlogPostController {
    */
   @Get("/")
   public async getPostList(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogPostService.getPostList(req.query);
+    }: Jres = await this.BlogPostService.getPostList(config);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -643,8 +649,8 @@ export class BlogPostController {
   @Get("/:id")
   public async getPostById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    const incrementView = req.query.incrementView === 'true';
-    
+    const incrementView = req.query.incrementView === "true";
+
     const {
       data = null,
       code = 200,
@@ -704,8 +710,8 @@ export class BlogPostController {
   @Get("/slug/:slug")
   public async getPostBySlug(req: Request, res: Response) {
     const slug = req.params.slug;
-    const incrementView = req.query.incrementView === 'true';
-    
+    const incrementView = req.query.incrementView === "true";
+
     const {
       data = null,
       code = 200,
@@ -815,7 +821,7 @@ export class BlogPostController {
   public async updatePost(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取
-    
+
     const {
       data = null,
       code = 200,
@@ -888,13 +894,114 @@ export class BlogPostController {
   public async deletePost(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取
-    
+
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
     }: Jres = await this.BlogPostService.deletePost(id, authorId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
+   * /blog/post/{id}/toggle-publish:
+   *   put:
+   *     tags:
+   *       - 博客文章管理
+   *     summary: 切换文章发布状态
+   *     description: 切换文章的发布状态（草稿<->已发布）
+   *     security:
+   *       - BearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: 文章ID
+   *     requestBody:
+   *       required: false
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               authorId:
+   *                 type: integer
+   *                 description: 作者ID（用于权限检查）
+   *           examples:
+   *             with_author_check:
+   *               summary: 带权限检查的切换
+   *               value:
+   *                 authorId: 1
+   *             without_author_check:
+   *               summary: 不检查权限的切换
+   *               value: {}
+   *     responses:
+   *       200:
+   *         description: 文章状态切换成功
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - type: object
+   *                   properties:
+   *                     data:
+   *                       $ref: '#/components/schemas/BlogPost'
+   *             examples:
+   *               success:
+   *                 summary: 状态切换成功响应
+   *                 value:
+   *                   data:
+   *                     id: 1
+   *                     title: "我的第一篇博客"
+   *                     slug: "my-first-blog"
+   *                     status: "PUBLISHED"
+   *                     publishedAt: "2024-01-01T12:00:00.000Z"
+   *                     author:
+   *                       id: 1
+   *                       username: "admin"
+   *                     category:
+   *                       id: 1
+   *                       name: "技术分享"
+   *                       slug: "tech"
+   *                     tags: []
+   *                   code: 200
+   *                   message: "文章状态切换成功"
+   *                   errMsg: ""
+   *       403:
+   *         description: 无权限修改此文章
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       404:
+   *         description: 文章不存在
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: 服务器内部错误
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  @Put("/:id/toggle-publish")
+  public async togglePublishStatus(req: Request, res: Response) {
+    const id = parseInt(req.params.id);
+    const authorId = req.body.authorId; // 可选的权限检查
+
+    const {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.BlogPostService.togglePublishStatus(id, authorId);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -971,7 +1078,7 @@ export class BlogPostController {
   public async toggleTop(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取
-    
+
     const {
       data = null,
       code = 200,

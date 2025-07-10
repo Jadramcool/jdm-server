@@ -1,3 +1,4 @@
+import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
 import { BlogPostStatus } from "@prisma/client";
 import { inject, injectable } from "inversify";
@@ -28,17 +29,6 @@ interface UpdatePostData {
   allowComment?: boolean;
   categoryId?: number;
   tagIds?: number[];
-}
-
-interface PostQueryParams {
-  page?: number;
-  pageSize?: number;
-  status?: BlogPostStatus;
-  categoryId?: number;
-  tagId?: number;
-  keyword?: string;
-  authorId?: number;
-  isTop?: boolean;
 }
 
 @injectable()
@@ -150,7 +140,7 @@ export class BlogPostService {
           author: { select: { id: true, username: true, avatar: true } },
           category: { select: { id: true, name: true, slug: true } },
           tags: {
-            include: {
+            select: {
               tag: {
                 select: { id: true, name: true, slug: true, color: true },
               },
@@ -195,79 +185,122 @@ export class BlogPostService {
   }
 
   // 获取文章列表
-  async getPostList(params: PostQueryParams) {
+  async getPostList(config: ReqListConfig) {
     try {
-      const {
-        page = 1,
-        pageSize = 10,
-        status,
-        categoryId,
-        tagId,
-        keyword,
-        authorId,
-        isTop,
-      } = params;
+      let { filters, options, pagination } = config;
 
-      const skip = (page - 1) * pageSize;
-      const take = Math.min(pageSize, 100); // 限制最大页面大小
+      filters = filters || {};
+      let sqlFilters = {};
 
-      const where: any = {
-        isDeleted: false,
-      };
-
-      if (status) where.status = status;
-      if (categoryId) where.categoryId = categoryId;
-      if (authorId) where.authorId = authorId;
-      if (isTop !== undefined) where.isTop = isTop;
-      if (keyword) {
-        where.OR = [
-          { title: { contains: keyword } },
-          { summary: { contains: keyword } },
-          { content: { contains: keyword } },
-        ];
-      }
-      if (tagId) {
-        where.tags = {
-          some: { tagId },
-        };
+      const keys = Object.keys(filters);
+      if (keys.length > 0) {
+        // 添加基础过滤条件
+        sqlFilters = FilterHelper.addFilterCondition(filters, [
+          "id",
+          "title",
+          "status",
+          "categoryId",
+          "authorId",
+          "isTop",
+        ]);
+        // 遍历时间字段并添加范围过滤条件
+        ["createdTime", "updatedTime", "publishedAt"].forEach((timeField) => {
+          if (keys.includes(timeField)) {
+            sqlFilters[timeField] = {
+              gte: new Date(filters[timeField][0]),
+              lte: new Date(filters[timeField][1]),
+            };
+          }
+        });
       }
 
-      const [posts, total] = await Promise.all([
-        this.PrismaDB.prisma.blogPost.findMany({
-          where,
-          skip,
-          take,
+      sqlFilters["isDeleted"] = false;
+
+      let result = [];
+      // 总页数
+      let totalPages = 1;
+
+      // 查询总数
+      const totalRecords = await this.PrismaDB.prisma.blogPost.count({
+        where: sqlFilters,
+      });
+
+      let page = 1;
+      let pageSize = 10;
+
+      if (
+        options &&
+        options.hasOwnProperty("showPagination") &&
+        !options["showPagination"]
+      ) {
+        result = await this.PrismaDB.prisma.blogPost.findMany({
+          where: sqlFilters,
+          include: {
+            author: { select: { id: true, username: true, avatar: true } },
+            category: { select: { id: true, name: true, slug: true } },
+            tags: {
+              select: {
+                tag: true,
+              },
+            },
+          },
           orderBy: [
             { isTop: "desc" },
             { publishedAt: "desc" },
             { createdTime: "desc" },
           ],
+        });
+      } else {
+        page = parseInt(pagination?.page as string) || 1;
+        pageSize = parseInt(pagination?.pageSize as string) || 10;
+
+        result = await this.PrismaDB.prisma.blogPost.findMany({
+          skip: (page - 1) * pageSize || 0,
+          take: pageSize || 10,
+          where: sqlFilters,
           include: {
             author: { select: { id: true, username: true, avatar: true } },
             category: { select: { id: true, name: true, slug: true } },
             tags: {
-              include: {
-                tag: {
-                  select: { id: true, name: true, slug: true, color: true },
-                },
+              select: {
+                tag: true,
               },
             },
           },
-        }),
-        this.PrismaDB.prisma.blogPost.count({ where }),
-      ]);
+          orderBy: [
+            { isTop: "desc" },
+            { publishedAt: "desc" },
+            { createdTime: "desc" },
+          ],
+        });
+
+        totalPages = Math.ceil(totalRecords / pageSize);
+      }
+
+      // 转换 tags 数据结构，直接返回 tag 对象而不是嵌套结构
+      const transformedPosts = result.map((post) => ({
+        ...post,
+        tags: post.tags.map((tagRelation) => tagRelation.tag),
+      }));
+
+      // 分页信息
+      const paginationData =
+        options?.showPagination !== false
+          ? {
+              page,
+              pageSize,
+              totalRecords,
+              totalPages,
+            }
+          : null;
 
       return {
         code: 200,
         data: {
-          data: posts,
-          pagination: {
-            page,
-            pageSize,
-            total,
-            totalPages: Math.ceil(total / pageSize),
-          },
+          data: transformedPosts,
+          pagination: paginationData,
         },
+        message: "获取文章列表成功",
       };
     } catch (error) {
       console.error("获取文章列表失败:", error);
@@ -283,15 +316,13 @@ export class BlogPostService {
   async getPostById(id: number, incrementView = false) {
     try {
       const post = await this.PrismaDB.prisma.blogPost.findFirst({
-        where: { id, isDeleted: false },
+        where: { id: id, isDeleted: false },
         include: {
           author: { select: { id: true, username: true, avatar: true } },
           category: { select: { id: true, name: true, slug: true } },
           tags: {
-            include: {
-              tag: {
-                select: { id: true, name: true, slug: true, color: true },
-              },
+            select: {
+              tag: true,
             },
           },
           comments: {
@@ -321,9 +352,15 @@ export class BlogPostService {
         post.viewCount += 1;
       }
 
+      // 转换 tags 数据结构
+      const transformedPost = {
+        ...post,
+        tags: post.tags.map((tagRelation) => tagRelation.tag),
+      };
+
       return {
         code: 200,
-        data: post,
+        data: transformedPost,
       };
     } catch (error) {
       console.error("获取文章详情失败:", error);
@@ -377,9 +414,15 @@ export class BlogPostService {
         post.viewCount += 1;
       }
 
+      // 转换 tags 数据结构
+      const transformedPost = {
+        ...post,
+        tags: post.tags.map((tagRelation) => tagRelation.tag),
+      };
+
       return {
         code: 200,
-        data: post,
+        data: transformedPost,
       };
     } catch (error) {
       console.error("获取文章详情失败:", error);
@@ -396,7 +439,7 @@ export class BlogPostService {
     try {
       // 检查文章是否存在
       const existingPost = await this.PrismaDB.prisma.blogPost.findFirst({
-        where: { id, isDeleted: false },
+        where: { id: id, isDeleted: false },
       });
 
       if (!existingPost) {
@@ -526,7 +569,7 @@ export class BlogPostService {
   async deletePost(id: number, authorId?: number) {
     try {
       const existingPost = await this.PrismaDB.prisma.blogPost.findFirst({
-        where: { id, isDeleted: false },
+        where: { id: id, isDeleted: false },
       });
 
       if (!existingPost) {
@@ -581,7 +624,7 @@ export class BlogPostService {
   async toggleTop(id: number, authorId?: number) {
     try {
       const existingPost = await this.PrismaDB.prisma.blogPost.findFirst({
-        where: { id, isDeleted: false },
+        where: { id: id, isDeleted: false },
       });
 
       if (!existingPost) {
@@ -614,6 +657,114 @@ export class BlogPostService {
       return {
         code: 500,
         message: "操作失败",
+        errMsg: error instanceof Error ? error.message : "未知错误",
+      };
+    }
+  }
+
+  // 切换文章发布状态
+  async togglePublishStatus(id: number, authorId?: number) {
+    try {
+      const existingPost = await this.PrismaDB.prisma.blogPost.findFirst({
+        where: { id: id, isDeleted: false },
+      });
+
+      if (!existingPost) {
+        return {
+          code: 404,
+          message: "文章不存在",
+        };
+      }
+
+      // 权限检查
+      if (authorId && existingPost.authorId !== authorId) {
+        return {
+          code: 403,
+          message: "无权限修改此文章",
+        };
+      }
+
+      // 确定新的状态和发布时间
+      let newStatus: BlogPostStatus;
+      let publishedAt: Date | null;
+      let message: string;
+      let categoryCountChange = 0;
+      let tagCountChange = 0;
+
+      if (existingPost.status === BlogPostStatus.PUBLISHED) {
+        // 从发布状态切换到草稿状态
+        newStatus = BlogPostStatus.DRAFT;
+        publishedAt = null;
+        message = "文章已取消发布";
+        categoryCountChange = -1;
+        tagCountChange = -1;
+      } else {
+        // 从草稿或归档状态切换到发布状态
+        newStatus = BlogPostStatus.PUBLISHED;
+        publishedAt = existingPost.publishedAt || new Date();
+        message = "文章发布成功";
+        categoryCountChange = 1;
+        tagCountChange = 1;
+      }
+
+      const post = await this.PrismaDB.prisma.blogPost.update({
+        where: { id },
+        data: {
+          status: newStatus,
+          publishedAt,
+        },
+        include: {
+          author: { select: { id: true, username: true, avatar: true } },
+          category: { select: { id: true, name: true, slug: true } },
+          tags: {
+            include: {
+              tag: {
+                select: { id: true, name: true, slug: true, color: true },
+              },
+            },
+          },
+        },
+      });
+
+      // 更新分类文章数量（只有在有分类且状态真正改变时）
+      if (existingPost.categoryId && categoryCountChange !== 0) {
+        await this.PrismaDB.prisma.blogCategory.update({
+          where: { id: existingPost.categoryId },
+          data: { postCount: { increment: categoryCountChange } },
+        });
+      }
+
+      // 更新标签使用次数（只有在有标签且状态真正改变时）
+      if (tagCountChange !== 0) {
+        const tagIds = await this.PrismaDB.prisma.blogPostTag.findMany({
+          where: { postId: id },
+          select: { tagId: true },
+        });
+
+        if (tagIds.length > 0) {
+          await this.PrismaDB.prisma.blogTag.updateMany({
+            where: { id: { in: tagIds.map((t) => t.tagId) } },
+            data: { useCount: { increment: tagCountChange } },
+          });
+        }
+      }
+
+      // 转换 tags 数据结构
+      const transformedPost = {
+        ...post,
+        tags: post.tags.map((tagRelation) => tagRelation.tag),
+      };
+
+      return {
+        code: 200,
+        data: transformedPost,
+        message,
+      };
+    } catch (error) {
+      console.error("切换发布状态失败:", error);
+      return {
+        code: 500,
+        message: "切换发布状态失败",
         errMsg: error instanceof Error ? error.message : "未知错误",
       };
     }

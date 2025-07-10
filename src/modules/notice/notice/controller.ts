@@ -29,7 +29,7 @@ export class Notice {
     private readonly UtilService: UtilService
   ) {}
 
-  @Get("/list", JWT.authenticateJwt())
+  @Get("/list")
   public async getNoticeList(req: Request, res: Response) {
     // 将query的key-value value的json参数转换为对象
     const config = this.UtilService.parseQueryParams(req);

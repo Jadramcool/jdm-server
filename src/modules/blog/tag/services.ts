@@ -1,3 +1,4 @@
+import { FilterHelper } from "@/utils";
 import { BlogPostStatus } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../../db";
@@ -9,6 +10,7 @@ interface CreateTagData {
   description?: string;
   color?: string;
   sortOrder?: number;
+  icon?: string;
 }
 
 interface UpdateTagData {
@@ -17,6 +19,7 @@ interface UpdateTagData {
   description?: string;
   color?: string;
   sortOrder?: number;
+  icon?: string;
 }
 
 interface TagListQuery {
@@ -56,7 +59,7 @@ export class BlogTagService {
     const existingTag = await this.prismaService.prisma.blogTag.findFirst({
       where: {
         name,
-        deletedTime: null,
+        isDeleted: false,
         ...(excludeId && { id: { not: excludeId } }),
       },
     });
@@ -73,7 +76,7 @@ export class BlogTagService {
     const existingTag = await this.prismaService.prisma.blogTag.findFirst({
       where: {
         slug,
-        deletedTime: null,
+        isDeleted: false,
         ...(excludeId && { id: { not: excludeId } }),
       },
     });
@@ -134,88 +137,126 @@ export class BlogTagService {
   /**
    * 获取标签列表
    */
-  public async getTagList(query: TagListQuery = {}): Promise<Jres> {
+  public async getTagList(config: ReqListConfig): Promise<Jres> {
     try {
-      const {
-        keyword,
-        includePostCount = true,
-        sortBy = "sortOrder",
-        sortOrder = "asc",
-        page,
-        pageSize,
-      } = query;
+      let { filters, options, pagination } = config;
 
-      // 构建查询条件
-      const where: any = {
-        deletedTime: null,
-      };
+      filters = filters || {};
+      let sqlFilters = {};
 
-      if (keyword) {
-        where.OR = [
-          { name: { contains: keyword } },
-          { description: { contains: keyword } },
-        ];
+      const keys = Object.keys(filters);
+      if (keys.length > 0) {
+        // 添加基础过滤条件
+        sqlFilters = FilterHelper.addFilterCondition(filters, [
+          "id",
+          "name",
+          "description",
+          "color",
+          "sortOrder",
+        ]);
+        // 遍历时间字段并添加范围过滤条件
+        ["createdTime", "updatedTime"].forEach((timeField) => {
+          if (keys.includes(timeField)) {
+            sqlFilters[timeField] = {
+              gte: new Date(filters[timeField][0]),
+              lte: new Date(filters[timeField][1]),
+            };
+          }
+        });
       }
 
-      // 构建排序条件
-      const orderBy: any = {};
-      orderBy[sortBy] = sortOrder;
+      sqlFilters["isDeleted"] = false;
 
-      // 分页参数
-      const skip = page && pageSize ? (page - 1) * pageSize : undefined;
-      const take = pageSize || undefined;
+      let result = [];
+      // 总页数
+      let totalPages = 1;
 
-      // 查询标签
-      const tags = await this.prismaService.prisma.blogTag.findMany({
-        where,
-        orderBy,
-        skip,
-        take,
-        include: {
-          _count: includePostCount
-            ? {
-                select: {
-                  postTags: {
-                    where: {
-                      post: {
-                        status: BlogPostStatus.PUBLISHED,
-                        deletedTime: null,
-                      },
+      // 查询总数
+      const totalRecords = await this.prismaService.prisma.blogTag.count({
+        where: sqlFilters,
+      });
+
+      let page = 1;
+      let pageSize = 10;
+
+      if (
+        options &&
+        options.hasOwnProperty("showPagination") &&
+        !options["showPagination"]
+      ) {
+        result = await this.prismaService.prisma.blogTag.findMany({
+          where: sqlFilters,
+          include: {
+            _count: {
+              select: {
+                postTags: {
+                  where: {
+                    post: {
+                      status: BlogPostStatus.PUBLISHED,
+                      isDeleted: false,
                     },
                   },
                 },
-              }
-            : false,
-        },
-      });
+              },
+            },
+          },
+          orderBy: [{ createdTime: "desc" }],
+        });
+      } else {
+        page = parseInt(pagination?.page as string) || 1;
+        pageSize = parseInt(pagination?.pageSize as string) || 10;
+
+        result = await this.prismaService.prisma.blogTag.findMany({
+          skip: (page - 1) * pageSize || 0,
+          take: pageSize || 10,
+          where: sqlFilters,
+          include: {
+            _count: {
+              select: {
+                postTags: {
+                  where: {
+                    post: {
+                      status: BlogPostStatus.PUBLISHED,
+                      isDeleted: false,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [{ createdTime: "desc" }],
+        });
+
+        totalPages = Math.ceil(totalRecords / pageSize);
+      }
 
       // 处理返回数据
-      const result = tags.map((tag) => {
+      const transformedTags = result.map((tag) => {
         const { _count, ...tagData } = tag;
         return {
           ...tagData,
-          ...(includePostCount && { useCount: _count?.postTags || 0 }),
+          useCount: _count?.postTags || 0,
         };
       });
 
-      // 如果有分页，返回总数
-      let total;
-      if (page && pageSize) {
-        total = await this.prismaService.prisma.blogTag.count({ where });
-      }
+      // 分页信息
+      const paginationData =
+        options?.showPagination !== false
+          ? {
+              page,
+              pageSize,
+              totalRecords,
+              totalPages,
+            }
+          : null;
 
       return {
-        data:
-          page && pageSize
-            ? {
-                data: result,
-                total,
-                page,
-                pageSize,
-                totalPages: Math.ceil(total! / pageSize),
-              }
-            : result,
         code: 200,
+        data: {
+          data: transformedTags,
+          pagination: paginationData,
+        },
+        message: "获取标签列表成功",
       };
     } catch (error) {
       console.error("获取标签列表失败:", error);
@@ -235,14 +276,14 @@ export class BlogTagService {
       const tag = await this.prismaService.prisma.blogTag.findFirst({
         where: {
           id,
-          deletedTime: null,
+          isDeleted: false,
         },
         include: {
           postTags: {
             where: {
               post: {
                 status: BlogPostStatus.PUBLISHED,
-                deletedTime: null,
+                isDeleted: false,
               },
             },
             include: {
@@ -313,14 +354,14 @@ export class BlogTagService {
       const tag = await this.prismaService.prisma.blogTag.findFirst({
         where: {
           slug,
-          deletedTime: null,
+          isDeleted: false,
         },
         include: {
           postTags: {
             where: {
               post: {
                 status: BlogPostStatus.PUBLISHED,
-                deletedTime: null,
+                isDeleted: false,
               },
             },
             include: {
@@ -392,7 +433,7 @@ export class BlogTagService {
       const existingTag = await this.prismaService.prisma.blogTag.findFirst({
         where: {
           id,
-          deletedTime: null,
+          isDeleted: false,
         },
       });
 
@@ -403,7 +444,7 @@ export class BlogTagService {
         };
       }
 
-      const { name, slug, description, color, sortOrder } = data;
+      const { name, slug, description, color, sortOrder, icon } = data;
       const updateData: any = {};
 
       // 检查名称是否重复
@@ -434,6 +475,7 @@ export class BlogTagService {
       if (description !== undefined) updateData.description = description;
       if (color !== undefined) updateData.color = color;
       if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
+      if (icon !== undefined) updateData.icon = icon;
 
       // 如果没有要更新的字段
       if (Object.keys(updateData).length === 0) {
@@ -476,7 +518,7 @@ export class BlogTagService {
       const existingTag = await this.prismaService.prisma.blogTag.findFirst({
         where: {
           id,
-          deletedTime: null,
+          isDeleted: false,
         },
       });
 
@@ -492,7 +534,7 @@ export class BlogTagService {
         where: {
           tagId: id,
           post: {
-            deletedTime: null,
+            isDeleted: false,
           },
         },
       });
@@ -508,6 +550,7 @@ export class BlogTagService {
       await this.prismaService.prisma.blogTag.update({
         where: { id },
         data: {
+          isDeleted: true,
           deletedTime: new Date(),
         },
       });
@@ -537,7 +580,7 @@ export class BlogTagService {
           tagId: id,
           post: {
             status: BlogPostStatus.PUBLISHED,
-            deletedTime: null,
+            isDeleted: false,
           },
         },
       });
@@ -574,19 +617,19 @@ export class BlogTagService {
       const [totalTags, tagsWithPosts, emptyTags] = await Promise.all([
         // 总标签数
         this.prismaService.prisma.blogTag.count({
-          where: { deletedTime: null },
+          where: { isDeleted: false },
         }),
         // 有文章的标签数
         this.prismaService.prisma.blogTag.count({
           where: {
-            deletedTime: null,
+            isDeleted: false,
             useCount: { gt: 0 },
           },
         }),
         // 空标签数
         this.prismaService.prisma.blogTag.count({
           where: {
-            deletedTime: null,
+            isDeleted: false,
             useCount: 0,
           },
         }),
@@ -617,7 +660,7 @@ export class BlogTagService {
     try {
       const tags = await this.prismaService.prisma.blogTag.findMany({
         where: {
-          deletedTime: null,
+          isDeleted: false,
           useCount: { gt: 0 },
         },
         orderBy: {
@@ -635,6 +678,82 @@ export class BlogTagService {
       return {
         code: 500,
         message: "获取热门标签失败",
+        errMsg: error instanceof Error ? error.message : "未知错误",
+      };
+    }
+  }
+
+  /**
+   * 全局更新所有标签的文章数量
+   */
+  public async updateAllTagsPostCount(): Promise<Jres> {
+    try {
+      // 获取所有未删除的标签
+      const tags = await this.prismaService.prisma.blogTag.findMany({
+        where: {
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+        },
+      });
+      let updatedCount = 0;
+      const results = [];
+
+      // 批量更新每个标签的文章数量
+      for (const tag of tags) {
+        try {
+          // 计算该标签的实际文章数量
+          const useCount = await this.prismaService.prisma.blogPostTag.count({
+            where: {
+              tagId: tag.id,
+              post: {
+                status: BlogPostStatus.PUBLISHED,
+                isDeleted: false,
+              },
+            },
+          });
+
+          // 更新标签的使用次数
+          await this.prismaService.prisma.blogTag.update({
+            where: { id: tag.id },
+            data: {
+              useCount,
+              updatedTime: new Date(),
+            },
+          });
+
+          results.push({
+            tagId: tag.id,
+            useCount,
+            status: "success",
+          });
+          updatedCount++;
+        } catch (error) {
+          console.error(`更新标签 ${tag.id} 文章数量失败:`, error);
+          results.push({
+            tagId: tag.id,
+            status: "failed",
+            error: error instanceof Error ? error.message : "未知错误",
+          });
+        }
+      }
+
+      return {
+        data: {
+          totalTags: tags.length,
+          updatedCount,
+          failedCount: tags.length - updatedCount,
+          results,
+        },
+        code: 200,
+        message: `成功更新 ${updatedCount}/${tags.length} 个标签的文章数量`,
+      };
+    } catch (error) {
+      console.error("全局更新标签文章数量失败:", error);
+      return {
+        code: 500,
+        message: "全局更新标签文章数量失败",
         errMsg: error instanceof Error ? error.message : "未知错误",
       };
     }

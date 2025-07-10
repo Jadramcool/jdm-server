@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { inject } from "inversify";
-import { controller, httpGet as Get, httpPost as Post, httpPut as Put, httpDelete as Delete } from "inversify-express-utils";
+import {
+  controller,
+  httpDelete as Delete,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { BlogCategoryService } from "./services";
 
@@ -9,7 +15,7 @@ import { BlogCategoryService } from "./services";
  * tags:
  *   - name: 博客分类管理
  *     description: 博客分类相关接口
- * 
+ *
  * components:
  *   schemas:
  *     BlogCategory:
@@ -80,7 +86,7 @@ import { BlogCategoryService } from "./services";
  *                 type: integer
  *               postCount:
  *                 type: integer
- * 
+ *
  *     CreateCategoryRequest:
  *       type: object
  *       required:
@@ -114,7 +120,7 @@ import { BlogCategoryService } from "./services";
  *           type: integer
  *           description: 排序
  *           example: 0
- * 
+ *
  *     UpdateCategoryRequest:
  *       type: object
  *       properties:
@@ -139,7 +145,7 @@ import { BlogCategoryService } from "./services";
  *         sortOrder:
  *           type: integer
  *           description: 排序
- * 
+ *
  *     CategoryStatsResponse:
  *       type: object
  *       properties:
@@ -359,12 +365,13 @@ export class BlogCategoryController {
    */
   @Get("/")
   public async getCategoryList(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogCategoryService.getCategoryList(req.query);
+    }: Jres = await this.BlogCategoryService.getCategoryList(config);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -593,7 +600,7 @@ export class BlogCategoryController {
   @Get("/:id")
   public async getCategoryById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -647,13 +654,103 @@ export class BlogCategoryController {
   @Get("/slug/:slug")
   public async getCategoryBySlug(req: Request, res: Response) {
     const slug = req.params.slug;
-    
+
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
     }: Jres = await this.BlogCategoryService.getCategoryBySlug(slug);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
+   * /blog/category/update-all-post-count:
+   *   put:
+   *     tags:
+   *       - 博客分类管理
+   *     summary: 全局更新所有分类文章数量
+   *     description: 重新计算并更新所有分类的文章数量，用于数据修复或定期维护
+   *     security:
+   *       - BearerAuth: []
+   *     responses:
+   *       200:
+   *         description: 全局更新成功
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - type: object
+   *                   properties:
+   *                     data:
+   *                       type: object
+   *                       properties:
+   *                         totalCategories:
+   *                           type: integer
+   *                           description: 总分类数量
+   *                         updatedCount:
+   *                           type: integer
+   *                           description: 成功更新的分类数量
+   *                         failedCount:
+   *                           type: integer
+   *                           description: 更新失败的分类数量
+   *                         results:
+   *                           type: array
+   *                           description: 详细更新结果
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               categoryId:
+   *                                 type: integer
+   *                                 description: 分类ID
+   *                               postCount:
+   *                                 type: integer
+   *                                 description: 更新后的文章数量
+   *                               status:
+   *                                 type: string
+   *                                 enum: [success, failed]
+   *                                 description: 更新状态
+   *                               error:
+   *                                 type: string
+   *                                 description: 错误信息（仅失败时）
+   *             examples:
+   *               success:
+   *                 summary: 全局更新成功
+   *                 value:
+   *                   data:
+   *                     totalCategories: 8
+   *                     updatedCount: 7
+   *                     failedCount: 1
+   *                     results:
+   *                       - categoryId: 1
+   *                         postCount: 12
+   *                         status: "success"
+   *                       - categoryId: 2
+   *                         postCount: 5
+   *                         status: "success"
+   *                       - categoryId: 3
+   *                         status: "failed"
+   *                         error: "数据库连接错误"
+   *                   code: 200
+   *                   message: "成功更新 7/8 个分类的文章数量"
+   *                   errMsg: ""
+   *       500:
+   *         description: 服务器内部错误
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  @Put("/update-all-post-count")
+  public async updateAllCategoriesPostCount(req: Request, res: Response) {
+    const {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.BlogCategoryService.updateAllCategoriesPostCount();
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -751,7 +848,6 @@ export class BlogCategoryController {
   @Put("/:id")
   public async updateCategory(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
     const {
       data = null,
       code = 200,
@@ -830,7 +926,7 @@ export class BlogCategoryController {
   @Delete("/:id")
   public async deleteCategory(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -892,7 +988,7 @@ export class BlogCategoryController {
   @Put("/:id/update-post-count")
   public async updateCategoryPostCount(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,

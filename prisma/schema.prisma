@@ -247,6 +247,7 @@ model BlogTag {
   slug        String    @unique // URL友好的标识符
   description String? // 标签描述
   color       String? // 标签颜色
+  icon        String? // 标签图标
   useCount    Int       @default(0) @map("use_count") // 使用次数（冗余字段）
   isDeleted   Boolean   @default(false) @map("is_deleted")
   createdTime DateTime  @default(now()) @map("created_time")

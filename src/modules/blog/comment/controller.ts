@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { inject } from "inversify";
-import { controller, httpGet as Get, httpPost as Post, httpPut as Put, httpDelete as Delete } from "inversify-express-utils";
+import {
+  controller,
+  httpDelete as Delete,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { BlogCommentService } from "./services";
 
@@ -9,7 +15,7 @@ import { BlogCommentService } from "./services";
  * tags:
  *   - name: 博客评论管理
  *     description: 博客评论相关接口
- * 
+ *
  * components:
  *   schemas:
  *     BlogComment:
@@ -28,8 +34,8 @@ import { BlogCommentService } from "./services";
  *           type: integer
  *           description: 父评论ID
  *         userId:
-           type: integer
-           description: 作者用户ID
+ *           type: integer
+ *           description: 作者用户ID
  *         authorName:
  *           type: string
  *           description: 作者姓名
@@ -37,8 +43,8 @@ import { BlogCommentService } from "./services";
  *           type: string
  *           description: 作者邮箱
  *         authorUrl:
-           type: string
-           description: 作者网站
+ *           type: string
+ *           description: 作者网站
  *         authorIp:
  *           type: string
  *           description: 作者IP地址
@@ -61,14 +67,14 @@ import { BlogCommentService } from "./services";
  *           format: date-time
  *           description: 更新时间
  *         user:
-           type: object
-           properties:
-             id:
-               type: integer
-             username:
-               type: string
-             avatar:
-               type: string
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             username:
+ *               type: string
+ *             avatar:
+ *               type: string
  *         parent:
  *           type: object
  *           properties:
@@ -91,7 +97,7 @@ import { BlogCommentService } from "./services";
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/BlogComment'
- * 
+ *
  *     CreateCommentRequest:
  *       type: object
  *       required:
@@ -112,9 +118,9 @@ import { BlogCommentService } from "./services";
  *           description: 父评论ID（回复评论时使用）
  *           example: 1
  *         userId:
-           type: integer
-           description: 作者用户ID
-           example: 1
+ *           type: integer
+ *           description: 作者用户ID
+ *           example: 1
  *         authorName:
  *           type: string
  *           description: 作者姓名（游客评论时使用）
@@ -124,10 +130,10 @@ import { BlogCommentService } from "./services";
  *           description: 作者邮箱（游客评论时使用）
  *           example: "zhangsan@example.com"
  *         authorUrl:
-           type: string
-           description: 作者网站（可选）
-           example: "https://zhangsan.com"
- * 
+ *           type: string
+ *           description: 作者网站（可选）
+ *           example: "https://zhangsan.com"
+ *
  *     UpdateCommentRequest:
  *       type: object
  *       properties:
@@ -138,7 +144,7 @@ import { BlogCommentService } from "./services";
  *           type: string
  *           enum: [PENDING, APPROVED, REJECTED]
  *           description: 评论状态
- * 
+ *
  *     CommentStatsResponse:
  *       type: object
  *       properties:
@@ -166,7 +172,7 @@ import { BlogCommentService } from "./services";
  *         errMsg:
  *           type: string
  *           example: ""
- * 
+ *
  *     CommentListResponse:
  *       type: object
  *       properties:
@@ -310,14 +316,14 @@ export class BlogCommentController {
   public async createComment(req: Request, res: Response) {
     // 获取客户端IP和User-Agent
     const authorIp = req.ip || req.connection.remoteAddress;
-    const userAgent = req.get('User-Agent');
-    
+    const userAgent = req.get("User-Agent");
+
     const commentData = {
       ...req.body,
       authorIp,
-      userAgent
+      userAgent,
     };
-    
+
     const {
       data = null,
       code = 200,
@@ -414,7 +420,7 @@ export class BlogCommentController {
    *                       status: "APPROVED"
    *                       likeCount: 5
    *                       user:
-                         username: "user1"
+   *                         username: "user1"
    *                       replies:
    *                         - id: 2
    *                           content: "我也这么认为"
@@ -513,7 +519,7 @@ export class BlogCommentController {
   @Get("/latest")
   public async getLatestComments(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     const {
       data = null,
       code = 200,
@@ -614,14 +620,14 @@ export class BlogCommentController {
    *                     status: "APPROVED"
    *                     likeCount: 3
    *                     user:
-                         username: "user1"
+   *                       username: "user1"
    *                     post:
    *                       title: "文章标题"
    *                     replies:
    *                       - id: 2
    *                         content: "这是回复"
    *                         user:
-                             username: "user2"
+   *                           username: "user2"
    *                   code: 200
    *                   message: ""
    *                   errMsg: ""
@@ -649,7 +655,7 @@ export class BlogCommentController {
   @Get("/:id")
   public async getCommentById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -736,7 +742,7 @@ export class BlogCommentController {
   @Put("/:id")
   public async updateComment(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -794,7 +800,7 @@ export class BlogCommentController {
   @Delete("/:id")
   public async deleteComment(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -860,7 +866,7 @@ export class BlogCommentController {
   @Put("/:id/approve")
   public async approveComment(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -926,7 +932,7 @@ export class BlogCommentController {
   @Put("/:id/reject")
   public async rejectComment(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -1009,13 +1015,16 @@ export class BlogCommentController {
     const commentId = parseInt(req.params.id);
     // 这里应该从认证中间件获取用户ID，暂时使用请求体中的userId
     const userId = req.body.userId || 1; // 临时处理
-    
+
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogCommentService.toggleCommentLike(commentId, userId);
+    }: Jres = await this.BlogCommentService.toggleCommentLike(
+      commentId,
+      userId
+    );
     res.sendResult(data, code, message, errMsg);
   }
 }

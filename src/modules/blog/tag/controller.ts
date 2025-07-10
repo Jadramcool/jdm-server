@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { inject } from "inversify";
-import { controller, httpGet as Get, httpPost as Post, httpPut as Put, httpDelete as Delete } from "inversify-express-utils";
+import {
+  controller,
+  httpDelete as Delete,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { BlogTagService } from "./services";
 
@@ -9,7 +15,7 @@ import { BlogTagService } from "./services";
  * tags:
  *   - name: 博客标签管理
  *     description: 博客标签相关接口
- * 
+ *
  * components:
  *   schemas:
  *     BlogTag:
@@ -77,7 +83,7 @@ import { BlogTagService } from "./services";
  *                     type: string
  *                   avatar:
  *                     type: string
- * 
+ *
  *     CreateTagRequest:
  *       type: object
  *       required:
@@ -103,7 +109,7 @@ import { BlogTagService } from "./services";
  *           type: integer
  *           description: 排序
  *           example: 0
- * 
+ *
  *     UpdateTagRequest:
  *       type: object
  *       properties:
@@ -122,7 +128,7 @@ import { BlogTagService } from "./services";
  *         sortOrder:
  *           type: integer
  *           description: 排序
- * 
+ *
  *     TagStatsResponse:
  *       type: object
  *       properties:
@@ -147,7 +153,7 @@ import { BlogTagService } from "./services";
  *         errMsg:
  *           type: string
  *           example: ""
- * 
+ *
  *     TagListResponse:
  *       type: object
  *       properties:
@@ -400,12 +406,13 @@ export class BlogTagController {
    */
   @Get("/")
   public async getTagList(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogTagService.getTagList(req.query);
+    }: Jres = await this.BlogTagService.getTagList(config);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -468,7 +475,7 @@ export class BlogTagController {
   @Get("/popular")
   public async getPopularTags(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     const {
       data = null,
       code = 200,
@@ -603,7 +610,7 @@ export class BlogTagController {
   @Get("/:id")
   public async getTagById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -657,13 +664,103 @@ export class BlogTagController {
   @Get("/slug/:slug")
   public async getTagBySlug(req: Request, res: Response) {
     const slug = req.params.slug;
-    
+
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
     }: Jres = await this.BlogTagService.getTagBySlug(slug);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
+   * /blog/tag/update-all-post-count:
+   *   put:
+   *     tags:
+   *       - 博客标签管理
+   *     summary: 全局更新所有标签文章数量
+   *     description: 重新计算并更新所有标签的文章数量，用于数据修复或定期维护
+   *     security:
+   *       - BearerAuth: []
+   *     responses:
+   *       200:
+   *         description: 全局更新成功
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - type: object
+   *                   properties:
+   *                     data:
+   *                       type: object
+   *                       properties:
+   *                         totalTags:
+   *                           type: integer
+   *                           description: 总标签数量
+   *                         updatedCount:
+   *                           type: integer
+   *                           description: 成功更新的标签数量
+   *                         failedCount:
+   *                           type: integer
+   *                           description: 更新失败的标签数量
+   *                         results:
+   *                           type: array
+   *                           description: 详细更新结果
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               tagId:
+   *                                 type: integer
+   *                                 description: 标签ID
+   *                               useCount:
+   *                                 type: integer
+   *                                 description: 更新后的使用次数
+   *                               status:
+   *                                 type: string
+   *                                 enum: [success, failed]
+   *                                 description: 更新状态
+   *                               error:
+   *                                 type: string
+   *                                 description: 错误信息（仅失败时）
+   *             examples:
+   *               success:
+   *                 summary: 全局更新成功
+   *                 value:
+   *                   data:
+   *                     totalTags: 15
+   *                     updatedCount: 14
+   *                     failedCount: 1
+   *                     results:
+   *                       - tagId: 1
+   *                         useCount: 5
+   *                         status: "success"
+   *                       - tagId: 2
+   *                         useCount: 3
+   *                         status: "success"
+   *                       - tagId: 3
+   *                         status: "failed"
+   *                         error: "数据库连接错误"
+   *                   code: 200
+   *                   message: "成功更新 14/15 个标签的文章数量"
+   *                   errMsg: ""
+   *       500:
+   *         description: 服务器内部错误
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  @Put("/update-all-post-count")
+  public async updateAllTagsPostCount(req: Request, res: Response) {
+    const {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.BlogTagService.updateAllTagsPostCount();
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -761,7 +858,7 @@ export class BlogTagController {
   @Put("/:id")
   public async updateTag(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -833,7 +930,7 @@ export class BlogTagController {
   @Delete("/:id")
   public async deleteTag(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -895,7 +992,7 @@ export class BlogTagController {
   @Put("/:id/update-post-count")
   public async updateTagPostCount(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
