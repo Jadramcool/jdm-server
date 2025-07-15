@@ -17,6 +17,7 @@
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.12",
     "ali-oss": "^6.20.0",
+    "alova": "^3.3.4",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
