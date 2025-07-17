@@ -307,6 +307,107 @@ export class BlogTagController {
 
   /**
    * @swagger
+   * /blog/tag/all:
+   *   get:
+   *     tags:
+   *       - 博客标签管理
+   *     summary: 获取所有标签
+   *     description: 获取所有标签列表（不分页，仅标签信息），按排序字段和创建时间排序
+   *     responses:
+   *       200:
+   *         description: 获取所有标签成功
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - type: object
+   *                   properties:
+   *                     data:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             description: 标签ID
+   *                           name:
+   *                             type: string
+   *                             description: 标签名称
+   *                           slug:
+   *                             type: string
+   *                             description: URL友好的标识符
+   *                           description:
+   *                             type: string
+   *                             description: 标签描述
+   *                           color:
+   *                             type: string
+   *                             description: 标签颜色
+   *                           sortOrder:
+   *                             type: integer
+   *                             description: 排序
+   *                           icon:
+   *                             type: string
+   *                             description: 标签图标
+   *                           useCount:
+   *                             type: integer
+   *                             description: 使用次数
+   *                           createdTime:
+   *                             type: string
+   *                             format: date-time
+   *                             description: 创建时间
+   *                           updatedTime:
+   *                             type: string
+   *                             format: date-time
+   *                             description: 更新时间
+   *             examples:
+   *               success:
+   *                 summary: 获取成功响应
+   *                 value:
+   *                   data:
+   *                     - id: 1
+   *                       name: "Vue.js"
+   *                       slug: "vuejs"
+   *                       description: "Vue.js 相关技术文章"
+   *                       color: "#4fc08d"
+   *                       sortOrder: 0
+   *                       icon: null
+   *                       useCount: 5
+   *                       createdTime: "2024-01-01T00:00:00.000Z"
+   *                       updatedTime: "2024-01-01T00:00:00.000Z"
+   *                     - id: 2
+   *                       name: "React"
+   *                       slug: "reactjs"
+   *                       description: "React 框架相关"
+   *                       color: "#61dafb"
+   *                       sortOrder: 1
+   *                       icon: null
+   *                       useCount: 3
+   *                       createdTime: "2024-01-02T00:00:00.000Z"
+   *                       updatedTime: "2024-01-02T00:00:00.000Z"
+   *                   code: 200
+   *                   message: "获取所有标签成功"
+   *                   errMsg: ""
+   *       500:
+   *         description: 服务器内部错误
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  @Get("/all")
+  public async getAllTags(req: Request, res: Response) {
+    const {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.BlogTagService.getAllTags();
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
    * /blog/tag:
    *   get:
    *     tags:
@@ -607,7 +708,7 @@ export class BlogTagController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Get("/:id")
+  @Get("/:id(\\d+)")
   public async getTagById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
 
@@ -855,7 +956,7 @@ export class BlogTagController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id")
+  @Put("/:id(\\d+)")
   public async updateTag(req: Request, res: Response) {
     const id = parseInt(req.params.id);
 
@@ -927,7 +1028,7 @@ export class BlogTagController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Delete("/:id")
+  @Delete("/:id(\\d+)")
   public async deleteTag(req: Request, res: Response) {
     const id = parseInt(req.params.id);
 
@@ -989,7 +1090,7 @@ export class BlogTagController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id/update-post-count")
+  @Put("/:id(\\d+)/update-post-count")
   public async updateTagPostCount(req: Request, res: Response) {
     const id = parseInt(req.params.id);
 

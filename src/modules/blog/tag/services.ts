@@ -269,6 +269,44 @@ export class BlogTagService {
   }
 
   /**
+   * 获取所有标签（不分页，仅标签信息）
+   */
+  public async getAllTags(): Promise<Jres> {
+    try {
+      const tags = await this.prismaService.prisma.blogTag.findMany({
+        where: {
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          color: true,
+          icon: true,
+          useCount: true,
+          createdTime: true,
+          updatedTime: true,
+        },
+        orderBy: [{ createdTime: "desc" }],
+      });
+
+      return {
+        data: tags,
+        code: 200,
+        message: "获取所有标签成功",
+      };
+    } catch (error) {
+      console.error("获取所有标签失败:", error);
+      return {
+        code: 500,
+        message: "获取所有标签失败",
+        errMsg: error instanceof Error ? error.message : "未知错误",
+      };
+    }
+  }
+
+  /**
    * 根据ID获取标签详情
    */
   public async getTagById(id: number): Promise<Jres> {
