@@ -1,3 +1,4 @@
+import { JWT } from "@/jwt";
 import type { Request, Response } from "express";
 import { inject } from "inversify";
 import {
@@ -384,14 +385,14 @@ export class BlogPostController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Post("/")
+  @Post("/", JWT.authenticateJwt())
   public async createPost(req: Request, res: Response) {
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogPostService.createPost(req.body);
+    }: Jres = await this.BlogPostService.createPost(req.body, req.user);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -817,7 +818,7 @@ export class BlogPostController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id")
+  @Put("/:id", JWT.authenticateJwt())
   public async updatePost(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取
@@ -890,7 +891,7 @@ export class BlogPostController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Delete("/:id")
+  @Delete("/:id", JWT.authenticateJwt())
   public async deletePost(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取
@@ -991,7 +992,7 @@ export class BlogPostController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id/toggle-publish")
+  @Put("/:id/toggle-publish", JWT.authenticateJwt())
   public async togglePublishStatus(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可选的权限检查
@@ -1074,7 +1075,7 @@ export class BlogPostController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id/toggle-top")
+  @Put("/:id/toggle-top", JWT.authenticateJwt())
   public async toggleTop(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     const authorId = req.body.authorId; // 可以从JWT token中获取

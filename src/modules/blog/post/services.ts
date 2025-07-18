@@ -1,6 +1,6 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
-import { BlogCommentStatus, BlogPostStatus } from "@prisma/client";
+import { BlogCommentStatus, BlogPostStatus, User } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../../db";
 
@@ -338,7 +338,9 @@ export class BlogPostService {
    * @param data 文章创建数据
    * @returns 创建结果
    */
-  async createPost(data: CreatePostData): Promise<ServiceResponse> {
+  async createPost(data: CreatePostData, user: User): Promise<ServiceResponse> {
+    console.log("🚀 ~ BlogPostService ~ createPost ~ user:", user);
+    console.log("🚀 ~ BlogPostService ~ createPost ~ data:", data);
     try {
       // 1. 处理新增标签，获取所有标签ID
       const allTagIds = await this.processAddTags(data.addTags, data.tagIds);
@@ -390,7 +392,7 @@ export class BlogPostService {
           status: data.status || BlogPostStatus.DRAFT,
           isTop: data.isTop || false,
           allowComment: data.allowComment !== false,
-          authorId: data.authorId,
+          authorId: user.id,
           categoryId: data.categoryId,
           publishedAt,
           tags: allTagIds.length
@@ -427,12 +429,12 @@ export class BlogPostService {
       // 文章列表包含选项
       const includeOptions = {
         author: { select: { id: true, username: true, avatar: true } },
-        category: { select: { id: true, name: true, slug: true } },
+        category: {
+          select: { id: true, name: true, slug: true, icon: true, color: true },
+        },
         tags: {
           include: {
-            tag: {
-              select: { id: true, name: true, slug: true, color: true },
-            },
+            tag: true,
           },
         },
       };
@@ -446,6 +448,10 @@ export class BlogPostService {
 
       // 1. 构建查询条件
       const sqlFilters = this.buildListFilters(filters);
+      console.log(
+        "🚀 ~ BlogPostService ~ getPostList ~ sqlFilters:",
+        sqlFilters
+      );
 
       // 2. 查询总数
       const totalRecords = await this.PrismaDB.prisma.blogPost.count({
@@ -509,7 +515,7 @@ export class BlogPostService {
       return sqlFilters;
     }
 
-    // 添加基础过滤条件
+    // 添加基础过滤条件（排除 tagIds，因为需要特殊处理）
     const baseFilters = FilterHelper.addFilterCondition(filters, [
       "id",
       "title",
@@ -519,6 +525,30 @@ export class BlogPostService {
       "isTop",
     ]);
     sqlFilters = { ...sqlFilters, ...baseFilters };
+
+    // 特殊处理 tagIds 过滤（多对多关系）
+    if (filters.tagIds) {
+      const tagIds = Array.isArray(filters.tagIds)
+        ? filters.tagIds
+        : [filters.tagIds];
+      sqlFilters.tags = {
+        some: {
+          tagId: { in: tagIds },
+        },
+      };
+    }
+
+    // 处理 tagIds__in 过滤
+    if (filters.tagIds__in) {
+      const tagIds = Array.isArray(filters.tagIds__in)
+        ? filters.tagIds__in
+        : [filters.tagIds__in];
+      sqlFilters.tags = {
+        some: {
+          tagId: { in: tagIds },
+        },
+      };
+    }
 
     // 处理时间范围过滤
     const timeFields = ["createdTime", "updatedTime", "publishedAt"];
