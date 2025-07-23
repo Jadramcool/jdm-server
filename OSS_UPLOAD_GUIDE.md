@@ -27,6 +27,9 @@
    
    # OSS存储桶名称
    OSS_BUCKET_NAME="your-bucket-name"
+   
+   # OSS访问端点（可选，如果不设置将自动根据region生成）
+   OSS_ENDPOINT="https://oss-cn-hangzhou.aliyuncs.com"
    ```
 
 3. **安全注意事项**
@@ -184,6 +187,10 @@ curl -X POST \
 2. 验证OSS AccessKey是否有效
 3. 确认OSS Bucket是否存在且有写入权限
 4. 检查网络连接是否正常
+5. **Endpoint错误**：如果遇到"must be addressed using the specified endpoint"错误，请检查：
+   - OSS_REGION配置是否正确
+   - OSS_ENDPOINT是否与region匹配
+   - 建议显式设置OSS_ENDPOINT为：`https://oss-cn-{region}.aliyuncs.com`
 
 ### 配置文件问题
 

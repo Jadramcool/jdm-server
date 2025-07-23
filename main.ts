@@ -4,7 +4,7 @@
  * @LastEditors: jdm
  * @LastEditTime: 2024-10-26 16:19:01
  * @FilePath: \APP\main.ts
- * @Description:
+ * @Description: JDM Server 主入口文件
  *
  */
 import "reflect-metadata";
