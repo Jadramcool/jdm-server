@@ -339,8 +339,6 @@ export class BlogPostService {
    * @returns 创建结果
    */
   async createPost(data: CreatePostData, user: User): Promise<ServiceResponse> {
-    console.log("🚀 ~ BlogPostService ~ createPost ~ user:", user);
-    console.log("🚀 ~ BlogPostService ~ createPost ~ data:", data);
     try {
       // 1. 处理新增标签，获取所有标签ID
       const allTagIds = await this.processAddTags(data.addTags, data.tagIds);
