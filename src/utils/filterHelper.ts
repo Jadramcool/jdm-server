@@ -21,7 +21,7 @@ export const addFilterCondition = (
   const sqlFilters: Record<string, any> = {};
 
   const processField = (f: string) => {
-    if (filters[f]) {
+    if (filters[f] !== undefined && filters[f] !== null) {
       // 如果有具体的值，直接使用 equals 条件，忽略其他条件
       sqlFilters[f] = { equals: filters[f] };
     } else {
@@ -63,7 +63,7 @@ export const addFilterConditionAny = (
   const sqlFilters: Record<string, any> = {};
 
   const processField = (f: string) => {
-    if (filters[f]) {
+    if (filters[f] !== undefined && filters[f] !== null) {
       // 日期字段
       if (f.includes("createdTime") || f.includes("updatedTime")) {
         sqlFilters[f] = {

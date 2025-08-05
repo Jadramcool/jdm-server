@@ -5,6 +5,9 @@ import { Role } from "./role/controller";
 import { RoleService } from "./role/services";
 import { UserManager } from "./user/controller";
 import { UserManagerService } from "./user/services";
+import { ConfigController } from "./config/controller";
+import { ConfigService } from "./config/services";
+import { ConfigUtil } from "./config/config.util";
 
 const systemContainer = new ContainerModule(
   (
@@ -28,6 +31,12 @@ const systemContainer = new ContainerModule(
      */
     bind<Role>(Role).toSelf();
     bind<RoleService>(RoleService).toSelf();
+    /*
+     * 系统配置
+     */
+    bind<ConfigController>(ConfigController).toSelf();
+    bind<ConfigService>(ConfigService).toSelf();
+    bind<ConfigUtil>(ConfigUtil).toSelf().inSingletonScope();
   }
 );
 
