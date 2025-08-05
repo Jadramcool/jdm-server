@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["omitApi", "relationJoins"]
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -8,184 +8,190 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 系统配置表
 model SysConfig {
-  id          Int      @id @default(autoincrement())
-  name        String
-  value       Boolean
+  id          Int        @id @default(autoincrement())
   description String?
-  createdTime DateTime @default(now()) @map("created_time")
-  updatedTime DateTime @updatedAt @map("updated_time")
+  createdTime DateTime   @default(now()) @map("created_time")
+  updatedTime DateTime   @updatedAt @map("updated_time")
+  category    String?    @default("SYSTEM")
+  key         String     @unique(map: "sys_config_config_key_key")
+  value       String?
+  isPublic    Boolean    @default(false) @map("is_public")
+  isSystem    Boolean    @default(false) @map("is_system")
+  sortOrder   Int?       @default(0) @map("sort_order")
+  type        ConfigType @default(STRING)
+  name        String?
 
   @@map("sys_config")
 }
 
-// 用户表
 model User {
-  id            Int       @id @default(autoincrement())
-  username      String    @unique
-  name          String?
-  phone         String?   @unique
-  email         String?   @unique
-  sex           Sex?      @default(OTHER)
-  avatar        String?
-  birthday      DateTime?
-  createdTime   DateTime  @default(now()) @map("created_time")
-  updatedTime   DateTime? @updatedAt @map("updated_time")
-  deletedTime   DateTime? @map("deleted_time")
-  password      String
-  isDeleted     Boolean   @default(false) @map("is_deleted")
-  status        Int       @default(0) // 0: 未激活, 1: 激活
-  roleType      String?   @default("user") @map("role_type") // 角色类型 admin, user
-  city          String? // 城市
-  address       String? // 地址
-  addressDetail String?   @map("address_detail") // 详细地址
-
+  id              Int          @id @default(autoincrement())
+  username        String       @unique
+  name            String?
+  phone           String?      @unique
+  email           String?      @unique
+  sex             Sex?         @default(OTHER)
+  avatar          String?
+  birthday        DateTime?
+  createdTime     DateTime     @default(now()) @map("created_time")
+  updatedTime     DateTime?    @updatedAt @map("updated_time")
+  deletedTime     DateTime?    @map("deleted_time")
+  password        String
+  isDeleted       Boolean      @default(false) @map("is_deleted")
+  status          Int          @default(0)
+  roleType        String?      @default("user") @map("role_type")
+  city            String?
+  address         String?
+  addressDetail   String?      @map("address_detail")
+  noticesAuthored Notice[]     @relation("NoticeAuthor")
+  Todo            Todo[]
+  userNotice      UserNotice[]
   roles           UserRole[]
-  noticesAuthored Notice[]   @relation("NoticeAuthor")
-
-  // 通过中间表 UserNotice 引用接收到的公告
-  userNotice UserNotice[]
-  Todo       Todo[]
 
   @@map("user")
 }
 
-// 性别枚举
+model Menu {
+  id          Int        @id @default(autoincrement())
+  name        String
+  code        String     @unique
+  type        String
+  pid         Int?
+  path        String?
+  redirect    String?
+  icon        String?
+  component   String?
+  layout      String
+  keepAlive   Boolean?   @default(false) @map("keep_alive")
+  method      String?
+  description String?
+  show        Boolean    @default(true)
+  enable      Boolean    @default(true)
+  order       Int
+  createdTime DateTime   @default(now()) @map("created_time")
+  updatedTime DateTime?  @updatedAt @map("updated_time")
+  needLogin   Boolean?   @default(true) @map("need_login")
+  extraData   String?    @map("extra_data")
+  roles       RoleMenu[]
+
+  @@map("menu")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  code        String     @unique
+  name        String     @unique
+  description String?
+  createdTime DateTime   @default(now()) @map("created_time")
+  updatedTime DateTime   @updatedAt @map("updated_time")
+  deletedTime DateTime?  @map("deleted_time")
+  isDeleted   Boolean    @default(false) @map("is_deleted")
+  menus       RoleMenu[]
+  users       UserRole[]
+
+  @@map("role")
+}
+
+model RoleMenu {
+  id         Int      @id @default(autoincrement())
+  roleId     Int      @map("role_id")
+  menuId     Int      @map("menu_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  menu       Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, menuId])
+  @@index([menuId], map: "role_menu_menu_id_fkey")
+  @@map("role_menu")
+}
+
+model UserRole {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  roleId     Int      @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roleId], map: "user_role_roleId_fkey")
+  @@index([userId], map: "user_role_user_id_fkey")
+  @@map("user_role")
+}
+
+model Notice {
+  id          Int          @id @default(autoincrement())
+  title       String
+  content     String?
+  type        NoticeType
+  authorId    Int
+  status      Int          @default(0)
+  isDeleted   Boolean      @default(false) @map("is_deleted")
+  createdTime DateTime     @default(now()) @map("created_time")
+  updatedTime DateTime     @updatedAt @map("updated_time")
+  deletedTime DateTime?    @map("deleted_time")
+  author      User         @relation("NoticeAuthor", fields: [authorId], references: [id])
+  receivers   UserNotice[]
+
+  @@index([authorId], map: "notice_authorId_fkey")
+  @@map("notice")
+}
+
+model UserNotice {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  noticeId     Int       @map("notice_id")
+  assignedTime DateTime  @default(now()) @map("assigned_time")
+  readTime     DateTime?
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  notice       Notice    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, noticeId])
+  @@index([noticeId], map: "user_notice_notice_id_fkey")
+  @@map("user_notice")
+}
+
+model Todo {
+  id          Int       @id @default(autoincrement())
+  pid         Int?
+  title       String
+  content     String?
+  sortOrder   Int?      @default(0) @map("sort_order")
+  isDone      Boolean   @default(false)
+  createdTime DateTime  @default(now()) @map("created_time")
+  updatedTime DateTime? @updatedAt @map("updated_time")
+  doneTime    DateTime? @map("done_time")
+  userId      Int
+  parent      Todo?     @relation("ParentChild", fields: [pid], references: [id])
+  children    Todo[]    @relation("ParentChild")
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([pid], map: "todo_pid_fkey")
+  @@index([userId], map: "todo_userId_fkey")
+  @@map("todo")
+}
+
+enum ConfigType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  ARRAY
+  FILE
+  EMAIL
+  URL
+  PASSWORD
+}
+
 enum Sex {
   MALE
   FEMALE
   OTHER
 }
 
-// 菜单表
-model Menu {
-  id          Int       @id @default(autoincrement())
-  name        String // 菜单名称
-  code        String    @unique // 权限代码
-  type        String // menu: 菜单, button: 按钮 , directory: 目录
-  pid         Int? // 菜单的父id
-  path        String? // 路由路径
-  redirect    String? // 重定向
-  icon        String? // 图标
-  component   String? // 组件路径
-  layout      String // 布局
-  keepAlive   Boolean?  @default(false) @map("keep_alive")
-  method      String? //  TODO 请求方法，暂时不知道干嘛的
-  description String? // 菜单描述
-  show        Boolean   @default(true) // 是否展示
-  enable      Boolean   @default(true) // TODO 暂时不知道干嘛的
-  order       Int // 排序
-  createdTime DateTime  @default(now()) @map("created_time")
-  updatedTime DateTime? @updatedAt @map("updated_time")
-  needLogin   Boolean?  @default(true) @map("need_login") // 是否需要登录的页面
-  extraData   String?   @map("extra_data") // 额外数据
-
-  roles RoleMenu[] // 与角色菜单表的关系
-
-  @@map("menu")
-}
-
-// 角色表
-model Role {
-  id          Int       @id @default(autoincrement())
-  code        String    @unique
-  name        String    @unique
-  description String?
-  createdTime DateTime  @default(now()) @map("created_time")
-  updatedTime DateTime  @updatedAt @map("updated_time")
-  deletedTime DateTime? @map("deleted_time")
-  isDeleted   Boolean   @default(false) @map("is_deleted")
-
-  users UserRole[]
-  menus RoleMenu[]
-
-  @@map("role")
-}
-
-// 角色菜单表
-model RoleMenu {
-  id         Int      @id @default(autoincrement())
-  roleId     Int      @map("role_id")
-  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  menuId     Int      @map("menu_id")
-  menu       Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  assignedAt DateTime @default(now()) @map("assigned_at")
-
-  @@unique([roleId, menuId])
-  @@map("role_menu")
-}
-
-// 用户角色表
-model UserRole {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId     Int      @map("role_id")
-  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  assignedAt DateTime @default(now()) @map("assigned_at")
-
-  @@index([roleId], map: "user_role_roleId_fkey")
-  @@map("user_role")
-}
-
-// 公告类型枚举
 enum NoticeType {
-  NOTICE // 通知
-  INFO // 消息
-  ACTIVITY // 活动
-}
-
-// 公告表
-model Notice {
-  id          Int        @id @default(autoincrement())
-  title       String
-  content     String?
-  type        NoticeType
-  authorId    Int
-  author      User       @relation("NoticeAuthor", fields: [authorId], references: [id])
-  status      Int        @default(0) // 0: 未发送, 1: 已发送
-  isDeleted   Boolean    @default(false) @map("is_deleted")
-  createdTime DateTime   @default(now()) @map("created_time")
-  updatedTime DateTime   @updatedAt @map("updated_time")
-  deletedTime DateTime?  @map("deleted_time")
-
-  // 通过中间表 UserNotice 引用接收人
-  receivers UserNotice[]
-
-  @@map("notice")
-}
-
-// 用户公告关联表
-model UserNotice {
-  id           Int       @id @default(autoincrement())
-  userId       Int       @map("user_id")
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  noticeId     Int       @map("notice_id")
-  notice       Notice    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
-  assignedTime DateTime  @default(now()) @map("assigned_time")
-  readTime     DateTime?
-  isDeleted    Boolean   @default(false) @map("is_deleted")
-
-  @@unique([userId, noticeId])
-  @@map("user_notice")
-}
-
-// 待办事项
-model Todo {
-  id          Int       @id @default(autoincrement())
-  pid         Int? // 待办事项父级id
-  title       String // 待办事项标题/待办组名称
-  content     String? // 待办事项内容/待办组内容
-  sortOrder   Int?      @default(0) @map("sort_order") // 排序
-  isDone      Boolean   @default(false) // 是否完成
-  createdTime DateTime  @default(now()) @map("created_time")
-  updatedTime DateTime? @updatedAt @map("updated_time")
-  doneTime    DateTime? @map("done_time")
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  parent      Todo?     @relation("ParentChild", fields: [pid], references: [id])
-  children    Todo[]    @relation("ParentChild")
-
-  @@map("todo")
+  NOTICE
+  INFO
+  ACTIVITY
 }

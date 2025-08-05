@@ -15,9 +15,10 @@ import express from "express";
 import { getRouteInfo, InversifyExpressServer } from "inversify-express-utils";
 import "module-alias/register";
 import createContainer from "./config/container";
+import { checkDatabaseHealth } from "./src/config/database";
+import { PrismaDB } from "./src/db";
 import { JWT } from "./src/jwt";
 // import { logger } from "./src/middleware/logger";
-import * as prettyjson from "prettyjson";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { responseHandler } from "./src/middleware/sendResult";
@@ -91,15 +92,48 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 // 优雅关闭
-process.on("SIGTERM", () => {
+process.on("SIGTERM", async () => {
   console.log("\n🛑 收到SIGTERM信号，正在优雅关闭服务器...");
-  process.exit(0);
+  await gracefulShutdown();
 });
 
-process.on("SIGINT", () => {
+process.on("SIGINT", async () => {
   console.log("\n\n🛑 收到中断信号，正在关闭服务器...");
-  process.exit(0);
+  await gracefulShutdown();
 });
+
+// 优雅关闭函数
+async function gracefulShutdown() {
+  try {
+    console.log("🔌 正在关闭数据库连接...");
+    const prismaDB = container.get(PrismaDB);
+    await prismaDB.disconnect();
+    console.log("✅ 数据库连接已关闭");
+  } catch (error) {
+    console.error("❌ 关闭数据库连接时出错:", error);
+  } finally {
+    console.log("👋 服务器已关闭");
+    process.exit(0);
+  }
+}
+
+// 数据库健康检查
+async function performDatabaseHealthCheck() {
+  try {
+    const prismaDB = container.get(PrismaDB);
+    const health = await checkDatabaseHealth(prismaDB.prisma);
+
+    if (health.isConnected) {
+      console.log(`✅ 数据库连接正常 (延迟: ${health.latency}ms)`);
+    } else {
+      console.error(`❌ 数据库连接失败: ${health.error}`);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error("❌ 数据库健康检查失败:", error);
+    process.exit(1);
+  }
+}
 
 const routeInfo = getRouteInfo(container);
 
@@ -160,18 +194,33 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "localhost";
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-app.listen(PORT, () => {
-  console.log("\n" + "=".repeat(60));
-  console.log("🚀 JDM Server 启动成功!");
-  console.log("=".repeat(60));
-  console.log(`📍 服务地址: http://${HOST}:${PORT}`);
-  console.log(`📚 API文档: http://${HOST}:${PORT}/api-docs`);
-  console.log(`🏥 健康检查: http://${HOST}:${PORT}/health`);
-  console.log(`🌍 运行环境: ${NODE_ENV}`);
-  console.log(`⏰ 启动时间: ${new Date().toLocaleString("zh-CN")}`);
-  console.log(`💾 进程ID: ${process.pid}`);
-  console.log(`📦 Node版本: ${process.version}`);
-  console.log("=".repeat(60));
-  console.log("✨ 服务器已就绪，等待请求处理...");
-  console.log("=".repeat(60) + "\n");
-});
+// 启动服务器
+async function startServer() {
+  try {
+    // 执行数据库健康检查
+    await performDatabaseHealthCheck();
+
+    // 启动HTTP服务器
+    app.listen(PORT, () => {
+      console.log("\n" + "=".repeat(60));
+      console.log("🚀 JDM Server 启动成功!");
+      console.log("=".repeat(60));
+      console.log(`📍 服务地址: http://${HOST}:${PORT}`);
+      console.log(`📚 API文档: http://${HOST}:${PORT}/api-docs`);
+      console.log(`🏥 健康检查: http://${HOST}:${PORT}/health`);
+      console.log(`🌍 运行环境: ${NODE_ENV}`);
+      console.log(`⏰ 启动时间: ${new Date().toLocaleString("zh-CN")}`);
+      console.log(`💾 进程ID: ${process.pid}`);
+      console.log(`📦 Node版本: ${process.version}`);
+      console.log("=".repeat(60));
+      console.log("✨ 服务器已就绪，等待请求处理...");
+      console.log("=".repeat(60) + "\n");
+    });
+  } catch (error) {
+    console.error("❌ 服务器启动失败:", error);
+    process.exit(1);
+  }
+}
+
+// 启动应用
+startServer();

@@ -23,17 +23,6 @@ type UserWithRolesPrisma = Prisma.UserGetPayload<{
   };
 }>;
 
-// Exclude keys from user
-function exclude<User, K extends keyof User>(
-  user: User,
-  keys: K[]
-): Omit<User, K> {
-  const filteredEntries = Object.entries(user)
-    .filter(([key]) => !keys.includes(key as K))
-    .map(([key, value]) => [key, value]);
-  return Object.fromEntries(filteredEntries) as Omit<User, K>;
-}
-
 @injectable()
 export class UserManagerService {
   constructor(
@@ -395,7 +384,6 @@ export class UserManagerService {
           errMsg: "用户不存在",
         };
       }
-      delete result.password;
       return {
         data: {
           ...result,
