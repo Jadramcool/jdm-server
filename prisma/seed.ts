@@ -31,11 +31,11 @@ const initMenus = async () => {
   // 检查是否已经初始化过了
   const isInit = await prisma.sysConfig.findFirst({
     where: {
-      name: "isInit",
+      key: "system.isInit",
     },
   });
 
-  if (isInit && !isInit.value) {
+  if (isInit && isInit.value === "false") {
     // 如果没有数据，插入初始数据
     await prisma.menu.createMany({
       data: Menu.menus,
@@ -46,7 +46,7 @@ const initMenus = async () => {
         id: isInit.id,
       },
       data: {
-        value: true,
+        value: "true",
       },
     });
   }
