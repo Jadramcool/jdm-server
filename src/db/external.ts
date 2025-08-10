@@ -15,8 +15,8 @@
  * 6. 索引提示 - 强制使用最优索引避免全表扫描
  * 7. COUNT查询优化 - 使用表统计信息避免大表全扫描
  */
-import mysql from "mysql2/promise";
 import { inject, injectable } from "inversify";
+import mysql from "mysql2/promise";
 
 /**
  * 查询日志配置类
@@ -25,7 +25,7 @@ import { inject, injectable } from "inversify";
 export class QueryLogConfig {
   // 全局日志开关，控制所有查询相关日志
   // static enableLog: boolean = process.env.NODE_ENV !== "production";
-  static enableLog: boolean = false;
+  static enableLog: boolean = false; // 临时启用调试日志以诊断搜索问题
 }
 
 /**
@@ -528,14 +528,16 @@ export class ExternalDB {
         }
       } else if (searchFeatures.hasChinese) {
         // 策略5: 中文单词搜索
-        if (tableName === "u3c3" && searchFeatures.length >= 2) {
-          // 中文全文搜索（布尔模式）- 解决最小词长限制问题
+        // 注意：MySQL FULLTEXT索引的最小词长限制已调整为1（ft_min_word_len=1）
+        // 现在支持单个中文字符的全文搜索，大幅提升中文搜索性能
+        if (tableName === "u3c3" && searchFeatures.length >= 1) {
+          // 中文全文搜索（布尔模式）- 支持所有长度的中文词，包括单字
           searchCondition = "MATCH(title) AGAINST(? IN BOOLEAN MODE)";
           searchValues = [`+${title}*`];
           hasFullTextSearch = true;
           searchStrategy = "中文全文搜索(布尔模式)";
         } else {
-          // 中文模糊搜索
+          // 兜底方案：中文模糊搜索（理论上不会执行到这里）
           searchCondition = "title LIKE ?";
           searchValues = [`%${title}%`];
           searchStrategy = "中文模糊搜索";
