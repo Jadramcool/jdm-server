@@ -7,12 +7,12 @@
  * @Description: 外部数据库查询服务
  */
 import { inject, injectable } from "inversify";
-import { ExternalDB, QueryParams, PaginatedResult } from "../../db/external";
+import { ExternalDB, PaginatedResult, QueryParams } from "../../db/external";
 import {
   CreateU3C3DataDto,
-  UpdateU3C3DataDto,
-  U3C3DataResponseDto,
   OperationResult,
+  U3C3DataResponseDto,
+  UpdateU3C3DataDto,
 } from "./dto";
 
 @injectable()
@@ -20,26 +20,34 @@ export class ExternalService {
   constructor(@inject(ExternalDB) private externalDB: ExternalDB) {}
 
   /**
-   * 获取爬虫数据
-   * @param params 查询参数
+   * 获取U3C3爬虫数据
+   * @param params 查询配置参数
    * @returns 分页结果
    */
   async getU3C3Data(params: ReqListConfig): Promise<PaginatedResult<any>> {
     try {
-      const { page, pageSize } = params.pagination;
-      const filters = params.filters;
+      // 设置默认值并安全解构参数
+      const pagination = params.pagination || { page: 1, pageSize: 10 };
+      const filters = params.filters || {};
+      const options = params.options || {};
+
+      // 构造查询参数
       const queryParams: QueryParams = {
-        page: page as number,
-        pageSize: pageSize as number,
-        sortBy: filters.sortBy as string, // 排序字段
-        sortOrder: filters.sortOrder as "ASC" | "DESC", // 排序顺序
-        title: filters.title as string,
-        type: filters.type as string,
-        date: filters.date as string,
-        startTime: filters.startTime as string,
-        endTime: filters.endTime as string,
+        page: Number(pagination.page) || 1,
+        pageSize: Number(pagination.pageSize) || 10,
+        sortBy: (filters.sortBy as string) || "id",
+        sortOrder: (filters.sortOrder as "ASC" | "DESC") || "DESC",
+        title: (filters.title as string) || "",
+        type: (filters.type as string) || "",
+        date: (filters.date as string) || "",
+        startTime: (filters.startTime as string) || "",
+        endTime: (filters.endTime as string) || "",
       };
-      const resp = await this.externalDB.getU3C3Data("u3c3", queryParams);
+
+      const resp = await this.externalDB.queryWithPagination(
+        "u3c3",
+        queryParams
+      );
       return resp;
     } catch (error) {
       console.error("ExternalService.getU3C3Data error:", error);
@@ -54,7 +62,10 @@ export class ExternalService {
    */
   async getExecutionLogs(params: QueryParams): Promise<PaginatedResult<any>> {
     try {
-      return await this.externalDB.getExecutionLogs(params);
+      return await this.externalDB.queryWithPagination("execution_logs", {
+        ...params,
+        sortBy: "created_at",
+      });
     } catch (error) {
       console.error("ExternalService.getExecutionLogs error:", error);
       throw new Error("获取执行日志失败");
@@ -237,4 +248,3 @@ export class ExternalService {
     return this.getDataById("u3c3", id);
   }
 }
-

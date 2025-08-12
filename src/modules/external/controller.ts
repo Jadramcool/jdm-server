@@ -38,6 +38,7 @@ export class ExternalController {
   @httpGet("/u3c3/list")
   async getU3C3Data(req: Request, res: Response) {
     try {
+      // 直接使用前端传来的数据格式
       const config = this.UtilService.parseQueryParams(req);
       const result = await this.externalService.getU3C3Data(config);
       res.json({
