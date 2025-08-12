@@ -18,8 +18,8 @@ export const externalContainer = new ContainerModule((bind) => {
   // 绑定服务
   bind(ExternalService).to(ExternalService);
 
-  // 绑定数据库连接
-  bind(ExternalDB).to(ExternalDB);
+  // 绑定数据库连接（单例模式）
+  bind(ExternalDB).to(ExternalDB).inSingletonScope();
 
   // 绑定外部数据库配置
   bind("ExternalDBConfig").toConstantValue({
