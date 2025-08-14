@@ -1,12 +1,19 @@
 -- CreateTable
 CREATE TABLE `sys_config` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `value` BOOLEAN NOT NULL,
     `description` VARCHAR(191) NULL,
     `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_time` DATETIME(3) NOT NULL,
+    `category` VARCHAR(191) NULL DEFAULT 'SYSTEM',
+    `key` VARCHAR(191) NOT NULL,
+    `value` VARCHAR(191) NULL,
+    `is_public` BOOLEAN NOT NULL DEFAULT false,
+    `is_system` BOOLEAN NOT NULL DEFAULT false,
+    `sort_order` INTEGER NULL DEFAULT 0,
+    `type` ENUM('STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'ARRAY', 'FILE', 'EMAIL', 'URL', 'PASSWORD') NOT NULL DEFAULT 'STRING',
+    `name` VARCHAR(191) NULL,
 
+    UNIQUE INDEX `sys_config_config_key_key`(`key`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -87,6 +94,7 @@ CREATE TABLE `role_menu` (
     `menu_id` INTEGER NOT NULL,
     `assigned_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `role_menu_menu_id_fkey`(`menu_id`),
     UNIQUE INDEX `role_menu_role_id_menu_id_key`(`role_id`, `menu_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -99,6 +107,7 @@ CREATE TABLE `user_role` (
     `assigned_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `user_role_roleId_fkey`(`role_id`),
+    INDEX `user_role_user_id_fkey`(`user_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -115,6 +124,7 @@ CREATE TABLE `notice` (
     `updated_time` DATETIME(3) NOT NULL,
     `deleted_time` DATETIME(3) NULL,
 
+    INDEX `notice_authorId_fkey`(`authorId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -127,6 +137,7 @@ CREATE TABLE `user_notice` (
     `readTime` DATETIME(3) NULL,
     `is_deleted` BOOLEAN NOT NULL DEFAULT false,
 
+    INDEX `user_notice_notice_id_fkey`(`notice_id`),
     UNIQUE INDEX `user_notice_user_id_notice_id_key`(`user_id`, `notice_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -144,32 +155,111 @@ CREATE TABLE `todo` (
     `done_time` DATETIME(3) NULL,
     `userId` INTEGER NOT NULL,
 
+    INDEX `todo_pid_fkey`(`pid`),
+    INDEX `todo_userId_fkey`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
-ALTER TABLE `role_menu` ADD CONSTRAINT `role_menu_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+-- CreateTable
+CREATE TABLE `department` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `code` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `level` INTEGER NOT NULL DEFAULT 1,
+    `sort_order` INTEGER NOT NULL DEFAULT 0,
+    `status` INTEGER NOT NULL DEFAULT 0,
+    `manager_id` INTEGER NULL,
+    `is_deleted` BOOLEAN NOT NULL DEFAULT false,
+    `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_time` DATETIME(3) NOT NULL,
+    `deleted_time` DATETIME(3) NULL,
+    `parent_id` INTEGER NULL,
+
+    UNIQUE INDEX `department_code_key`(`code`),
+    INDEX `department_parent_id_fkey`(`parent_id`),
+    INDEX `department_manager_id_fkey`(`manager_id`),
+    INDEX `department_code_idx`(`code`),
+    INDEX `department_status_idx`(`status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `user_department` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `department_id` INTEGER NOT NULL,
+    `is_main` BOOLEAN NOT NULL DEFAULT false,
+    `position` VARCHAR(191) NULL,
+    `assigned_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `left_at` DATETIME(3) NULL,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
+
+    INDEX `user_department_user_id_fkey`(`user_id`),
+    INDEX `user_department_department_id_fkey`(`department_id`),
+    INDEX `user_department_is_main_idx`(`is_main`),
+    INDEX `user_department_is_active_idx`(`is_active`),
+    UNIQUE INDEX `user_department_user_id_department_id_key`(`user_id`, `department_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `role_department` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `role_id` INTEGER NOT NULL,
+    `department_id` INTEGER NOT NULL,
+    `auto_assign` BOOLEAN NOT NULL DEFAULT false,
+    `default_position` VARCHAR(191) NULL,
+    `assigned_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `role_department_role_id_fkey`(`role_id`),
+    INDEX `role_department_department_id_fkey`(`department_id`),
+    INDEX `role_department_auto_assign_idx`(`auto_assign`),
+    UNIQUE INDEX `role_department_role_id_department_id_key`(`role_id`, `department_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `role_menu` ADD CONSTRAINT `role_menu_menu_id_fkey` FOREIGN KEY (`menu_id`) REFERENCES `menu`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `user_role` ADD CONSTRAINT `user_role_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `role_menu` ADD CONSTRAINT `role_menu_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `user_role` ADD CONSTRAINT `user_role_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `notice` ADD CONSTRAINT `notice_authorId_fkey` FOREIGN KEY (`authorId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `user_role` ADD CONSTRAINT `user_role_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `user_notice` ADD CONSTRAINT `user_notice_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `notice` ADD CONSTRAINT `notice_authorId_fkey` FOREIGN KEY (`authorId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `user_notice` ADD CONSTRAINT `user_notice_notice_id_fkey` FOREIGN KEY (`notice_id`) REFERENCES `notice`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `todo` ADD CONSTRAINT `todo_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `user_notice` ADD CONSTRAINT `user_notice_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `todo` ADD CONSTRAINT `todo_pid_fkey` FOREIGN KEY (`pid`) REFERENCES `todo`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `todo` ADD CONSTRAINT `todo_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `department` ADD CONSTRAINT `department_manager_id_fkey` FOREIGN KEY (`manager_id`) REFERENCES `user`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `department` ADD CONSTRAINT `department_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `department`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `user_department` ADD CONSTRAINT `user_department_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `department`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `user_department` ADD CONSTRAINT `user_department_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `role_department` ADD CONSTRAINT `role_department_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `department`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `role_department` ADD CONSTRAINT `role_department_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

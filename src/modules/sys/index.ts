@@ -8,6 +8,8 @@ import { UserManagerService } from "./user/services";
 import { ConfigController } from "./config/controller";
 import { ConfigService } from "./config/services";
 import { ConfigUtil } from "./config/config.util";
+import { DepartmentController } from "./department/controller";
+import { DepartmentService } from "./department/services";
 
 const systemContainer = new ContainerModule(
   (
@@ -37,6 +39,11 @@ const systemContainer = new ContainerModule(
     bind<ConfigController>(ConfigController).toSelf();
     bind<ConfigService>(ConfigService).toSelf();
     bind<ConfigUtil>(ConfigUtil).toSelf().inSingletonScope();
+    /*
+     * 部门管理
+     */
+    bind<DepartmentController>(DepartmentController).toSelf();
+    bind<DepartmentService>(DepartmentService).toSelf();
   }
 );
 

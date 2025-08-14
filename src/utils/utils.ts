@@ -2,7 +2,11 @@ import { injectable } from "inversify";
 
 @injectable()
 export class UtilService {
-  // 解析查询参数
+  /**
+   * 解析查询参数
+   * @param req 请求对象
+   * @returns 解析后的查询参数
+   */
   public parseQueryParams(req: any): any {
     const { query, user = {} } = req;
     const parsedQuery: any = {};
