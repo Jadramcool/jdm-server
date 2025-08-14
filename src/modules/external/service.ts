@@ -35,7 +35,7 @@ export class ExternalService {
       const queryParams: QueryParams = {
         page: Number(pagination.page) || 1,
         pageSize: Number(pagination.pageSize) || 10,
-        sortBy: (filters.sortBy as string) || "id",
+        sortBy: (filters.sortBy as string) || "date",
         sortOrder: (filters.sortOrder as "ASC" | "DESC") || "DESC",
         title: (filters.title as string) || "",
         type: (filters.type as string) || "",
