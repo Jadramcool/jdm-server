@@ -329,7 +329,8 @@ export class DepartmentService {
 
       for (const dept of departments) {
         const childrenResult = await this.getDepartmentTree(dept.id);
-        const children = childrenResult.data || [];
+        const children =
+          childrenResult.data.length > 0 ? childrenResult.data : null;
 
         result.push({
           id: dept.id,
@@ -950,6 +951,34 @@ export class DepartmentService {
         errMsg: err,
       };
     }
+  }
+
+  /**
+   * 递归获取部门及其所有下级部门的ID列表
+   * @param departmentId 部门ID
+   * @returns 包含该部门及所有下级部门的ID数组
+   */
+  public async getAllSubDepartmentIds(departmentId: number): Promise<number[]> {
+    const departmentIds = [departmentId];
+
+    // 查找直接下级部门
+    const subDepartments = await this.PrismaDB.prisma.department.findMany({
+      where: {
+        parentId: departmentId,
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // 递归获取每个下级部门的子部门
+    for (const subDept of subDepartments) {
+      const subDeptIds = await this.getAllSubDepartmentIds(subDept.id);
+      departmentIds.push(...subDeptIds);
+    }
+
+    return departmentIds;
   }
 
   /**
