@@ -6,6 +6,7 @@ import { validate } from "class-validator";
 import { inject, injectable } from "inversify";
 import _ from "lodash";
 import { PrismaDB } from "../../../db";
+import { DepartmentService } from "../department/services";
 import type { User } from "../typings";
 import { UserDto } from "./user.dto";
 
@@ -27,14 +28,14 @@ type UserWithRolesPrisma = Prisma.UserGetPayload<{
 export class UserManagerService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
-    @inject(JWT) private readonly JWT: JWT
+    @inject(JWT) private readonly JWT: JWT,
+    @inject(DepartmentService)
+    private readonly departmentService: DepartmentService
   ) {}
 
   // 获取用户列表
   public async getUserList(config: ReqListConfig) {
     let { filters, options, pagination } = config;
-    // 过滤条件
-
     filters = filters || {};
     // filters["role__in"] = filters["role"];
 
@@ -63,6 +64,16 @@ export class UserManagerService {
     }
 
     sqlFilters["isDeleted"] = false;
+
+    // 处理部门ID过滤，包含下级部门
+    if (filters["departmentId"]) {
+      const departmentId = Number(filters["departmentId"]);
+      const allDepartmentIds =
+        await this.departmentService.getAllSubDepartmentIds(departmentId);
+      sqlFilters["departmentId"] = {
+        in: allDepartmentIds,
+      };
+    }
 
     // 查询中间关联表roleId
     if (sqlFilters["role"]) {
