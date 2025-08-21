@@ -26,29 +26,36 @@ model SysConfig {
 }
 
 model User {
-  id              Int          @id @default(autoincrement())
-  username        String       @unique
+  id              Int            @id @default(autoincrement())
+  username        String         @unique
   name            String?
-  phone           String?      @unique
-  email           String?      @unique
-  sex             Sex?         @default(OTHER)
+  phone           String?        @unique
+  email           String?        @unique
+  sex             Sex?           @default(OTHER)
   avatar          String?
   birthday        DateTime?
-  createdTime     DateTime     @default(now()) @map("created_time")
-  updatedTime     DateTime?    @updatedAt @map("updated_time")
-  deletedTime     DateTime?    @map("deleted_time")
+  createdTime     DateTime       @default(now()) @map("created_time")
+  updatedTime     DateTime?      @updatedAt @map("updated_time")
+  deletedTime     DateTime?      @map("deleted_time")
   password        String
-  isDeleted       Boolean      @default(false) @map("is_deleted")
-  status          Int          @default(0)
-  roleType        String?      @default("user") @map("role_type")
+  isDeleted       Boolean        @default(false) @map("is_deleted")
+  status          Int            @default(0)
+  roleType        String?        @default("user") @map("role_type")
   city            String?
   address         String?
-  addressDetail   String?      @map("address_detail")
-  noticesAuthored Notice[]     @relation("NoticeAuthor")
+  addressDetail   String?        @map("address_detail")
+  departmentId    Int?           @map("department_id")
+  joinedAt        DateTime?      @map("joined_at")
+  position        String?
+  managedDepts    Department[]   @relation("DepartmentManager")
+  noticesAuthored Notice[]       @relation("NoticeAuthor")
+  operationLogs   OperationLog[]
   Todo            Todo[]
+  department      Department?    @relation("UserDepartment", fields: [departmentId], references: [id])
   userNotice      UserNotice[]
   roles           UserRole[]
 
+  @@index([departmentId], map: "user_department_id_fkey")
   @@map("user")
 }
 
@@ -79,14 +86,15 @@ model Menu {
 }
 
 model Role {
-  id          Int        @id @default(autoincrement())
-  code        String     @unique
-  name        String     @unique
+  id          Int              @id @default(autoincrement())
+  code        String           @unique
+  name        String           @unique
   description String?
-  createdTime DateTime   @default(now()) @map("created_time")
-  updatedTime DateTime   @updatedAt @map("updated_time")
-  deletedTime DateTime?  @map("deleted_time")
-  isDeleted   Boolean    @default(false) @map("is_deleted")
+  createdTime DateTime         @default(now()) @map("created_time")
+  updatedTime DateTime         @updatedAt @map("updated_time")
+  deletedTime DateTime?        @map("deleted_time")
+  isDeleted   Boolean          @default(false) @map("is_deleted")
+  departments RoleDepartment[] @relation("RoleDepartments")
   menus       RoleMenu[]
   users       UserRole[]
 
@@ -172,6 +180,76 @@ model Todo {
   @@map("todo")
 }
 
+model Department {
+  id          Int              @id @default(autoincrement())
+  name        String
+  code        String           @unique
+  description String?
+  level       Int              @default(1)
+  sortOrder   Int              @default(0) @map("sort_order")
+  status      Int              @default(0)
+  managerId   Int?             @map("manager_id")
+  isDeleted   Boolean          @default(false) @map("is_deleted")
+  createdTime DateTime         @default(now()) @map("created_time")
+  updatedTime DateTime         @updatedAt @map("updated_time")
+  deletedTime DateTime?        @map("deleted_time")
+  parentId    Int?             @map("parent_id")
+  manager     User?            @relation("DepartmentManager", fields: [managerId], references: [id])
+  parent      Department?      @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children    Department[]     @relation("DepartmentHierarchy")
+  roles       RoleDepartment[] @relation("DepartmentRoles")
+  users       User[]           @relation("UserDepartment")
+
+  @@index([parentId], map: "department_parent_id_fkey")
+  @@index([managerId], map: "department_manager_id_fkey")
+  @@index([code])
+  @@index([status])
+  @@map("department")
+}
+
+model RoleDepartment {
+  id              Int        @id @default(autoincrement())
+  roleId          Int        @map("role_id")
+  departmentId    Int        @map("department_id")
+  autoAssign      Boolean    @default(false) @map("auto_assign")
+  defaultPosition String?    @map("default_position")
+  assignedAt      DateTime   @default(now()) @map("assigned_at")
+  department      Department @relation("DepartmentRoles", fields: [departmentId], references: [id], onDelete: Cascade)
+  role            Role       @relation("RoleDepartments", fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, departmentId])
+  @@index([roleId], map: "role_department_role_id_fkey")
+  @@index([departmentId], map: "role_department_department_id_fkey")
+  @@index([autoAssign])
+  @@map("role_department")
+}
+
+model OperationLog {
+  id            Int             @id @default(autoincrement())
+  userId        Int?            @map("user_id")
+  username      String?
+  operationType OperationType   @map("operation_type")
+  module        String?
+  description   String?
+  method        String?
+  url           String?
+  params        String?         @db.Text
+  result        String?         @db.Text
+  status        OperationStatus @default(SUCCESS)
+  errorMessage  String?         @map("error_message") @db.Text
+  ipAddress     String?         @map("ip_address")
+  userAgent     String?         @map("user_agent") @db.Text
+  duration      Int?
+  createdTime   DateTime        @default(now()) @map("created_time")
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "operation_log_user_id_fkey")
+  @@index([operationType])
+  @@index([createdTime])
+  @@index([status])
+  @@map("operation_log")
+}
+
 enum ConfigType {
   STRING
   NUMBER
@@ -194,4 +272,22 @@ enum NoticeType {
   NOTICE
   INFO
   ACTIVITY
+}
+
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  OTHER
+}
+
+enum OperationStatus {
+  SUCCESS
+  FAILED
+  PENDING
 }

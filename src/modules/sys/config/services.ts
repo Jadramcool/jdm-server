@@ -56,8 +56,6 @@ export class ConfigService {
         }
       });
     }
-    console.log("🚀 ~ sqlFilters:", sqlFilters);
-
     // 分页参数
     const page = parseInt(pagination?.page as string) || 1;
     const pageSize = parseInt(pagination?.pageSize as string) || 10;
@@ -676,4 +674,3 @@ export class ConfigService {
     return Boolean(value);
   }
 }
-
