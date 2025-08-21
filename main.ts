@@ -21,6 +21,7 @@ import { JWT } from "./src/jwt";
 // import { logger } from "./src/middleware/logger";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
 
 const container = createContainer();
@@ -53,10 +54,27 @@ const swaggerSpec = swaggerJsDoc(swaggerOptions);
 
 // 配置中间件
 server.setConfig((app) => {
+  // CORS 配置 - 允许所有来源和方法
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded());
   app.use(container.get(JWT).init());
+
+  // 操作日志中间件 - 直接使用JWT服务解析token
+  app.use(
+    createOperationLogMiddleware(container, {
+      enabled: true,
+      excludePaths: ["/health", "/api-docs", "/uploads"],
+      excludeMethods: ["OPTIONS"], // 排除的HTTP方法
+      // includeMethods: ["GET", "POST", "PUT", "DELETE"], // 只记录指定的HTTP方法（优先级高于excludeMethods）
+      logParams: true,  // 记录请求参数
+      logResult: true,  // 记录响应结果
+      maxParamsLength: 2000,  // 参数最大长度
+      maxResultLength: 2000,  // 结果最大长度
+      async: true,
+    })
+  );
+
   app.use(responseHandler);
   // app.use(logger);
   app.use("/uploads", express.static("uploads")); // 静态文件

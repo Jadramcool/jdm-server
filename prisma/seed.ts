@@ -8,7 +8,14 @@
  *
  */
 import { PrismaClient } from "@prisma/client";
-import { Department, Menu, Role, SysConfig, User } from "./initData";
+import {
+  Department,
+  Menu,
+  OperationLog,
+  Role,
+  SysConfig,
+  User,
+} from "./initData";
 
 const prisma = new PrismaClient();
 
@@ -161,6 +168,25 @@ const initDepartments = async () => {
   }
 };
 
+/**
+ * 初始化操作日志数据
+ */
+const initOperationLogs = async () => {
+  // 检查表中是否有数据
+  const operationLogCount = await prisma.operationLog.count();
+
+  if (operationLogCount === 0) {
+    // 如果没有数据，插入初始数据
+    await prisma.operationLog.createMany({
+      data: OperationLog.operationLogInitData,
+      skipDuplicates: true,
+    });
+    console.log("操作日志数据初始化完成");
+  } else {
+    console.log("操作日志数据已存在，跳过初始化");
+  }
+};
+
 const main = async () => {
   console.log("开始初始化数据库数据...");
   await initConfigData();
@@ -169,6 +195,7 @@ const main = async () => {
   await initMenus();
   await initDepartments();
   await initAdminPermissions();
+  await initOperationLogs();
   console.log("数据库数据初始化完成！");
 };
 

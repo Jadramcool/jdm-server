@@ -90,7 +90,6 @@ export class User {
    *       401:
    *         description: Unauthorized
    */
-
   @Post("/login")
   public async login(req: Request, res: Response) {
     let {

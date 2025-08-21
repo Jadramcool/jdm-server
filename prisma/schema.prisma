@@ -26,31 +26,32 @@ model SysConfig {
 }
 
 model User {
-  id              Int              @id @default(autoincrement())
-  username        String           @unique
+  id              Int            @id @default(autoincrement())
+  username        String         @unique
   name            String?
-  phone           String?          @unique
-  email           String?          @unique
-  sex             Sex?             @default(OTHER)
+  phone           String?        @unique
+  email           String?        @unique
+  sex             Sex?           @default(OTHER)
   avatar          String?
   birthday        DateTime?
-  createdTime     DateTime         @default(now()) @map("created_time")
-  updatedTime     DateTime?        @updatedAt @map("updated_time")
-  deletedTime     DateTime?        @map("deleted_time")
+  createdTime     DateTime       @default(now()) @map("created_time")
+  updatedTime     DateTime?      @updatedAt @map("updated_time")
+  deletedTime     DateTime?      @map("deleted_time")
   password        String
-  isDeleted       Boolean          @default(false) @map("is_deleted")
-  status          Int              @default(0)
-  roleType        String?          @default("user") @map("role_type")
+  isDeleted       Boolean        @default(false) @map("is_deleted")
+  status          Int            @default(0)
+  roleType        String?        @default("user") @map("role_type")
   city            String?
   address         String?
-  addressDetail   String?          @map("address_detail")
-  departmentId    Int?             @map("department_id")
+  addressDetail   String?        @map("address_detail")
+  departmentId    Int?           @map("department_id")
+  joinedAt        DateTime?      @map("joined_at")
   position        String?
-  joinedAt        DateTime?        @map("joined_at")
-  managedDepts    Department[]     @relation("DepartmentManager")
-  noticesAuthored Notice[]         @relation("NoticeAuthor")
+  managedDepts    Department[]   @relation("DepartmentManager")
+  noticesAuthored Notice[]       @relation("NoticeAuthor")
+  operationLogs   OperationLog[]
   Todo            Todo[]
-  department      Department?      @relation("UserDepartment", fields: [departmentId], references: [id])
+  department      Department?    @relation("UserDepartment", fields: [departmentId], references: [id])
   userNotice      UserNotice[]
   roles           UserRole[]
 
@@ -206,8 +207,6 @@ model Department {
   @@map("department")
 }
 
-
-
 model RoleDepartment {
   id              Int        @id @default(autoincrement())
   roleId          Int        @map("role_id")
@@ -223,6 +222,32 @@ model RoleDepartment {
   @@index([departmentId], map: "role_department_department_id_fkey")
   @@index([autoAssign])
   @@map("role_department")
+}
+
+model OperationLog {
+  id            Int             @id @default(autoincrement())
+  userId        Int?            @map("user_id")
+  username      String?
+  operationType OperationType   @map("operation_type")
+  module        String?
+  description   String?
+  method        String?
+  url           String?
+  params        String?         @db.Text
+  result        String?         @db.Text
+  status        OperationStatus @default(SUCCESS)
+  errorMessage  String?         @map("error_message") @db.Text
+  ipAddress     String?         @map("ip_address")
+  userAgent     String?         @map("user_agent") @db.Text
+  duration      Int?
+  createdTime   DateTime        @default(now()) @map("created_time")
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "operation_log_user_id_fkey")
+  @@index([operationType])
+  @@index([createdTime])
+  @@index([status])
+  @@map("operation_log")
 }
 
 enum ConfigType {
@@ -247,4 +272,22 @@ enum NoticeType {
   NOTICE
   INFO
   ACTIVITY
+}
+
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  OTHER
+}
+
+enum OperationStatus {
+  SUCCESS
+  FAILED
+  PENDING
 }

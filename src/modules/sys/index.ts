@@ -10,6 +10,8 @@ import { ConfigService } from "./config/services";
 import { ConfigUtil } from "./config/config.util";
 import { DepartmentController } from "./department/controller";
 import { DepartmentService } from "./department/services";
+import { OperationLogController } from "./operation-log/controller";
+import { OperationLogService } from "./operation-log/services";
 
 const systemContainer = new ContainerModule(
   (
@@ -44,6 +46,11 @@ const systemContainer = new ContainerModule(
      */
     bind<DepartmentController>(DepartmentController).toSelf();
     bind<DepartmentService>(DepartmentService).toSelf();
+    /*
+     * 操作日志
+     */
+    bind<OperationLogController>(OperationLogController).toSelf();
+    bind<OperationLogService>(OperationLogService).toSelf();
   }
 );
 
