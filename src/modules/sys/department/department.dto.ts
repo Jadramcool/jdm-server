@@ -238,7 +238,11 @@ export class DepartmentTreeNodeDto {
 
   sortOrder: number;
 
+  /** 包含子部门的总成员数量 */
   memberCount: number;
+
+  /** 直接属于该部门的成员数量（不包含子部门） */
+  directMemberCount: number;
 
   children: DepartmentTreeNodeDto[];
 
