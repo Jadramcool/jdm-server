@@ -11,6 +11,7 @@ import { UploadService } from "../src/modules/upload/services";
 import { User } from "../src/modules/user/controller";
 import { UserService } from "../src/modules/user/services";
 import { UtilService } from "../src/utils/utils";
+import { RouteInfoManager } from "../src/utils/routeInfoManager";
 
 const createContainer = () => {
   // 创建了一个InversifyExpressServer实例
@@ -36,6 +37,11 @@ const createContainer = () => {
   container.bind(UploadService).to(UploadService);
 
   container.bind(UtilService).to(UtilService);
+
+  /**
+   * 路由信息管理器
+   */
+  container.bind(RouteInfoManager).to(RouteInfoManager).inSingletonScope();
 
   /**
    * 封装PrismaClient，使用单例模式避免连接池耗尽

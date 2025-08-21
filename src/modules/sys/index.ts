@@ -1,17 +1,17 @@
 import { ContainerModule, interfaces } from "inversify";
+import { ConfigUtil } from "./config/config.util";
+import { ConfigController } from "./config/controller";
+import { ConfigService } from "./config/services";
+import { DepartmentController } from "./department/controller";
+import { DepartmentService } from "./department/services";
 import { Menu } from "./menu/controller";
 import { MenuService } from "./menu/services";
+import { OperationLogController } from "./operation-log/controller";
+import { OperationLogService } from "./operation-log/services";
 import { Role } from "./role/controller";
 import { RoleService } from "./role/services";
 import { UserManager } from "./user/controller";
 import { UserManagerService } from "./user/services";
-import { ConfigController } from "./config/controller";
-import { ConfigService } from "./config/services";
-import { ConfigUtil } from "./config/config.util";
-import { DepartmentController } from "./department/controller";
-import { DepartmentService } from "./department/services";
-import { OperationLogController } from "./operation-log/controller";
-import { OperationLogService } from "./operation-log/services";
 
 const systemContainer = new ContainerModule(
   (
@@ -53,5 +53,4 @@ const systemContainer = new ContainerModule(
     bind<OperationLogService>(OperationLogService).toSelf();
   }
 );
-
 export { systemContainer };
