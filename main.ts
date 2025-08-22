@@ -23,6 +23,7 @@ import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
+import { RouteInfoManager } from "./src/utils/routeInfoManager";
 
 const container = createContainer();
 
@@ -67,10 +68,10 @@ server.setConfig((app) => {
       excludePaths: ["/health", "/api-docs", "/uploads"],
       excludeMethods: ["OPTIONS"], // 排除的HTTP方法
       // includeMethods: ["GET", "POST", "PUT", "DELETE"], // 只记录指定的HTTP方法（优先级高于excludeMethods）
-      logParams: true,  // 记录请求参数
-      logResult: true,  // 记录响应结果
-      maxParamsLength: 2000,  // 参数最大长度
-      maxResultLength: 2000,  // 结果最大长度
+      logParams: true, // 记录请求参数
+      logResult: true, // 记录响应结果
+      maxParamsLength: 2000, // 参数最大长度
+      maxResultLength: 2000, // 结果最大长度
       async: true,
     })
   );
@@ -155,58 +156,10 @@ async function performDatabaseHealthCheck() {
 
 const routeInfo = getRouteInfo(container);
 
-// 优化的路由信息打印函数
-function printOptimizedRouteInfo(routes: any[]) {
-  const totalEndpoints = routes.reduce(
-    (total, module) => total + (module.endpoints?.length || 0),
-    0
-  );
-
-  console.log("\n" + "=".repeat(60));
-  console.log("📋 API 接口统计报告");
-  console.log("=".repeat(60));
-  console.log(`📊 模块总数: ${routes.length} 个`);
-  console.log(`🔗 接口总数: ${totalEndpoints} 个`);
-  console.log("=".repeat(60));
-
-  routes.forEach((module, index) => {
-    const controllerName = module.controller;
-    const endpoints = module.endpoints || [];
-    const endpointCount = endpoints.length;
-
-    console.log(`\n📁 ${index + 1}. ${controllerName} 模块`);
-    console.log(`   └─ 接口数量: ${endpointCount} 个`);
-
-    if (endpointCount > 0) {
-      console.log("   └─ 接口列表:");
-      endpoints.forEach((endpoint: any, endpointIndex: number) => {
-        const route = endpoint.route;
-        const method = route.split(" ")[0];
-        const path = route.split(" ")[1] || route;
-        const methodEmoji = getMethodEmoji(method);
-        console.log(`      ${methodEmoji} ${endpointIndex + 1}. ${route}`);
-      });
-    }
-  });
-
-  console.log("\n" + "=".repeat(60));
-  console.log("✅ 路由信息加载完成");
-  console.log("=".repeat(60));
-}
-
-// 根据HTTP方法返回对应的emoji
-function getMethodEmoji(method: string): string {
-  const methodMap: { [key: string]: string } = {
-    GET: "📖",
-    POST: "📝",
-    PUT: "✏️",
-    DELETE: "🗑️",
-    PATCH: "🔧",
-  };
-  return methodMap[method] || "🔗";
-}
-
-printOptimizedRouteInfo(routeInfo);
+// 初始化路由信息管理器
+const routeInfoManager = container.get(RouteInfoManager);
+routeInfoManager.initialize(routeInfo);
+// routeInfoManager.printRouteMappings();
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "localhost";

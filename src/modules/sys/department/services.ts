@@ -278,13 +278,24 @@ export class DepartmentService {
         this.PrismaDB.prisma.department.count({ where: sqlFilters }),
       ]);
 
+      // 优化：使用统一的成员数量计算器
+      const { calculateTotalMemberCount } =
+        await this.createMemberCountCalculator();
+
+      // 为每个部门计算包含子部门的总成员数
+      const departmentsWithTotalCount = departments.map((dept) => {
+        const totalMemberCount = calculateTotalMemberCount(dept.id);
+        return {
+          ...dept,
+          memberCount: totalMemberCount,
+          directMemberCount: dept._count.users,
+          childrenCount: dept._count.children,
+        };
+      });
+
       return {
         data: {
-          list: departments.map((dept) => ({
-            ...dept,
-            memberCount: dept._count.users,
-            childrenCount: dept._count.children,
-          })),
+          list: departmentsWithTotalCount,
           total,
         },
         code: 200,
@@ -301,17 +312,15 @@ export class DepartmentService {
   }
 
   /**
-   * 获取部门树形结构
+   * 获取部门树形结构（优化版本）
    */
   public async getDepartmentTree(parentId?: number): Promise<Jres> {
     try {
-      const where: Prisma.DepartmentWhereInput = {
-        isDeleted: false,
-        parentId: parentId || null,
-      };
-
-      const departments = await this.PrismaDB.prisma.department.findMany({
-        where,
+      // 一次性获取所有部门数据
+      const allDepartments = await this.PrismaDB.prisma.department.findMany({
+        where: {
+          isDeleted: false,
+        },
         orderBy: [{ sortOrder: "asc" }, { createdTime: "asc" }],
         include: {
           manager: {
@@ -325,30 +334,52 @@ export class DepartmentService {
         },
       });
 
-      const result: DepartmentTreeNodeDto[] = [];
+      // 优化：使用统一的成员数量计算器
+      const { calculateTotalMemberCount } =
+        await this.createMemberCountCalculator();
 
-      for (const dept of departments) {
-        const childrenResult = await this.getDepartmentTree(dept.id);
-        const children =
-          childrenResult.data.length > 0 ? childrenResult.data : null;
+      // 创建部门映射和子部门映射
+      const departmentMap = new Map<number, any>();
+      const childrenMap = new Map<number, any[]>();
 
-        result.push({
-          id: dept.id,
-          name: dept.name,
-          code: dept.code,
-          description: dept.description,
-          parentId: dept.parentId,
-          managerId: dept.managerId,
-          managerName: dept.manager?.name,
-          level: dept.level,
-          sortOrder: dept.sortOrder,
-          status: dept.status,
-          memberCount: dept._count.users,
-          children,
-          createdTime: dept.createdTime,
-          updatedTime: dept.updatedTime,
+      allDepartments.forEach((dept) => {
+        departmentMap.set(dept.id, dept);
+        if (!childrenMap.has(dept.parentId || 0)) {
+          childrenMap.set(dept.parentId || 0, []);
+        }
+        childrenMap.get(dept.parentId || 0)!.push(dept);
+      });
+
+      // 递归构建树形结构
+      const buildTree = (
+        currentParentId: number | null
+      ): DepartmentTreeNodeDto[] => {
+        const children = childrenMap.get(currentParentId || 0) || [];
+        return children.map((dept) => {
+          const subChildren = buildTree(dept.id);
+          const totalMemberCount = calculateTotalMemberCount(dept.id);
+
+          return {
+            id: dept.id,
+            name: dept.name,
+            code: dept.code,
+            description: dept.description,
+            parentId: dept.parentId,
+            managerId: dept.managerId,
+            managerName: dept.manager?.name,
+            level: dept.level,
+            sortOrder: dept.sortOrder,
+            status: dept.status,
+            memberCount: totalMemberCount,
+            directMemberCount: dept._count.users,
+            children: subChildren.length > 0 ? subChildren : null,
+            createdTime: dept.createdTime,
+            updatedTime: dept.updatedTime,
+          };
         });
-      }
+      };
+
+      const result = buildTree(parentId || null);
 
       return {
         data: result,
@@ -431,6 +462,11 @@ export class DepartmentService {
       const childrenResult = await this.getDepartmentTree(id);
       const children = childrenResult.data || [];
 
+      // 优化：使用统一的成员数量计算器
+      const { calculateTotalMemberCount } =
+        await this.createMemberCountCalculator();
+      const totalMemberCount = calculateTotalMemberCount(id);
+
       return {
         data: {
           id: department.id,
@@ -443,7 +479,8 @@ export class DepartmentService {
           level: department.level,
           sortOrder: department.sortOrder,
           status: department.status,
-          memberCount: department._count.users,
+          memberCount: totalMemberCount,
+          directMemberCount: department._count.users,
           children,
           createdTime: department.createdTime,
           updatedTime: department.updatedTime,
@@ -979,6 +1016,85 @@ export class DepartmentService {
     }
 
     return departmentIds;
+  }
+
+  /**
+   * 获取部门及其所有子部门的总成员数量（旧版本，保留用于兼容性）
+   * @param departmentId 部门ID
+   * @returns 总成员数量
+   */
+  private async getTotalMemberCount(departmentId: number): Promise<number> {
+    // 获取该部门及所有子部门的ID
+    const allDepartmentIds = await this.getAllSubDepartmentIds(departmentId);
+
+    // 统计所有这些部门的用户数量
+    const totalCount = await this.PrismaDB.prisma.user.count({
+      where: {
+        departmentId: {
+          in: allDepartmentIds,
+        },
+        isDeleted: false,
+      },
+    });
+
+    return totalCount;
+  }
+
+  /**
+   * 优化版本：批量计算部门成员数量的辅助方法
+   * @returns 包含用户数量映射和计算函数的对象
+   */
+  private async createMemberCountCalculator() {
+    // 获取所有用户的部门统计
+    const userCounts = await this.PrismaDB.prisma.user.groupBy({
+      by: ["departmentId"],
+      where: {
+        isDeleted: false,
+        departmentId: { not: null },
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    // 创建用户数量映射
+    const userCountMap = new Map<number, number>();
+    userCounts.forEach((item) => {
+      if (item.departmentId) {
+        userCountMap.set(item.departmentId, item._count.id);
+      }
+    });
+
+    // 获取所有部门用于构建层级关系
+    const allDepartments = await this.PrismaDB.prisma.department.findMany({
+      where: { isDeleted: false },
+      select: { id: true, parentId: true },
+    });
+
+    // 创建子部门映射
+    const childrenMap = new Map<number, number[]>();
+    allDepartments.forEach((dept) => {
+      if (!childrenMap.has(dept.parentId || 0)) {
+        childrenMap.set(dept.parentId || 0, []);
+      }
+      childrenMap.get(dept.parentId || 0)!.push(dept.id);
+    });
+
+    // 递归计算总成员数量（包含子部门）
+    const calculateTotalMemberCount = (deptId: number): number => {
+      let total = userCountMap.get(deptId) || 0;
+      const children = childrenMap.get(deptId) || [];
+      children.forEach((childId) => {
+        total += calculateTotalMemberCount(childId);
+      });
+      return total;
+    };
+
+    return {
+      userCountMap,
+      childrenMap,
+      calculateTotalMemberCount,
+    };
   }
 
   /**

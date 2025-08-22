@@ -101,10 +101,15 @@ export class OperationLogService implements IOperationLogService {
           }
         });
       }
-
       let result = [];
       let totalPages = 1;
 
+      // !如果没有操作类型，则默认查询非查看操作
+      if (!filters.operationType) {
+        sqlFilters["operationType"] = {
+          notIn: ["VIEW"],
+        };
+      }
       // 查询总数
       const totalRecords = await this.prismaDB.prisma.operationLog.count({
         where: sqlFilters,
