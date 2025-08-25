@@ -345,6 +345,32 @@ export class DepartmentController implements interfaces.Controller {
     res.sendResult(data, code, message, errMsg);
   }
 
+  // 启用部门
+  @Put("/enable/:id", JWT.authenticateJwt())
+  public async enableDepartment(req: Request, res: Response) {
+    const { id } = req.params;
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.departmentService.enableDepartment(parseInt(id));
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 禁用部门
+  @Put("/disable/:id", JWT.authenticateJwt())
+  public async disableDepartment(req: Request, res: Response) {
+    const { id } = req.params;
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.departmentService.disableDepartment(parseInt(id));
+    res.sendResult(data, code, message, errMsg);
+  }
+
   /**
    * @swagger
    * /system/department/detail/{id}:
@@ -860,4 +886,3 @@ export class DepartmentController implements interfaces.Controller {
     res.sendResult(data, code, message, errMsg);
   }
 }
-

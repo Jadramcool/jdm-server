@@ -37,10 +37,14 @@ CREATE TABLE `user` (
     `city` VARCHAR(191) NULL,
     `address` VARCHAR(191) NULL,
     `address_detail` VARCHAR(191) NULL,
+    `department_id` INTEGER NULL,
+    `joined_at` DATETIME(3) NULL,
+    `position` VARCHAR(191) NULL,
 
     UNIQUE INDEX `user_username_key`(`username`),
     UNIQUE INDEX `user_phone_key`(`phone`),
     UNIQUE INDEX `user_email_key`(`email`),
+    INDEX `user_department_id_fkey`(`department_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -185,25 +189,6 @@ CREATE TABLE `department` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `user_department` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `user_id` INTEGER NOT NULL,
-    `department_id` INTEGER NOT NULL,
-    `is_main` BOOLEAN NOT NULL DEFAULT false,
-    `position` VARCHAR(191) NULL,
-    `assigned_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `left_at` DATETIME(3) NULL,
-    `is_active` BOOLEAN NOT NULL DEFAULT true,
-
-    INDEX `user_department_user_id_fkey`(`user_id`),
-    INDEX `user_department_department_id_fkey`(`department_id`),
-    INDEX `user_department_is_main_idx`(`is_main`),
-    INDEX `user_department_is_active_idx`(`is_active`),
-    UNIQUE INDEX `user_department_user_id_department_id_key`(`user_id`, `department_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `role_department` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `role_id` INTEGER NOT NULL,
@@ -218,6 +203,35 @@ CREATE TABLE `role_department` (
     UNIQUE INDEX `role_department_role_id_department_id_key`(`role_id`, `department_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `operation_log` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `user_id` INTEGER NULL,
+    `username` VARCHAR(191) NULL,
+    `operation_type` ENUM('CREATE', 'UPDATE', 'DELETE', 'VIEW', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT', 'OTHER') NOT NULL,
+    `module` VARCHAR(191) NULL,
+    `description` VARCHAR(191) NULL,
+    `method` VARCHAR(191) NULL,
+    `url` VARCHAR(191) NULL,
+    `params` TEXT NULL,
+    `result` TEXT NULL,
+    `status` ENUM('SUCCESS', 'FAILED', 'PENDING') NOT NULL DEFAULT 'SUCCESS',
+    `error_message` TEXT NULL,
+    `ip_address` VARCHAR(191) NULL,
+    `user_agent` TEXT NULL,
+    `duration` INTEGER NULL,
+    `created_time` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `operation_log_user_id_fkey`(`user_id`),
+    INDEX `operation_log_operation_type_idx`(`operation_type`),
+    INDEX `operation_log_created_time_idx`(`created_time`),
+    INDEX `operation_log_status_idx`(`status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `user` ADD CONSTRAINT `user_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `department`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `role_menu` ADD CONSTRAINT `role_menu_menu_id_fkey` FOREIGN KEY (`menu_id`) REFERENCES `menu`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -253,13 +267,10 @@ ALTER TABLE `department` ADD CONSTRAINT `department_manager_id_fkey` FOREIGN KEY
 ALTER TABLE `department` ADD CONSTRAINT `department_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `department`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `user_department` ADD CONSTRAINT `user_department_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `department`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `user_department` ADD CONSTRAINT `user_department_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `role_department` ADD CONSTRAINT `role_department_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `department`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `role_department` ADD CONSTRAINT `role_department_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `operation_log` ADD CONSTRAINT `operation_log_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

@@ -320,6 +320,7 @@ export class DepartmentService {
       const allDepartments = await this.PrismaDB.prisma.department.findMany({
         where: {
           isDeleted: false,
+          status: 1,
         },
         orderBy: [{ sortOrder: "asc" }, { createdTime: "asc" }],
         include: {
@@ -561,6 +562,122 @@ export class DepartmentService {
         code: 500,
         message: "删除部门失败",
         errMsg: err,
+      };
+    }
+  }
+
+  /**
+   * 启用部门
+   * @param id 部门ID
+   * @returns 启用结果
+   */
+
+  public async enableDepartment(id: number): Promise<Jres> {
+    try {
+      const department = await this.PrismaDB.prisma.department.findUnique({
+        where: { id, isDeleted: false },
+      });
+      if (!department) {
+        return {
+          data: null,
+          code: 400,
+          message: "部门不存在",
+        };
+      }
+      const result = await this.PrismaDB.prisma.department.update({
+        where: { id },
+        data: {
+          status: 1,
+        },
+      });
+      return {
+        data: result,
+        code: 200,
+        message: "启用部门成功",
+      };
+    } catch (err) {
+      return {
+        data: null,
+        code: 500,
+        message: "启用部门失败",
+        errMsg: err,
+      };
+    }
+  }
+
+  /**
+   * 禁用部门（包括所有子部门）
+   * @param id 部门ID
+   * @returns 禁用结果
+   */
+  public async disableDepartment(id: number): Promise<Jres> {
+    try {
+      // 检查部门是否存在
+      const department = await this.PrismaDB.prisma.department.findUnique({
+        where: { id, isDeleted: false },
+      });
+
+      if (!department) {
+        return {
+          data: null,
+          code: 400,
+          message: "部门不存在",
+        };
+      }
+
+      // 检查部门是否已经被禁用
+      if (department.status === 0) {
+        return {
+          data: department,
+          code: 200,
+          message: "部门已处于禁用状态",
+        };
+      }
+
+      // 获取当前部门及其所有子部门的ID列表
+      const allDepartmentIds = await this.getAllSubDepartmentIds(id);
+
+      // 使用事务批量更新所有相关部门的状态
+      const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
+        // 批量禁用所有部门（包括当前部门和所有子部门）
+        const updateResult = await prisma.department.updateMany({
+          where: {
+            id: { in: allDepartmentIds },
+            isDeleted: false,
+            status: 1, // 只更新当前启用的部门
+          },
+          data: {
+            status: 0,
+          },
+        });
+
+        // 获取更新后的主部门信息
+        const updatedDepartment = await prisma.department.findUnique({
+          where: { id },
+        });
+
+        return {
+          updatedDepartment,
+          affectedCount: updateResult.count,
+        };
+      });
+
+      return {
+        data: {
+          department: result.updatedDepartment,
+          affectedDepartments: result.affectedCount,
+          message: `成功禁用 ${result.affectedCount} 个部门`,
+        },
+        code: 200,
+        message: "禁用部门成功",
+      };
+    } catch (err) {
+      console.error("禁用部门失败:", err);
+      return {
+        data: null,
+        code: 500,
+        message: "禁用部门失败",
+        errMsg: err instanceof Error ? err.message : String(err),
       };
     }
   }
