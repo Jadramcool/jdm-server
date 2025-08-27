@@ -14,13 +14,12 @@ import cors from "cors";
 import express from "express";
 import { getRouteInfo, InversifyExpressServer } from "inversify-express-utils";
 import "module-alias/register";
+import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import createContainer from "./config/container";
 import { checkDatabaseHealth } from "./src/config/database";
 import { PrismaDB } from "./src/db";
 import { JWT } from "./src/jwt";
-// import { logger } from "./src/middleware/logger";
-import swaggerJsDoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
 import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
 import { RouteInfoManager } from "./src/utils/routeInfoManager";
@@ -77,7 +76,6 @@ server.setConfig((app) => {
   );
 
   app.use(responseHandler);
-  // app.use(logger);
   app.use("/uploads", express.static("uploads")); // 静态文件
 
   // Swagger UI 路由

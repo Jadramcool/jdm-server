@@ -231,6 +231,7 @@ export const OPERATION_LOG_CONSTANTS = {
     "/api/todo": "待办事项",
     "/api/upload": "文件上传",
     "/api/user": "用户认证",
+    "/api/navigation": "导航",
   },
 
   // 操作类型描述映射
@@ -246,4 +247,3 @@ export const OPERATION_LOG_CONSTANTS = {
     [OperationType.OTHER]: "其他",
   },
 };
-
