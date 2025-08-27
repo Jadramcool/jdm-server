@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon main.ts",
-    "docs:generate": "ts-node config/generate-docs.ts",
-    "apifox:generate": "npm run docs:generate && echo \"📋 Apifox文档已生成: docs/openapi.json\""
+    "dev": "nodemon main.ts"
   },
   "author": "",
   "license": "ISC",
