@@ -56,6 +56,9 @@ importers:
       inversify-express-utils:
         specifier: ^6.4.6
         version: 6.4.6
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
