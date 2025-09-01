@@ -21,7 +21,7 @@ import { DepartmentService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: System Department
+ *   name: 系统管理
  *   description: 系统部门管理
  */
 
@@ -39,7 +39,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/create:
    *   post:
    *     summary: 创建部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -122,7 +122,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/update:
    *   put:
    *     summary: 更新部门信息
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -210,7 +210,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/list:
    *   get:
    *     summary: 获取部门列表（分页）
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -302,7 +302,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/tree:
    *   get:
    *     summary: 获取部门树形结构
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -376,7 +376,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/detail/{id}:
    *   get:
    *     summary: 获取部门详情
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -425,7 +425,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/delete/{id}:
    *   delete:
    *     summary: 删除部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -460,7 +460,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/members/{id}:
    *   get:
    *     summary: 获取部门成员列表
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -517,7 +517,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/assign-user:
    *   post:
    *     summary: 分配用户到部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -570,7 +570,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/batch-assign-users:
    *   post:
    *     summary: 批量分配用户到部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -623,7 +623,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/remove-user:
    *   delete:
    *     summary: 从部门移除用户
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -672,7 +672,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/assign-role:
    *   post:
    *     summary: 分配角色到部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -725,7 +725,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/remove-role:
    *   delete:
    *     summary: 从部门移除角色
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -774,7 +774,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/search:
    *   get:
    *     summary: 搜索部门
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -831,7 +831,7 @@ export class DepartmentController implements interfaces.Controller {
    * /system/department/stats:
    *   get:
    *     summary: 获取部门统计信息
-   *     tags: [System Department]
+   *     tags: [系统管理 - 部门管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:

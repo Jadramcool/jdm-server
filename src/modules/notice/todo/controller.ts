@@ -23,7 +23,7 @@ import { TodoService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: Todo
+ *   name: 通知管理
  *   description: 待办事项管理
  */
 
@@ -41,7 +41,7 @@ export class Todo {
    * /todo/list:
    *   get:
    *     summary: 获取待办事项列表
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -145,7 +145,7 @@ export class Todo {
    * /todo/detail/{id}:
    *   get:
    *     summary: 获取待办事项详情
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -215,7 +215,7 @@ export class Todo {
    * /todo/create:
    *   post:
    *     summary: 创建待办事项
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -293,7 +293,7 @@ export class Todo {
    * /todo/update:
    *   put:
    *     summary: 更新待办事项
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -374,7 +374,7 @@ export class Todo {
    *   put:
    *     summary: 更新待办事项排序
    *     description: 批量更新待办事项的排序顺序
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -440,7 +440,7 @@ export class Todo {
    * /todo/delete/{id}:
    *   delete:
    *     summary: 删除待办事项
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -489,7 +489,7 @@ export class Todo {
    *   put:
    *     summary: 标记待办事项完成状态
    *     description: 将待办事项标记为完成或未完成，status可传可不传，不传默认为已完成，0：未完成，1：已完成
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -555,7 +555,7 @@ export class Todo {
    *   get:
    *     summary: 获取待办事项时间线
    *     description: 获取待办事项的时间线视图，按日期分组显示
-   *     tags: [Todo]
+   *     tags: [通知管理 - 待办事项]
    *     security:
    *       - bearerAuth: []
    *     parameters:

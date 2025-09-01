@@ -23,7 +23,7 @@ import { NoticeService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: Notice
+ *   name: 通知管理
  *   description: 通知管理
  */
 
@@ -41,7 +41,7 @@ export class Notice {
    * /notice/list:
    *   get:
    *     summary: 获取通知列表
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -138,7 +138,7 @@ export class Notice {
    * /notice/detail/{id}:
    *   get:
    *     summary: 获取通知详情
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -202,7 +202,7 @@ export class Notice {
    * /notice/create:
    *   post:
    *     summary: 创建通知
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -285,7 +285,7 @@ export class Notice {
    * /notice/update:
    *   put:
    *     summary: 更新通知
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -362,7 +362,7 @@ export class Notice {
    * /notice/delete/{id}:
    *   delete:
    *     summary: 删除通知
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -410,7 +410,7 @@ export class Notice {
    *   post:
    *     summary: 发送通知
    *     description: 将通知发送给指定用户或所有用户
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -478,7 +478,7 @@ export class Notice {
    *   get:
    *     summary: 获取用户通知列表
    *     description: 获取当前用户的通知列表
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -572,7 +572,7 @@ export class Notice {
    *   put:
    *     summary: 标记通知为已读
    *     description: 将指定通知标记为已读状态
-   *     tags: [Notice]
+   *     tags: [通知管理 - 通知]
    *     security:
    *       - bearerAuth: []
    *     requestBody:

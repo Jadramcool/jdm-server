@@ -14,7 +14,7 @@ import { NavigationService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: Navigation
+ *   name: 导航管理
  *   description: 导航管理
  * 
  * components:
@@ -154,7 +154,7 @@ export class Navigation {
    * @swagger
    * /navigation/list:
    *   get:
-   *     tags: [Navigation]
+   *     tags: [导航管理 - 导航]
    *     summary: 获取导航列表
    *     description: 获取导航列表，支持分页和筛选
    *     security:
@@ -231,7 +231,7 @@ export class Navigation {
    * @swagger
    * /navigation/detail/{id}:
    *   get:
-   *     tags: [Navigation]
+   *     tags: [导航管理 - 导航]
    *     summary: 获取导航详情
    *     description: 根据ID获取导航的详细信息
    *     security:
@@ -281,7 +281,7 @@ export class Navigation {
    * @swagger
    * /navigation/create:
    *   post:
-   *     tags: [Navigation]
+   *     tags: [导航管理 - 导航]
    *     summary: 创建导航
    *     description: 创建新的导航项
    *     security:
@@ -357,7 +357,7 @@ export class Navigation {
    * @swagger
    * /navigation/update:
    *   put:
-   *     tags: [Navigation]
+   *     tags: [导航管理 - 导航]
    *     summary: 更新导航
    *     description: 更新现有的导航项信息
    *     security:
@@ -414,7 +414,7 @@ export class Navigation {
    * @swagger
    * /navigation/delete/{id}:
    *   delete:
-   *     tags: [Navigation]
+   *     tags: [导航管理 - 导航]
    *     summary: 删除导航
    *     description: 软删除指定的导航项（标记为已删除，不会物理删除）
    *     security:

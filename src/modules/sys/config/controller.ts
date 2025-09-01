@@ -15,7 +15,7 @@ import { ConfigService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: System Config
+ *   name: 系统管理
  *   description: 系统配置管理
  */
 
@@ -33,7 +33,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/list:
    *   get:
    *     summary: 获取配置列表
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -129,7 +129,7 @@ export class ConfigController implements interfaces.Controller {
    *   get:
    *     summary: 获取公开配置
    *     description: 获取所有公开的系统配置，无需认证
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     responses:
    *       200:
    *         description: 获取公开配置成功
@@ -167,7 +167,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/detail/{id}:
    *   get:
    *     summary: 根据ID获取配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -217,7 +217,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/key/{key}:
    *   get:
    *     summary: 根据键名获取配置值
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -273,7 +273,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/create:
    *   post:
    *     summary: 创建新配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -323,7 +323,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/update:
    *   put:
    *     summary: 更新配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -384,7 +384,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/batch-update:
    *   put:
    *     summary: 批量更新配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -446,7 +446,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/delete/{id}:
    *   delete:
    *     summary: 删除配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -498,7 +498,7 @@ export class ConfigController implements interfaces.Controller {
    * /system/config/validate-password:
    *   post:
    *     summary: 验证密码配置
-   *     tags: [System Config]
+   *     tags: [系统管理 - 系统配置]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
