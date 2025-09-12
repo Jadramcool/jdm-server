@@ -9,5 +9,7 @@
  */
 import * as ErrorInfo from "./errInfo";
 import * as FilterHelper from "./filterHelper";
+import { PaginationHelper } from "./pagination.helper";
+import { FlattenHelper } from "./flattenHelper";
 
-export { ErrorInfo, FilterHelper };
+export { ErrorInfo, FilterHelper, PaginationHelper, FlattenHelper };

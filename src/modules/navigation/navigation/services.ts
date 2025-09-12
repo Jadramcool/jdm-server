@@ -38,7 +38,7 @@ export class NavigationService {
           "status",
           "groupId",
         ]);
-        
+
         // 遍历时间字段并添加范围过滤条件
         ["createdTime", "updatedTime"].forEach((timeField) => {
           if (keys.includes(timeField) && Array.isArray(filters[timeField])) {
@@ -81,7 +81,10 @@ export class NavigationService {
       } else {
         // 分页查询
         page = Math.max(1, parseInt(pagination?.page as string) || 1);
-        pageSize = Math.max(1, Math.min(100, parseInt(pagination?.pageSize as string) || 10)); // 限制最大页面大小
+        pageSize = Math.max(
+          1,
+          Math.min(100, parseInt(pagination?.pageSize as string) || 10)
+        ); // 限制最大页面大小
 
         result = await this.PrismaDB.prisma.navigation.findMany({
           skip: (page - 1) * pageSize,
@@ -116,7 +119,7 @@ export class NavigationService {
         message: "获取导航列表成功",
       };
     } catch (err) {
-      console.error('获取导航列表失败:', err);
+      console.error("获取导航列表失败:", err);
       return {
         data: null,
         code: 500,
@@ -171,7 +174,7 @@ export class NavigationService {
         message: "获取导航信息成功",
       };
     } catch (err) {
-      console.error('获取导航详情失败:', err);
+      console.error("获取导航详情失败:", err);
       return {
         data: null,
         code: 500,
@@ -207,20 +210,70 @@ export class NavigationService {
         };
       }
 
+      // 如果提供了分组ID，验证分组是否存在
+      if (navigation.groupIds && navigation.groupIds.length > 0) {
+        const existingGroups =
+          await this.PrismaDB.prisma.navigationGroup.findMany({
+            where: {
+              id: { in: navigation.groupIds },
+              isDeleted: false,
+            },
+          });
+
+        if (existingGroups.length !== navigation.groupIds.length) {
+          return {
+            code: 400,
+            message: "部分分组不存在或已被删除",
+            errMsg: "部分分组不存在或已被删除",
+            data: null,
+          };
+        }
+      }
+
       // 构建创建数据，映射DTO字段到数据库字段
       const createData = {
         name: navigation.title, // DTO的title映射到数据库的name字段
-        path: '', // 默认路径，可根据需要调整
-        icon: null, // 默认图标
-        description: null, // 默认描述
-        groupId: null, // 默认分组
-        sortOrder: 0, // 默认排序
-        status: 1, // 默认启用状态
+        path: navigation.path || "", // 使用提供的路径或默认空字符串
+        icon: navigation.icon || null, // 使用提供的图标或默认null
+        description: navigation.description || null, // 使用提供的描述或默认null
+        sortOrder: navigation.sortOrder || 0, // 使用提供的排序或默认0
+        status: navigation.status !== undefined ? navigation.status : 1, // 使用提供的状态或默认启用
         isDeleted: false, // 默认未删除
       };
 
-      const result = await this.PrismaDB.prisma.navigation.create({
-        data: createData,
+      // 使用事务创建导航和分组关联
+      const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
+        // 创建导航
+        const newNavigation = await prisma.navigation.create({
+          data: createData,
+        });
+
+        // 如果提供了分组ID，创建分组关联
+        if (navigation.groupIds && navigation.groupIds.length > 0) {
+          const groupNavigationData = navigation.groupIds.map(
+            (groupId, index) => ({
+              navigationId: newNavigation.id,
+              groupId: groupId,
+              sortOrder: index, // 使用数组索引作为排序
+            })
+          );
+
+          await prisma.navigationGroupNavigation.createMany({
+            data: groupNavigationData,
+          });
+        }
+
+        // 返回包含分组信息的导航数据
+        return await prisma.navigation.findUnique({
+          where: { id: newNavigation.id },
+          include: {
+            groups: {
+              include: {
+                group: true,
+              },
+            },
+          },
+        });
       });
 
       return {
@@ -229,7 +282,7 @@ export class NavigationService {
         message: "创建导航成功",
       };
     } catch (err) {
-      console.error('创建导航失败:', err);
+      console.error("创建导航失败:", err);
       return {
         data: null,
         code: 400,
@@ -266,9 +319,10 @@ export class NavigationService {
       }
 
       // 验证导航是否存在
-      const existingNavigation = await this.PrismaDB.prisma.navigation.findUnique({
-        where: { id: navigation.id },
-      });
+      const existingNavigation =
+        await this.PrismaDB.prisma.navigation.findUnique({
+          where: { id: navigation.id },
+        });
 
       if (!existingNavigation) {
         return {
@@ -290,7 +344,7 @@ export class NavigationService {
 
       // 构建更新数据，过滤掉不允许更新的字段
       const { id, ...updateData } = navigation;
-      
+
       // 如果包含title字段，映射到name字段
       if (updateData.title) {
         updateData.name = updateData.title;
@@ -314,7 +368,7 @@ export class NavigationService {
         message: "更新导航成功",
       };
     } catch (err) {
-      console.error('更新导航失败:', err);
+      console.error("更新导航失败:", err);
       return {
         data: null,
         code: 400,
@@ -333,9 +387,10 @@ export class NavigationService {
   public async deleteNavigation(navigationId: number, user?: User) {
     try {
       // 验证导航是否存在
-      const existingNavigation = await this.PrismaDB.prisma.navigation.findUnique({
-        where: { id: navigationId },
-      });
+      const existingNavigation =
+        await this.PrismaDB.prisma.navigation.findUnique({
+          where: { id: navigationId },
+        });
 
       if (!existingNavigation) {
         return {
@@ -374,11 +429,39 @@ export class NavigationService {
         message: "删除导航成功",
       };
     } catch (err) {
-      console.error('删除导航失败:', err);
+      console.error("删除导航失败:", err);
       return {
         data: null,
         code: 400,
         message: "删除导航失败",
+        errMsg: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  /**
+   * 获取导航组列表
+   * @returns 导航组列表
+   */
+  public async getNavigationGroupList() {
+    try {
+      const navigationGroups =
+        await this.PrismaDB.prisma.navigationGroup.findMany({
+          where: {
+            isDeleted: false,
+          },
+        });
+      return {
+        data: navigationGroups,
+        code: 200,
+        message: "获取导航组列表成功",
+      };
+    } catch (err) {
+      console.error("获取导航组列表失败:", err);
+      return {
+        data: null,
+        code: 400,
+        message: "获取导航组列表失败",
         errMsg: err instanceof Error ? err.message : String(err),
       };
     }

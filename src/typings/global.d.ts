@@ -28,6 +28,7 @@ declare global {
   }
 
   interface WithOptions {
+    showPagination?: boolean;
     [key: string]: string | number | boolean | undefined;
   }
 

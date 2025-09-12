@@ -323,35 +323,51 @@ model OperationLog {
 }
 
 model Navigation {
-  id          Int       @id @default(autoincrement()) // 主键，自增ID
-  name        String // 导航名称
-  path        String // 导航路径
+  id          Int                         @id @default(autoincrement()) // 主键，自增ID
+  name        String? // 导航名称
+  path        String? // 导航路径
   icon        String? // 导航图标
   description String? // 导航描述
-  groupId     Int?      @map("group_id") // 导航组ID
-  sortOrder   Int?      @default(0) @map("sort_order") // 排序顺序
-  status      Int?      @default(0) // 导航状态 0-禁用 1-启用
-  isDeleted   Boolean?  @default(false) @map("is_deleted") // 是否已删除
-  createdTime DateTime? @default(now()) @map("created_time") // 创建时间
-  updatedTime DateTime? @updatedAt @map("updated_time") // 更新时间
-  deletedTime DateTime? @map("deleted_time") // 删除时间
+  sortOrder   Int?                        @default(0) @map("sort_order") // 排序顺序
+  status      Int?                        @default(0) // 导航状态 0-禁用 1-启用
+  isDeleted   Boolean?                    @default(false) @map("is_deleted") // 是否已删除
+  createdTime DateTime?                   @default(now()) @map("created_time") // 创建时间
+  updatedTime DateTime?                   @updatedAt @map("updated_time") // 更新时间
+  deletedTime DateTime?                   @map("deleted_time") // 删除时间
+  groups      NavigationGroupNavigation[] // 导航与导航组的多对多关联
 
   @@map("navigation")
 }
 
 model NavigationGroup {
-  id          Int       @id @default(autoincrement()) // 主键，自增ID
+  id          Int                         @id @default(autoincrement()) // 主键，自增ID
   name        String // 导航组名称
   icon        String? // 导航组图标
   description String? // 导航组描述
-  sortOrder   Int?      @default(0) @map("sort_order") // 排序顺序
-  status      Int?      @default(0) // 导航组状态 0-禁用 1-启用
-  isDeleted   Boolean?  @default(false) @map("is_deleted") // 是否已删除
-  createdTime DateTime? @default(now()) @map("created_time") // 创建时间
-  updatedTime DateTime? @updatedAt @map("updated_time") // 更新时间
-  deletedTime DateTime? @map("deleted_time") // 删除时间
+  sortOrder   Int?                        @default(0) @map("sort_order") // 排序顺序
+  status      Int?                        @default(0) // 导航组状态 0-禁用 1-启用
+  isDeleted   Boolean?                    @default(false) @map("is_deleted") // 是否已删除
+  createdTime DateTime?                   @default(now()) @map("created_time") // 创建时间
+  updatedTime DateTime?                   @updatedAt @map("updated_time") // 更新时间
+  deletedTime DateTime?                   @map("deleted_time") // 删除时间
+  navigations NavigationGroupNavigation[] // 导航组与导航的多对多关联
 
-  @@map("navigation_group")
+  @@map("navigation-group")
+}
+
+// 导航与导航组的多对多关联表
+model NavigationGroupNavigation {
+  id           Int             @id @default(autoincrement()) // 主键，自增ID
+  navigationId Int             @map("navigation_id") // 导航ID
+  groupId      Int             @map("group_id") // 导航组ID
+  sortOrder    Int?            @default(0) @map("sort_order") // 在该组内的排序顺序
+  createdTime  DateTime?       @default(now()) @map("created_time") // 创建时间
+  updatedTime  DateTime?       @updatedAt @map("updated_time") // 更新时间
+  navigation   Navigation      @relation(fields: [navigationId], references: [id], onDelete: Cascade) // 导航关联
+  group        NavigationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade) // 导航组关联
+
+  @@unique([navigationId, groupId]) // 确保同一个导航在同一个组中只能存在一次
+  @@map("navigation_group_navigation")
 }
 
 // 枚举定义

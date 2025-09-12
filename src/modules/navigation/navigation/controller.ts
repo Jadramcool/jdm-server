@@ -16,7 +16,7 @@ import { NavigationService } from "./services";
  * tags:
  *   name: 导航管理
  *   description: 导航管理
- * 
+ *
  * components:
  *   schemas:
  *     NavigationItem:
@@ -25,19 +25,27 @@ import { NavigationService } from "./services";
  *         id:
  *           type: integer
  *           description: 导航ID
+ *         name:
+ *           type: string
+ *           description: 导航名称
  *         title:
  *           type: string
  *           description: 导航标题
- *         content:
+ *         path:
  *           type: string
- *           description: 导航内容
- *         type:
+ *           description: 导航路径
+ *         icon:
  *           type: string
- *           enum: [NOTICE, INFO, ACTIVITY]
- *           description: 导航类型
+ *           description: 导航图标
+ *         description:
+ *           type: string
+ *           description: 导航描述
+ *         sortOrder:
+ *           type: integer
+ *           description: 排序顺序
  *         status:
- *           type: string
- *           description: 导航状态
+ *           type: integer
+ *           description: 导航状态（0-禁用，1-启用）
  *         authorId:
  *           type: integer
  *           description: 作者ID
@@ -49,15 +57,19 @@ import { NavigationService } from "./services";
  *           type: string
  *           format: date-time
  *           description: 更新时间
- *         author:
- *           type: object
- *           description: 作者信息
- *         receivers:
+ *         groups:
  *           type: array
- *           description: 接收者列表
+ *           description: 关联的分组列表
  *           items:
  *             type: object
- * 
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: 分组ID
+ *               name:
+ *                 type: string
+ *                 description: 分组名称
+ *
  *     NavigationCreateDto:
  *       type: object
  *       required:
@@ -67,17 +79,39 @@ import { NavigationService } from "./services";
  *         title:
  *           type: string
  *           description: 导航标题
- *           example: "系统公告"
- *         content:
- *           type: string
- *           description: 导航内容
- *           example: "这是一条系统公告内容"
+ *           example: "系统导航"
  *         type:
  *           type: string
  *           enum: [NOTICE, INFO, ACTIVITY]
  *           description: 导航类型
  *           example: "NOTICE"
- * 
+ *         groupIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *           description: 分组ID列表（支持多分组）
+ *           example: [1, 2, 3]
+ *         path:
+ *           type: string
+ *           description: 导航路径
+ *           example: "/dashboard"
+ *         icon:
+ *           type: string
+ *           description: 导航图标
+ *           example: "icon-home"
+ *         description:
+ *           type: string
+ *           description: 导航描述
+ *           example: "这是一个导航项描述"
+ *         sortOrder:
+ *           type: integer
+ *           description: 排序顺序
+ *           example: 1
+ *         status:
+ *           type: integer
+ *           description: 状态（0-禁用，1-启用）
+ *           example: 1
+ *
  *     NavigationUpdateDto:
  *       type: object
  *       required:
@@ -87,20 +121,35 @@ import { NavigationService } from "./services";
  *           type: integer
  *           description: 导航ID
  *           example: 1
+ *         name:
+ *           type: string
+ *           description: 导航名称
+ *           example: "更新后的名称"
  *         title:
  *           type: string
  *           description: 导航标题
  *           example: "更新后的标题"
- *         content:
+ *         path:
  *           type: string
- *           description: 导航内容
- *           example: "更新后的内容"
- *         type:
+ *           description: 导航路径
+ *           example: "/updated-path"
+ *         icon:
  *           type: string
- *           enum: [NOTICE, INFO, ACTIVITY]
- *           description: 导航类型
- *           example: "INFO"
- * 
+ *           description: 导航图标
+ *           example: "icon-updated"
+ *         description:
+ *           type: string
+ *           description: 导航描述
+ *           example: "更新后的描述"
+ *         sortOrder:
+ *           type: integer
+ *           description: 排序顺序
+ *           example: 2
+ *         status:
+ *           type: integer
+ *           description: 状态（0-禁用，1-启用）
+ *           example: 1
+ *
  *     NavigationListResponse:
  *       type: object
  *       properties:
@@ -123,7 +172,7 @@ import { NavigationService } from "./services";
  *             totalPages:
  *               type: integer
  *               description: 总页数
- * 
+ *
  *     ApiResponse:
  *       type: object
  *       properties:
@@ -293,18 +342,20 @@ export class Navigation {
    *           schema:
    *             $ref: '#/components/schemas/NavigationCreateDto'
    *           examples:
-   *             notice:
-   *               summary: 创建公告
+   *             navigation:
+   *               summary: 创建导航
    *               value:
-   *                 title: "系统维护通知"
-   *                 content: "系统将于今晚进行维护，请提前保存工作"
-   *                 type: "NOTICE"
-   *             info:
-   *               summary: 创建信息
+   *                 title: "系统导航"
+   *                 groupIds: [1, 2]
+   *                 path: "/dashboard"
+   *                 icon: "icon-home"
+   *                 description: "这是一个导航项"
+   *                 sortOrder: 1
+   *                 status: 1
+   *             minimal:
+   *               summary: 最小创建导航
    *               value:
-   *                 title: "新功能上线"
-   *                 content: "我们推出了全新的功能模块"
-   *                 type: "INFO"
+   *                 title: "简单导航"
    *     responses:
    *       200:
    *         description: 创建成功
@@ -373,9 +424,18 @@ export class Navigation {
    *               summary: 更新导航
    *               value:
    *                 id: 1
+   *                 name: "更新后的名称"
    *                 title: "更新后的标题"
-   *                 content: "更新后的内容描述"
-   *                 type: "INFO"
+   *                 path: "/updated-path"
+   *                 icon: "icon-updated"
+   *                 description: "更新后的描述"
+   *                 sortOrder: 2
+   *                 status: 1
+   *             minimal:
+   *               summary: 最小更新
+   *               value:
+   *                 id: 1
+   *                 title: "仅更新标题"
    *     responses:
    *       200:
    *         description: 更新成功

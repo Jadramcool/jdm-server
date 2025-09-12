@@ -1,5 +1,11 @@
 import { Transform } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 /**
  * 创建导航DTO
@@ -9,8 +15,30 @@ export class NavigationDto {
   @Transform((role) => role.value.trim())
   title: string;
 
-  @IsNotEmpty({ message: "类型是必填的" })
-  type: "NOTICE" | "INFO" | "ACTIVITY";
+  @IsOptional()
+  @IsArray({ message: "分组ID列表必须是数组" })
+  @IsNumber({}, { each: true, message: "分组ID必须是数字" })
+  groupIds?: number[];
+
+  @IsOptional()
+  @IsString({ message: "路径必须是字符串" })
+  path?: string;
+
+  @IsOptional()
+  @IsString({ message: "图标必须是字符串" })
+  icon?: string;
+
+  @IsOptional()
+  @IsString({ message: "描述必须是字符串" })
+  description?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: "排序必须是数字" })
+  sortOrder?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: "状态必须是数字" })
+  status?: number;
 }
 
 /**
@@ -43,9 +71,9 @@ export class UpdateNavigationDto {
   @IsString({ message: "描述必须是字符串" })
   description?: string;
 
-  @IsOptional()
-  @IsNumber({}, { message: "分组ID必须是数字" })
-  groupId?: number;
+  // @IsOptional()
+  // @IsNumber({}, { message: "分组ID必须是数字" })
+  // groupId?: number;
 
   @IsOptional()
   @IsNumber({}, { message: "排序必须是数字" })
