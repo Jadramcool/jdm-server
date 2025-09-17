@@ -9,6 +9,7 @@ import {
   httpPut as Put,
   controller,
 } from "inversify-express-utils";
+
 import { NavigationService } from "./services";
 
 /**
@@ -520,6 +521,91 @@ export class Navigation {
       message = "",
       errMsg = "",
     }: Jres = await this.NavigationService.deleteNavigation(roleId);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
+   * /navigation/website-info:
+   *   get:
+   *     summary: 获取网站信息
+   *     description: 根据提供的网址获取网站的标题和图标
+   *     tags: [导航管理 - 导航]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: url
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: 网站URL地址
+   *         example: "https://www.baidu.com"
+   *     responses:
+   *       200:
+   *         description: 获取成功
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     title:
+   *                       type: string
+   *                       description: 网站标题
+   *                       example: "百度一下，你就知道"
+   *                     icon:
+   *                       type: string
+   *                       description: 网站图标URL
+   *                       example: "https://www.baidu.com/favicon.ico"
+   *                     url:
+   *                       type: string
+   *                       description: 标准化后的URL
+   *                       example: "https://www.baidu.com"
+   *                     originalUrl:
+   *                       type: string
+   *                       description: 原始输入的URL
+   *                       example: "www.baidu.com"
+   *                 code:
+   *                   type: integer
+   *                   example: 200
+   *                 message:
+   *                   type: string
+   *                   example: "获取网站信息成功"
+   *       400:
+   *         description: 请求参数错误或网站访问失败
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: null
+   *                 code:
+   *                   type: integer
+   *                   example: 400
+   *                 message:
+   *                   type: string
+   *                   example: "无效的URL格式"
+   *                 errMsg:
+   *                   type: string
+   *                   example: "请提供有效的URL地址"
+   *       401:
+   *         description: 未授权
+   */
+  @Get("/website-info", JWT.authenticateJwt())
+  public async getWebsiteInfo(req: Request, res: Response) {
+    let {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.NavigationService.getWebsiteInfo({
+      url: req.query.url,
+    });
+
     res.sendResult(data, code, message, errMsg);
   }
 }

@@ -11,9 +11,10 @@ import {
  * 创建导航DTO
  */
 export class NavigationDto {
-  @IsNotEmpty({ message: "导航标题是必填的" })
-  @Transform((role) => role.value.trim())
-  title: string;
+  @IsOptional()
+  @IsString({ message: "导航名称必须是字符串" })
+  @Transform((name) => name.value?.trim())
+  name?: string;
 
   @IsOptional()
   @IsArray({ message: "分组ID列表必须是数组" })
@@ -42,6 +43,16 @@ export class NavigationDto {
 }
 
 /**
+ * 获取网站信息DTO
+ */
+export class GetWebsiteInfoDto {
+  @IsNotEmpty({ message: "网址是必填的" })
+  @IsString({ message: "网址必须是字符串" })
+  @Transform((param) => param.value?.trim())
+  url: string;
+}
+
+/**
  * 更新导航DTO
  */
 export class UpdateNavigationDto {
@@ -55,11 +66,6 @@ export class UpdateNavigationDto {
   name?: string;
 
   @IsOptional()
-  @IsString({ message: "导航标题必须是字符串" })
-  @Transform((param) => param.value?.trim())
-  title?: string;
-
-  @IsOptional()
   @IsString({ message: "路径必须是字符串" })
   path?: string;
 
@@ -70,10 +76,6 @@ export class UpdateNavigationDto {
   @IsOptional()
   @IsString({ message: "描述必须是字符串" })
   description?: string;
-
-  // @IsOptional()
-  // @IsNumber({}, { message: "分组ID必须是数字" })
-  // groupId?: number;
 
   @IsOptional()
   @IsNumber({}, { message: "排序必须是数字" })

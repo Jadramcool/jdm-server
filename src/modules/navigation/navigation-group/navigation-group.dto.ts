@@ -19,6 +19,10 @@ export class NavigationGroupDto {
   description?: string;
 
   @IsOptional()
+  @IsNumber({}, { message: "排序必须是数字" })
+  sortOrder?: number;
+
+  @IsOptional()
   @IsNumber({}, { message: "状态必须是数字" })
   status?: number;
 }
@@ -43,6 +47,10 @@ export class UpdateNavigationGroupDto {
   @IsOptional()
   @IsString({ message: "描述必须是字符串" })
   description?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: "排序必须是数字" })
+  sortOrder?: number;
 
   @IsOptional()
   @IsNumber({}, { message: "状态必须是数字" })

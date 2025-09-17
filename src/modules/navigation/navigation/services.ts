@@ -1,11 +1,18 @@
 import { FilterHelper } from "@/utils";
 import { JWT } from "@jwt/index";
 import { User } from "@prisma/client";
+import axios from "axios";
+import * as cheerio from "cheerio";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
+import * as iconv from "iconv-lite";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../../db";
-import { NavigationDto, UpdateNavigationDto } from "./navigation.dto";
+import {
+  GetWebsiteInfoDto,
+  NavigationDto,
+  UpdateNavigationDto,
+} from "./navigation.dto";
 
 @injectable()
 export class NavigationService {
@@ -232,7 +239,7 @@ export class NavigationService {
 
       // 构建创建数据，映射DTO字段到数据库字段
       const createData = {
-        name: navigation.title, // DTO的title映射到数据库的name字段
+        name: navigation.name, // DTO的name映射到数据库的name字段
         path: navigation.path || "", // 使用提供的路径或默认空字符串
         icon: navigation.icon || null, // 使用提供的图标或默认null
         description: navigation.description || null, // 使用提供的描述或默认null
@@ -344,12 +351,6 @@ export class NavigationService {
 
       // 构建更新数据，过滤掉不允许更新的字段
       const { id, ...updateData } = navigation;
-
-      // 如果包含title字段，映射到name字段
-      if (updateData.title) {
-        updateData.name = updateData.title;
-        delete updateData.title;
-      }
 
       // 过滤掉undefined值
       const filteredUpdateData = Object.fromEntries(
@@ -463,6 +464,249 @@ export class NavigationService {
         code: 400,
         message: "获取导航组列表失败",
         errMsg: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  /**
+   * 根据网址获取图标和标题
+   * @param requestBody 请求体对象，包含url字段
+   * @returns 包含图标和标题的对象
+   */
+  public async getWebsiteInfo(requestBody: any) {
+    try {
+      // 验证请求参数
+      const websiteInfoDto = plainToClass(GetWebsiteInfoDto, requestBody);
+      const errors = await validate(websiteInfoDto);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((error) => Object.values(error.constraints || {}).join(", "))
+          .join(", ");
+
+        return {
+          data: null,
+          code: 400,
+          message: "参数验证失败",
+          errMsg: errorMessages,
+        };
+      }
+
+      const url = websiteInfoDto.url;
+
+      // 确保URL包含协议
+      let normalizedUrl = url.trim();
+      if (
+        !normalizedUrl.startsWith("http://") &&
+        !normalizedUrl.startsWith("https://")
+      ) {
+        normalizedUrl = "https://" + normalizedUrl;
+      }
+
+      // 验证URL格式
+      try {
+        new URL(normalizedUrl);
+      } catch (error) {
+        return {
+          data: null,
+          code: 400,
+          message: "无效的URL格式",
+          errMsg: "请提供有效的URL地址",
+        };
+      }
+
+      // 设置请求配置
+      const config = {
+        timeout: 10000, // 10秒超时
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+          "Accept-Encoding": "gzip, deflate, br",
+          Connection: "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        maxRedirects: 5, // 最多5次重定向
+        responseType: "arraybuffer" as const, // 获取原始字节数据
+      };
+
+      // 发送HTTP请求获取网页内容
+      const response = await axios.get(normalizedUrl, config);
+
+      if (response.status !== 200) {
+        return {
+          data: null,
+          code: 400,
+          message: "无法访问该网址",
+          errMsg: `HTTP状态码: ${response.status}`,
+        };
+      }
+
+      // 检测字符编码并转换为UTF-8
+      let htmlContent = "";
+      const buffer = Buffer.from(response.data);
+
+      // 从HTTP响应头获取编码信息
+      const contentType = response.headers["content-type"] || "";
+      let charset = "";
+
+      const charsetMatch = contentType.match(/charset=([^;]+)/i);
+      if (charsetMatch) {
+        charset = charsetMatch[1].toLowerCase().trim();
+      }
+
+      // 如果没有从响应头获取到编码，尝试从HTML内容中检测
+      if (!charset) {
+        const htmlPreview = buffer.toString(
+          "ascii",
+          0,
+          Math.min(1024, buffer.length)
+        );
+        const metaCharsetMatch = htmlPreview.match(
+          /<meta[^>]+charset\s*=\s*["\']?([^"\'>\s]+)/i
+        );
+        if (metaCharsetMatch) {
+          charset = metaCharsetMatch[1].toLowerCase().trim();
+        }
+      }
+
+      // 常见编码映射
+      const encodingMap: { [key: string]: string } = {
+        gb2312: "gbk",
+        gb18030: "gbk",
+        gbk: "gbk",
+        "utf-8": "utf8",
+        utf8: "utf8",
+        "iso-8859-1": "latin1",
+        "windows-1252": "latin1",
+      };
+
+      const encoding = encodingMap[charset] || "utf8";
+
+      try {
+        if (encoding === "utf8") {
+          htmlContent = buffer.toString("utf8");
+        } else if (iconv.encodingExists(encoding)) {
+          htmlContent = iconv.decode(buffer, encoding);
+        } else {
+          // 如果编码不支持，尝试常见的中文编码
+          try {
+            htmlContent = iconv.decode(buffer, "gbk");
+          } catch {
+            htmlContent = buffer.toString("utf8");
+          }
+        }
+      } catch (error) {
+        console.warn("编码转换失败，使用UTF-8:", error);
+        htmlContent = buffer.toString("utf8");
+      }
+
+      // 使用cheerio解析HTML
+      const $ = cheerio.load(htmlContent);
+      // 获取网站标题
+      let title = $("title").text().trim();
+
+      // 如果没有title标签，尝试获取其他可能的标题
+      if (!title) {
+        title =
+          $('meta[property="og:title"]').attr("content") ||
+          $('meta[name="twitter:title"]').attr("content") ||
+          $("h1").first().text().trim() ||
+          "未知标题";
+      }
+
+      // 获取网站图标
+      let icon = "";
+
+      // 按优先级查找图标
+      const iconSelectors = [
+        'link[rel="icon"]',
+        'link[rel="shortcut icon"]',
+        'link[rel="apple-touch-icon"]',
+        'link[rel="apple-touch-icon-precomposed"]',
+        'meta[property="og:image"]',
+        'meta[name="twitter:image"]',
+      ];
+
+      for (const selector of iconSelectors) {
+        const iconElement = $(selector);
+        if (iconElement.length > 0) {
+          icon = iconElement.attr("href") || iconElement.attr("content") || "";
+          if (icon) {
+            // 处理相对路径
+            if (icon.startsWith("//")) {
+              icon = "https:" + icon;
+            } else if (icon.startsWith("/")) {
+              const urlObj = new URL(normalizedUrl);
+              icon = `${urlObj.protocol}//${urlObj.host}${icon}`;
+            } else if (!icon.startsWith("http")) {
+              const urlObj = new URL(normalizedUrl);
+              icon = `${urlObj.protocol}//${urlObj.host}/${icon}`;
+            }
+            break;
+          }
+        }
+      }
+
+      // 如果没有找到图标，使用默认的favicon路径
+      if (!icon) {
+        const urlObj = new URL(normalizedUrl);
+        icon = `${urlObj.protocol}//${urlObj.host}/favicon.ico`;
+      }
+
+      // 清理标题，移除多余的空白字符
+      title = title.replace(/\s+/g, " ").trim();
+
+      // 限制标题长度
+      if (title.length > 100) {
+        title = title.substring(0, 100) + "...";
+      }
+
+      return {
+        data: {
+          title,
+          icon,
+          url: normalizedUrl,
+          originalUrl: url,
+        },
+        code: 200,
+        message: "获取网站信息成功",
+      };
+    } catch (error) {
+      console.error("获取网站信息失败:", error);
+
+      // 处理不同类型的错误
+      let errorMessage = "获取网站信息失败";
+      let errorDetail = "";
+
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ENOTFOUND") {
+          errorMessage = "无法找到该网址";
+          errorDetail = "请检查网址是否正确";
+        } else if (error.code === "ECONNREFUSED") {
+          errorMessage = "连接被拒绝";
+          errorDetail = "目标服务器拒绝连接";
+        } else if (error.code === "ETIMEDOUT") {
+          errorMessage = "请求超时";
+          errorDetail = "网站响应时间过长";
+        } else if (error.response) {
+          errorMessage = "网站访问失败";
+          errorDetail = `HTTP状态码: ${error.response.status}`;
+        } else {
+          errorMessage = "网络请求失败";
+          errorDetail = error.message;
+        }
+      } else {
+        errorDetail = error instanceof Error ? error.message : String(error);
+      }
+
+      return {
+        data: null,
+        code: 400,
+        message: errorMessage,
+        errMsg: errorDetail,
       };
     }
   }
