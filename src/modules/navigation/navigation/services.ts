@@ -1,4 +1,4 @@
-import { FilterHelper } from "@/utils";
+import { FilterHelper, FlattenHelper, PaginationHelper } from "@/utils";
 import { JWT } from "@jwt/index";
 import { User } from "@prisma/client";
 import axios from "axios";
@@ -57,7 +57,7 @@ export class NavigationService {
         });
       }
 
-      // 查询中间关联表roleId
+      // 查询中间关联表groupId
       if (sqlFilters["groupId"]) {
         sqlFilters = {
           ...sqlFilters,
@@ -70,69 +70,46 @@ export class NavigationService {
         delete sqlFilters["groupId"];
       }
 
-      // 硬删除模式下，不需要过滤isDeleted字段
+      const showPagination = options?.showPagination !== false; // 默认启用分页
 
-      let result = [];
-      let totalPages = 1;
-      // 查询总记录数
-      const totalRecords = await this.PrismaDB.prisma.navigation.count({
-        where: sqlFilters,
-      });
+      const page = Math.max(1, parseInt(pagination?.page as string) || 1);
+      const pageSize = Math.max(
+        1,
+        Math.min(100, parseInt(pagination?.pageSize as string) || 10)
+      ); // 限制最大页面大小为100
 
-      let page = 1;
-      let pageSize = 10;
-
-      // 判断是否需要分页
-      if (
-        options &&
-        options.hasOwnProperty("showPagination") &&
-        !options["showPagination"]
-      ) {
-        // 不分页，查询所有数据
-        result = await this.PrismaDB.prisma.navigation.findMany({
-          where: sqlFilters,
-          orderBy: [
-            { sortOrder: "asc" }, // 按排序字段升序
-            { createdTime: "desc" }, // 再按创建时间降序
-          ],
-        });
-      } else {
-        // 分页查询
-        page = Math.max(1, parseInt(pagination?.page as string) || 1);
-        pageSize = Math.max(
-          1,
-          Math.min(100, parseInt(pagination?.pageSize as string) || 10)
-        ); // 限制最大页面大小
-
-        result = await this.PrismaDB.prisma.navigation.findMany({
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-          where: sqlFilters,
-          orderBy: [
-            { sortOrder: "asc" }, // 按排序字段升序
-            { createdTime: "desc" }, // 再按创建时间降序
-          ],
-        });
-
-        totalPages = Math.ceil(totalRecords / pageSize);
+      const include = {};
+      if (options?.with_navigation_group) {
+        include["groups"] = {
+          include: {
+            group: true,
+          },
+        };
       }
 
-      // 构建分页信息
-      const paginationData =
-        options?.showPagination !== false
-          ? {
-              page,
-              pageSize,
-              totalRecords,
-              totalPages,
-            }
-          : null;
+      const resp = await PaginationHelper.executePagedQuery(
+        this.PrismaDB.prisma.navigation,
+        sqlFilters,
+        {
+          showPagination,
+          page,
+          pageSize,
+          orderBy: [{ sortOrder: "asc" }, { createdTime: "asc" }],
+          include,
+        }
+      );
+
+      // 如果包含navigation数据，进行扁平化处理
+      if (options?.with_navigation_group && resp.data) {
+        // 扁平化navigation数据，将中间表的navigation字段提取出来
+        resp.data = FlattenHelper.flattenData(resp.data, {
+          relationField: "groups",
+          targetField: "group",
+        });
+      }
 
       return {
-        data: {
-          data: result,
-          pagination: paginationData,
-        },
+        data: resp,
         code: 200,
         message: "获取导航列表成功",
       };

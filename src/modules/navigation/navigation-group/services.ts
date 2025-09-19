@@ -162,16 +162,56 @@ export class NavigationGroupService {
       if (updateData.status !== undefined)
         updateFields.status = updateData.status;
 
-      // 更新导航组
-      const updatedGroup = await prisma.navigationGroup.update({
-        where: { id: updateData.id },
-        data: updateFields,
+      // 使用事务更新导航组和关联导航
+      const result = await prisma.$transaction(async (transactionPrisma) => {
+        // 更新导航组
+        const updatedGroup = await transactionPrisma.navigationGroup.update({
+          where: { id: updateData.id },
+          data: updateFields,
+        });
+
+        // 如果导航组被禁用（status = 0），同时禁用所有关联的导航
+        if (updateData.status === 0) {
+          // 获取该导航组下的所有导航ID
+          const navigationGroupNavigations =
+            await transactionPrisma.navigationGroupNavigation.findMany({
+              where: {
+                groupId: updateData.id,
+              },
+              select: {
+                navigationId: true,
+              },
+            });
+
+          // 提取导航ID数组
+          const navigationIds = navigationGroupNavigations.map(
+            (item) => item.navigationId
+          );
+
+          // 如果有关联的导航，则批量禁用
+          if (navigationIds.length > 0) {
+            await transactionPrisma.navigation.updateMany({
+              where: {
+                id: { in: navigationIds },
+              },
+              data: {
+                status: 0, // 禁用状态
+                updatedTime: new Date(),
+              },
+            });
+          }
+        }
+
+        return updatedGroup;
       });
 
       return {
         code: 200,
-        message: "导航组更新成功",
-        data: updatedGroup,
+        message:
+          updateData.status === 0
+            ? "导航组已禁用，同时禁用了所有关联的导航"
+            : "导航组更新成功",
+        data: result,
       };
     } catch (error) {
       console.error("更新导航组失败:", error);
