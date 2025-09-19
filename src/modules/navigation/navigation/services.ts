@@ -57,12 +57,23 @@ export class NavigationService {
         });
       }
 
-      // 默认只查询未删除的记录
-      sqlFilters["isDeleted"] = false;
+      // 查询中间关联表roleId
+      if (sqlFilters["groupId"]) {
+        sqlFilters = {
+          ...sqlFilters,
+          groups: {
+            some: {
+              groupId: sqlFilters["groupId"],
+            },
+          },
+        };
+        delete sqlFilters["groupId"];
+      }
+
+      // 硬删除模式下，不需要过滤isDeleted字段
 
       let result = [];
       let totalPages = 1;
-
       // 查询总记录数
       const totalRecords = await this.PrismaDB.prisma.navigation.count({
         where: sqlFilters,
@@ -166,15 +177,6 @@ export class NavigationService {
         };
       }
 
-      if (result.isDeleted) {
-        return {
-          data: null,
-          code: 400,
-          message: "导航已被删除",
-          errMsg: "导航已被删除",
-        };
-      }
-
       return {
         data: result,
         code: 200,
@@ -223,15 +225,14 @@ export class NavigationService {
           await this.PrismaDB.prisma.navigationGroup.findMany({
             where: {
               id: { in: navigation.groupIds },
-              isDeleted: false,
             },
           });
 
         if (existingGroups.length !== navigation.groupIds.length) {
           return {
             code: 400,
-            message: "部分分组不存在或已被删除",
-            errMsg: "部分分组不存在或已被删除",
+            message: "部分分组不存在",
+            errMsg: "部分分组不存在",
             data: null,
           };
         }
@@ -245,7 +246,6 @@ export class NavigationService {
         description: navigation.description || null, // 使用提供的描述或默认null
         sortOrder: navigation.sortOrder || 0, // 使用提供的排序或默认0
         status: navigation.status !== undefined ? navigation.status : 1, // 使用提供的状态或默认启用
-        isDeleted: false, // 默认未删除
       };
 
       // 使用事务创建导航和分组关联
@@ -340,27 +340,75 @@ export class NavigationService {
         };
       }
 
-      if (existingNavigation.isDeleted) {
-        return {
-          data: null,
-          code: 400,
-          message: "导航已被删除，无法更新",
-          errMsg: "导航已被删除",
-        };
+      // 如果提供了分组ID，验证分组是否存在
+      if (navigation.groupIds && navigation.groupIds.length > 0) {
+        const existingGroups =
+          await this.PrismaDB.prisma.navigationGroup.findMany({
+            where: {
+              id: { in: navigation.groupIds },
+            },
+          });
+
+        if (existingGroups.length !== navigation.groupIds.length) {
+          return {
+            code: 400,
+            message: "部分分组不存在",
+            errMsg: "部分分组不存在",
+            data: null,
+          };
+        }
       }
 
-      // 构建更新数据，过滤掉不允许更新的字段
-      const { id, ...updateData } = navigation;
+      // 使用事务更新导航和分组关联
+      const result = await this.PrismaDB.prisma.$transaction(async (prisma) => {
+        // 构建更新数据，过滤掉不允许更新的字段
+        const { id, groupIds, ...updateData } = navigation;
 
-      // 过滤掉undefined值
-      const filteredUpdateData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== undefined)
-      );
+        // 过滤掉undefined值
+        const filteredUpdateData = Object.fromEntries(
+          Object.entries(updateData).filter(([_, value]) => value !== undefined)
+        );
 
-      // 确保updatedTime会被自动更新
-      const result = await this.PrismaDB.prisma.navigation.update({
-        where: { id: navigation.id },
-        data: filteredUpdateData,
+        // 更新导航基本信息
+        const updatedNavigation = await prisma.navigation.update({
+          where: { id: navigation.id },
+          data: filteredUpdateData,
+        });
+
+        // 如果提供了分组ID，更新分组关联
+        if (navigation.groupIds !== undefined) {
+          // 删除现有的分组关联
+          await prisma.navigationGroupNavigation.deleteMany({
+            where: { navigationId: navigation.id },
+          });
+
+          // 如果有新的分组ID，创建新的关联
+          if (navigation.groupIds.length > 0) {
+            const groupNavigationData = navigation.groupIds.map(
+              (groupId, index) => ({
+                navigationId: navigation.id,
+                groupId: groupId,
+                sortOrder: index, // 使用数组索引作为排序
+              })
+            );
+
+            await prisma.navigationGroupNavigation.createMany({
+              data: groupNavigationData,
+            });
+          }
+        }
+
+        // 返回包含分组信息的导航数据
+        return await prisma.navigation.findUnique({
+          where: { id: navigation.id },
+          include: {
+            groups: {
+              include: {
+                group: true,
+              },
+            },
+          },
+        });
       });
 
       return {
@@ -380,7 +428,7 @@ export class NavigationService {
   }
 
   /**
-   * 删除导航（软删除）
+   * 删除导航（硬删除）
    * @param navigationId 导航ID
    * @param user 当前用户
    * @returns 删除结果
@@ -402,24 +450,19 @@ export class NavigationService {
         };
       }
 
-      if (existingNavigation.isDeleted) {
-        return {
-          data: null,
-          code: 400,
-          message: "导航已被删除",
-          errMsg: "导航已被删除",
-        };
-      }
-
-      // 执行软删除
+      // 执行硬删除（包括关联的中间表数据）
       await this.PrismaDB.prisma.$transaction(async (prisma) => {
-        await prisma.navigation.update({
+        // 先删除导航与导航组的关联关系
+        await prisma.navigationGroupNavigation.deleteMany({
+          where: {
+            navigationId: navigationId,
+          },
+        });
+
+        // 再删除导航本身
+        await prisma.navigation.delete({
           where: {
             id: navigationId,
-          },
-          data: {
-            isDeleted: true,
-            deletedTime: new Date(),
           },
         });
       });
@@ -447,11 +490,7 @@ export class NavigationService {
   public async getNavigationGroupList() {
     try {
       const navigationGroups =
-        await this.PrismaDB.prisma.navigationGroup.findMany({
-          where: {
-            isDeleted: false,
-          },
-        });
+        await this.PrismaDB.prisma.navigationGroup.findMany();
       return {
         data: navigationGroups,
         code: 200,
@@ -620,40 +659,106 @@ export class NavigationService {
       // 获取网站图标
       let icon = "";
 
-      // 按优先级查找图标
-      const iconSelectors = [
-        'link[rel="icon"]',
-        'link[rel="shortcut icon"]',
-        'link[rel="apple-touch-icon"]',
-        'link[rel="apple-touch-icon-precomposed"]',
-        'meta[property="og:image"]',
-        'meta[name="twitter:image"]',
-      ];
-
-      for (const selector of iconSelectors) {
-        const iconElement = $(selector);
-        if (iconElement.length > 0) {
-          icon = iconElement.attr("href") || iconElement.attr("content") || "";
-          if (icon) {
-            // 处理相对路径
-            if (icon.startsWith("//")) {
-              icon = "https:" + icon;
-            } else if (icon.startsWith("/")) {
-              const urlObj = new URL(normalizedUrl);
-              icon = `${urlObj.protocol}//${urlObj.host}${icon}`;
-            } else if (!icon.startsWith("http")) {
-              const urlObj = new URL(normalizedUrl);
-              icon = `${urlObj.protocol}//${urlObj.host}/${icon}`;
-            }
-            break;
-          }
+      /**
+       * 从URL中提取域名
+       * @param url 完整URL
+       * @returns 域名字符串
+       */
+      const extractHost = (url: string): string => {
+        try {
+          return new URL(url).host;
+        } catch {
+          return "";
         }
-      }
+      };
 
-      // 如果没有找到图标，使用默认的favicon路径
-      if (!icon) {
-        const urlObj = new URL(normalizedUrl);
-        icon = `${urlObj.protocol}//${urlObj.host}/favicon.ico`;
+      const host = extractHost(normalizedUrl);
+
+      if (host) {
+        // 第三方图标API服务列表（按速度和可靠性排序）
+        const iconServices = [
+          `https://www.google.com/s2/favicons?domain=${host}&sz=64`,
+          `https://icons.duckduckgo.com/ip3/${host}.ico`,
+          `https://favicon.yandex.net/favicon/${host}`,
+          `https://api.lcll.cc/favicon?host=${host}`,
+          `https://favicon.im/${host}`,
+        ];
+
+        /**
+         * 快速验证图标服务是否可用（并发版本）
+         * @param iconUrl 图标URL
+         * @param timeout 超时时间（毫秒）
+         * @returns Promise<{url: string, available: boolean}>
+         */
+        const checkIconAvailability = async (
+          iconUrl: string,
+          timeout: number = 1000
+        ): Promise<{ url: string; available: boolean }> => {
+          try {
+            const response = await axios.head(iconUrl, {
+              timeout,
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+              },
+              validateStatus: (status) => status === 200,
+            });
+            return { url: iconUrl, available: true };
+          } catch {
+            return { url: iconUrl, available: false };
+          }
+        };
+
+        /**
+         * 并发检查所有图标服务，返回第一个可用的
+         * @param services 图标服务URL列表
+         * @returns 第一个可用的图标URL
+         */
+        const findFirstAvailableIcon = async (
+          services: string[]
+        ): Promise<string> => {
+          return new Promise((resolve) => {
+            let resolved = false;
+            let completedCount = 0;
+
+            // 并发检查所有服务
+            services.forEach(async (serviceUrl, index) => {
+              try {
+                const result = await checkIconAvailability(serviceUrl, 800); // 800ms超时
+                completedCount++;
+
+                // 如果找到可用的图标且还没有解决，立即返回
+                if (result.available && !resolved) {
+                  resolved = true;
+                  resolve(result.url);
+                }
+
+                // 如果所有请求都完成了但没有找到可用的，返回第一个（Google）
+                if (completedCount === services.length && !resolved) {
+                  resolved = true;
+                  resolve(services[0]);
+                }
+              } catch {
+                completedCount++;
+                if (completedCount === services.length && !resolved) {
+                  resolved = true;
+                  resolve(services[0]);
+                }
+              }
+            });
+
+            // 设置总体超时，防止无限等待
+            setTimeout(() => {
+              if (!resolved) {
+                resolved = true;
+                resolve(services[0]); // 超时后返回Google服务
+              }
+            }, 2000); // 2秒总超时
+          });
+        };
+
+        // 使用并发方式快速获取可用图标
+        icon = await findFirstAvailableIcon(iconServices);
       }
 
       // 清理标题，移除多余的空白字符

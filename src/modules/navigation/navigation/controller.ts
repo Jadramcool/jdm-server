@@ -150,6 +150,12 @@ import { NavigationService } from "./services";
  *           type: integer
  *           description: 状态（0-禁用，1-启用）
  *           example: 1
+ *         groupIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *           description: 导航分组ID数组
+ *           example: [1, 2, 3]
  *
  *     NavigationListResponse:
  *       type: object
@@ -265,7 +271,7 @@ export class Navigation {
    *       401:
    *         description: 未授权
    */
-  @Get("/list", JWT.authenticateJwt())
+  @Get("/list")
   public async getNavigationList(req: Request, res: Response) {
     const config = this.UtilService.parseQueryParams(req);
     let {
@@ -315,7 +321,7 @@ export class Navigation {
    *       401:
    *         description: 未授权
    */
-  @Get("/detail/:id", JWT.authenticateJwt())
+  @Get("/detail/:id")
   public async getNavigationDetail(req: Request, res: Response) {
     const noticeId = Number(req.params.id);
     let {
@@ -514,13 +520,13 @@ export class Navigation {
    */
   @Delete("/delete/:id", JWT.authenticateJwt())
   public async deleteNavigation(req: Request, res: Response) {
-    const roleId = Number(req.params.id);
+    const navigationId = parseInt(req.params.id);
     let {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.NavigationService.deleteNavigation(roleId);
+    }: Jres = await this.NavigationService.deleteNavigation(navigationId);
     res.sendResult(data, code, message, errMsg);
   }
 

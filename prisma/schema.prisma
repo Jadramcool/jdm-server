@@ -352,7 +352,7 @@ model NavigationGroup {
   deletedTime DateTime?                   @map("deleted_time") // 删除时间
   navigations NavigationGroupNavigation[] // 导航组与导航的多对多关联
 
-  @@map("navigation-group")
+  @@map("navigation_group")
 }
 
 // 导航与导航组的多对多关联表

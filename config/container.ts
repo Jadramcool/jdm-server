@@ -8,9 +8,12 @@ import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
 import { navigationContainer } from "../src/modules/navigation/index";
 import { noticeContainer } from "../src/modules/notice/index";
+import { Public } from "../src/modules/public/controller";
+import { PublicService } from "../src/modules/public/services";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
+
 import { User } from "../src/modules/user/controller";
 import { UserService } from "../src/modules/user/services";
 import { UtilService } from "../src/utils/utils";
@@ -28,7 +31,11 @@ const createContainer = () => {
    * 公告模块
    */
   container.load(noticeContainer);
-
+  /**
+   * public模块
+   */
+  container.bind(Public).to(Public);
+  container.bind(PublicService).to(PublicService);
   /**
    * user模块
    */

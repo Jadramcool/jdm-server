@@ -84,12 +84,9 @@ import { NavigationGroupService } from "./services";
  *           type: string
  *           description: 描述
  *         status:
- *           type: number
- *           description: 状态
- *         isDeleted:
- *           type: boolean
- *           description: 是否删除
- *         createdTime:
+           type: number
+           description: 状态
+         createdTime:
  *           type: string
  *           format: date-time
  *           description: 创建时间
@@ -243,24 +240,14 @@ export class NavigationGroup {
    *     tags: [导航管理 - 导航组]
    *     security:
    *       - bearerAuth: []
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             properties:
-   *               id:
-   *                 type: number
-   *                 description: 导航组ID
-   *                 example: 1
-   *             required:
-   *               - id
-   *           examples:
-   *             删除导航组:
-   *               summary: 删除指定导航组
-   *               value:
-   *                 id: 1
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: number
+   *         description: 导航组ID
+   *         example: 1
    *     responses:
    *       200:
    *         description: 删除成功
@@ -286,7 +273,7 @@ export class NavigationGroup {
    *       500:
    *         description: 服务器错误
    */
-  @httpDelete("/delete", JWT.authenticateJwt())
+  @httpDelete("/delete/:id", JWT.authenticateJwt())
   public async deleteNavigationGroup(req: Request, res: Response) {
     let {
       data = null,
@@ -294,7 +281,7 @@ export class NavigationGroup {
       message = "",
       errMsg = "",
     }: Jres = await this.navigationGroupService.deleteNavigationGroup(
-      req.body.id,
+      parseInt(req.params.id),
       req.user
     );
     res.sendResult(data, code, message, errMsg);
@@ -358,7 +345,7 @@ export class NavigationGroup {
    *       500:
    *         description: 服务器错误
    */
-  @httpGet("/detail/:id", JWT.authenticateJwt())
+  @httpGet("/detail/:id")
   public async getNavigationGroupDetail(req: Request, res: Response) {
     let {
       data = null,
@@ -450,7 +437,7 @@ export class NavigationGroup {
    *       500:
    *         description: 服务器错误
    */
-  @httpGet("/list", JWT.authenticateJwt())
+  @httpGet("/list")
   public async getNavigationGroupList(req: Request, res: Response) {
     const config = this.UtilService.parseQueryParams(req);
     let {

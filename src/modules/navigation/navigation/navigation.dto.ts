@@ -66,6 +66,11 @@ export class UpdateNavigationDto {
   name?: string;
 
   @IsOptional()
+  @IsArray({ message: "分组ID列表必须是数组" })
+  @IsNumber({}, { each: true, message: "分组ID必须是数字" })
+  groupIds?: number[];
+
+  @IsOptional()
   @IsString({ message: "路径必须是字符串" })
   path?: string;
 

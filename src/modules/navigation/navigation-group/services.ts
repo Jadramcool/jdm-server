@@ -53,7 +53,6 @@ export class NavigationGroupService {
       const existingGroup = await prisma.navigationGroup.findFirst({
         where: {
           name: navigationGroupData.name,
-          isDeleted: false,
         },
       });
 
@@ -72,7 +71,6 @@ export class NavigationGroupService {
           icon: navigationGroupData.icon || null,
           description: navigationGroupData.description || null,
           status: navigationGroupData.status || 1,
-          isDeleted: false,
           createdTime: new Date(),
           updatedTime: new Date(),
         },
@@ -119,18 +117,17 @@ export class NavigationGroupService {
         };
       }
 
-      // 检查导航组是否存在且未被删除
+      // 检查导航组是否存在
       const existingGroup = await prisma.navigationGroup.findFirst({
         where: {
           id: updateData.id,
-          isDeleted: false,
         },
       });
 
       if (!existingGroup) {
         return {
           code: 404,
-          message: "导航组不存在或已被删除",
+          message: "导航组不存在",
           data: null,
         };
       }
@@ -141,7 +138,6 @@ export class NavigationGroupService {
           where: {
             name: updateData.name,
             id: { not: updateData.id },
-            isDeleted: false,
           },
         });
 
@@ -188,7 +184,7 @@ export class NavigationGroupService {
   }
 
   /**
-   * 删除导航组（软删除）
+   * 删除导航组（硬删除）
    * @param navigationGroupId 导航组ID
    * @param user 当前用户信息
    * @returns 删除结果
@@ -207,46 +203,40 @@ export class NavigationGroupService {
         };
       }
 
-      // 检查导航组是否存在且未被删除
+      // 检查导航组是否存在
       const existingGroup = await prisma.navigationGroup.findFirst({
         where: {
           id: navigationGroupId,
-          isDeleted: false,
         },
       });
 
       if (!existingGroup) {
         return {
           code: 404,
-          message: "导航组不存在或已被删除",
+          message: "导航组不存在",
           data: null,
         };
       }
 
       // 检查是否有关联的导航项
-      // const relatedNavigations = await prisma.navigation.findMany({
-      //   where: {
-      //     groupId: navigationGroupId,
-      //     isDeleted: false,
-      //   },
-      // });
+      const relatedNavigations =
+        await prisma.navigationGroupNavigation.findMany({
+          where: {
+            groupId: navigationGroupId,
+          },
+        });
 
-      // if (relatedNavigations.length > 0) {
-      //   return {
-      //     code: 400,
-      //     message: "该导航组下还有导航项，无法删除",
-      //     data: null,
-      //   };
-      // }
+      if (relatedNavigations.length > 0) {
+        return {
+          code: 400,
+          message: "该导航组下还有导航项，无法删除",
+          data: null,
+        };
+      }
 
-      // 软删除导航组
-      const deletedGroup = await prisma.navigationGroup.update({
+      // 硬删除导航组
+      const deletedGroup = await prisma.navigationGroup.delete({
         where: { id: navigationGroupId },
-        data: {
-          isDeleted: true,
-          deletedTime: new Date(),
-          updatedTime: new Date(),
-        },
       });
 
       return {
@@ -288,14 +278,13 @@ export class NavigationGroupService {
       const navigationGroup = await prisma.navigationGroup.findFirst({
         where: {
           id: navigationGroupId,
-          isDeleted: false,
         },
       });
 
       if (!navigationGroup) {
         return {
           code: 404,
-          message: "导航组不存在或已被删除",
+          message: "导航组不存在",
           data: null,
         };
       }
@@ -315,12 +304,6 @@ export class NavigationGroupService {
     }
   }
 
-  /**
-   * 获取导航组列表
-   * @param config 查询配置
-   * @param user 当前用户信息
-   * @returns 导航组列表
-   */
   public async getNavigationGroupList(config: ReqListConfig): Promise<Jres> {
     try {
       let { filters, options, pagination } = config;
@@ -351,8 +334,7 @@ export class NavigationGroupService {
         });
       }
 
-      // 默认只查询未删除的记录
-      sqlFilters["isDeleted"] = false;
+      // 硬删除模式下，不需要过滤isDeleted字段
 
       // 优化分页参数处理
       const showPagination = options?.showPagination !== false; // 默认启用分页
@@ -372,6 +354,15 @@ export class NavigationGroupService {
         };
       }
 
+      // 处理导航数量查询 - 仅在只需要数量时使用聚合查询
+      if (options?.with_navigation_count && !options?.with_navigation) {
+        include["_count"] = {
+          select: {
+            navigations: true,
+          },
+        };
+      }
+
       const resp = await PaginationHelper.executePagedQuery(
         this.PrismaDB.prisma.navigationGroup,
         sqlFilters,
@@ -379,7 +370,7 @@ export class NavigationGroupService {
           showPagination,
           page,
           pageSize,
-          orderBy: [{ createdTime: "asc" }],
+          orderBy: [{ sortOrder: "asc" }, { createdTime: "asc" }],
           include,
         }
       );
@@ -391,6 +382,21 @@ export class NavigationGroupService {
           relationField: "navigations",
           targetField: "navigation",
         });
+      }
+
+      // 处理导航数量
+      if (
+        options?.with_navigation_count &&
+        resp.data &&
+        Array.isArray(resp.data)
+      ) {
+        resp.data = resp.data.map((group: any) => ({
+          ...group,
+          navigationCount: options?.with_navigation
+            ? group.navigations?.length || 0 // 有导航数据时直接通过数组长度计算
+            : group._count?.navigations || 0, // 仅需数量时使用聚合查询结果
+          _count: undefined, // 移除原始的 _count 字段
+        }));
       }
 
       return {
