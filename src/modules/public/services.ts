@@ -193,11 +193,6 @@ export class PublicService {
               where: { id: targetId },
               select: { id: true, [sortField]: true },
             });
-            console.log(
-              "🚀 ~ PublicService ~ result ~ targetItem:",
-              targetItem
-            );
-
             if (!targetItem) {
               throw new Error("找不到目标项目");
             }
@@ -238,7 +233,6 @@ export class PublicService {
               // 确保最终结果不小于0
               newSortOrder = this.validateSortValue(newSortOrder);
             } else {
-              console.log("🚀 ~ filters:", filters);
               // 将源项目移动到目标项目之后（源项目排在目标项目后面）
               // 找到目标项目后一个项目的排序值
               const nextItem = await model.findFirst({
@@ -405,11 +399,6 @@ export class PublicService {
           errMsg: `表名 '${tableName}' 不存在或不支持排序操作`,
         };
       }
-
-      console.log(
-        `🚀 开始重置排序 - 表: ${tableName}, 排序字段: ${sortField}, 依据: ${orderBy} ${orderDirection}`
-      );
-
       // 查询所有需要重新排序的记录
       const records = await model.findMany({
         where: filters,
@@ -424,8 +413,6 @@ export class PublicService {
           data: { updatedCount: 0, tableName, sortField },
         };
       }
-      console.log("🚀 ~ sortField:", sortField);
-
       // 构建批量更新操作
       const updateOperations = records.map((record, index) => {
         return model.update({
