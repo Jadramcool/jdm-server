@@ -1,17 +1,24 @@
-import { PrismaClient } from "@prisma/client"; // 数据库orm框架
 import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
+import {
+  createOptimizedPrismaClient,
+  type OptimizedPrismaClient,
+} from "../src/config/database";
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
-import { createOptimizedPrismaClient, type OptimizedPrismaClient } from "../src/config/database";
+import { navigationContainer } from "../src/modules/navigation/index";
 import { BlogContainer } from "../src/modules/blog/index";
 import { noticeContainer } from "../src/modules/notice/index";
+import { Public } from "../src/modules/public/controller";
+import { PublicService } from "../src/modules/public/services";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
+
 import { User } from "../src/modules/user/controller";
 import { UserService } from "../src/modules/user/services";
 import { UtilService } from "../src/utils/utils";
+
 import { RouteInfoManager } from "../src/utils/routeInfoManager";
 
 const createContainer = () => {
@@ -25,7 +32,11 @@ const createContainer = () => {
    * 公告模块
    */
   container.load(noticeContainer);
-
+  /**
+   * public模块
+   */
+  container.bind(Public).to(Public);
+  container.bind(PublicService).to(PublicService);
   /**
    * user模块
    */
@@ -44,6 +55,11 @@ const createContainer = () => {
   container.bind(UtilService).to(UtilService);
 
   /**
+   * 导航模块
+   */
+  container.load(navigationContainer);
+
+  /**
    * 路由信息管理器
    */
   container.bind(RouteInfoManager).to(RouteInfoManager).inSingletonScope();
@@ -58,10 +74,10 @@ const createContainer = () => {
    */
   container.bind<OptimizedPrismaClient>("PrismaClient").toConstantValue(
     createOptimizedPrismaClient({
-      enableQueryLog: process.env.NODE_ENV === 'development',
-      connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
-      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT   || '20000'),
-      queryTimeout: parseInt(process.env.DB_QUERY_TIMEOUT || '60000'),
+      enableQueryLog: process.env.NODE_ENV === "development",
+      connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "10"),
+      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT   || "20000"),
+      queryTimeout: parseInt(process.env.DB_QUERY_TIMEOUT || "60000"),
     })
   );
 

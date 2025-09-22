@@ -23,7 +23,7 @@ import { RoleService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: System Role
+ *   name: 系统管理
  *   description: 系统角色管理
  */
 
@@ -41,7 +41,7 @@ export class Role {
    * /system/role/list:
    *   get:
    *     summary: 获取角色列表
-   *     tags: [System Role]
+   *     tags: [系统管理 - 角色管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -108,7 +108,7 @@ export class Role {
    * /system/role/create:
    *   post:
    *     summary: 创建角色
-   *     tags: [System Role]
+   *     tags: [系统管理 - 角色管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -168,7 +168,7 @@ export class Role {
    * /system/role/delete/{id}:
    *   delete:
    *     summary: 删除角色
-   *     tags: [System Role]
+   *     tags: [系统管理 - 角色管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -218,7 +218,7 @@ export class Role {
    * /system/role/detail/{id}:
    *   get:
    *     summary: 获取角色详情
-   *     tags: [System Role]
+   *     tags: [系统管理 - 角色管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -294,7 +294,7 @@ export class Role {
    *   post:
    *     summary: 更新角色菜单权限
    *     description: 为指定角色分配菜单权限
-   *     tags: [System Role]
+   *     tags: [系统管理 - 角色管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
