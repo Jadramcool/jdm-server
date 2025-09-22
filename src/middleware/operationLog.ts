@@ -13,6 +13,7 @@ import {
   IOperationLogMiddlewareConfig,
   OPERATION_LOG_CONSTANTS,
 } from "../modules/sys/operation-log/typings";
+import { RouteInfoManager } from "../utils/routeInfoManager";
 
 /**
  * 操作日志中间件类
@@ -22,6 +23,7 @@ export class OperationLogMiddleware {
   private operationLogService: OperationLogService;
   private jwtService: JWT;
   private container: Container;
+  private routeInfoManager: RouteInfoManager;
 
   constructor(
     container: Container,
@@ -34,6 +36,7 @@ export class OperationLogMiddleware {
     this.container = container;
     this.operationLogService = container.get(OperationLogService);
     this.jwtService = container.get(JWT);
+    this.routeInfoManager = container.get(RouteInfoManager);
   }
 
   /**
@@ -84,7 +87,7 @@ export class OperationLogMiddleware {
       // 创建操作日志上下文
       const logContext: IOperationLogContext = {
         userId: user?.id || null, // 未认证用户为null
-        username: user?.username || "匿名用户", // 未认证用户显示为匿名用户
+        username: user?.username || "-", // 未认证用户 -
         operationType: this.getOperationType(req.method, req.path),
         module: this.getModuleName(req.path),
         description: this.getOperationDescription(req.method, req.path),
@@ -326,8 +329,19 @@ export class OperationLogMiddleware {
   /**
    * 根据路径获取模块名称
    */
+  /**
+   * 根据路径获取模块名称（使用动态路由信息）
+   * @param path 请求路径
+   * @returns 模块名称
+   */
   private getModuleName(path: string): string {
-    // 查找预定义的模块名称映射
+    // 优先使用动态路由信息管理器
+    const dynamicModuleName = this.routeInfoManager.getModuleNameByPath(path);
+    if (dynamicModuleName && dynamicModuleName !== "未知模块") {
+      return dynamicModuleName;
+    }
+
+    // 回退到预定义的模块名称映射
     for (const [pathPattern, moduleName] of Object.entries(
       OPERATION_LOG_CONSTANTS.MODULE_NAMES
     )) {
@@ -336,7 +350,7 @@ export class OperationLogMiddleware {
       }
     }
 
-    // 从路径中提取模块名
+    // 最后回退到从路径中提取模块名
     const pathParts = path.split("/").filter((part) => part);
     if (pathParts.length >= 2) {
       return pathParts[1]; // 通常是 /api/moduleName 的格式
@@ -419,4 +433,3 @@ export function OperationLog(options: {
 export function getOperationLogMetadata(target: any, propertyKey: string) {
   return Reflect.getMetadata("operationLog", target, propertyKey);
 }
-

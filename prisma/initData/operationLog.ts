@@ -95,7 +95,7 @@ export const operationLogInitData: ICreateOperationLog[] = [
   },
   {
     userId: undefined,
-    username: "匿名用户",
+    username: "-",
     operationType: OperationType.LOGIN,
     module: "用户管理",
     description: "用户登录失败",
@@ -182,4 +182,3 @@ export const operationLogInitData: ICreateOperationLog[] = [
     duration: 78,
   },
 ];
-

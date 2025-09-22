@@ -14,15 +14,15 @@ import cors from "cors";
 import express from "express";
 import { getRouteInfo, InversifyExpressServer } from "inversify-express-utils";
 import "module-alias/register";
+import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import createContainer from "./config/container";
 import { checkDatabaseHealth } from "./src/config/database";
 import { PrismaDB } from "./src/db";
 import { JWT } from "./src/jwt";
-// import { logger } from "./src/middleware/logger";
-import swaggerJsDoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
 import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
+import { RouteInfoManager } from "./src/utils/routeInfoManager";
 
 const container = createContainer();
 
@@ -36,14 +36,70 @@ const swaggerOptions: any = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API Documentation",
+      title: "JDM Server API",
       version: "1.0.0",
-      description: "API documentation for the Express application",
+      description: `这是一个企业级管理系统的API文档。您可以在这里找到所有可用的API接口，包括用户管理、部门管理、通知系统、AI聊天等功能。
+
+  更多信息请访问：
+  - [项目文档](https://github.com/Jadramcool)
+  - [API JSON文档](http://localhost:3000/api-docs.json)
+
+  如有问题请联系开发者。`,
+      // termsOfService: "https://your-domain.com/terms",
+      // contact: {
+      //   name: "API Support",
+      //   url: "https://your-domain.com/support",
+      //   email: "support@your-domain.com",
+      // },
+      // license: {
+      //   name: "MIT",
+      //   url: "https://opensource.org/licenses/MIT",
+      // },
     },
     servers: [
       {
-        url: "http://localhost:3000/api", // API 根路径
-        description: "Local server",
+        url: "http://localhost:3000/api",
+        description: "开发环境服务器",
+      },
+      {
+        url: "http://117.72.60.94:3000/api",
+        description: "生产环境服务器",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "请在此处输入JWT token，格式：Bearer <token>",
+        },
+      },
+      schemas: {
+        ApiResponse: {
+          type: "object",
+          properties: {
+            code: {
+              type: "integer",
+              description: "响应状态码",
+              example: 200,
+            },
+            message: {
+              type: "string",
+              description: "响应消息",
+              example: "操作成功",
+            },
+            data: {
+              type: "object",
+              description: "响应数据",
+            },
+          },
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },
@@ -67,20 +123,25 @@ server.setConfig((app) => {
       excludePaths: ["/health", "/api-docs", "/uploads"],
       excludeMethods: ["OPTIONS"], // 排除的HTTP方法
       // includeMethods: ["GET", "POST", "PUT", "DELETE"], // 只记录指定的HTTP方法（优先级高于excludeMethods）
-      logParams: true,  // 记录请求参数
-      logResult: true,  // 记录响应结果
-      maxParamsLength: 2000,  // 参数最大长度
-      maxResultLength: 2000,  // 结果最大长度
+      logParams: true, // 记录请求参数
+      logResult: true, // 记录响应结果
+      maxParamsLength: 2000, // 参数最大长度
+      maxResultLength: 2000, // 结果最大长度
       async: true,
     })
   );
 
   app.use(responseHandler);
-  // app.use(logger);
   app.use("/uploads", express.static("uploads")); // 静态文件
 
   // Swagger UI 路由
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+  // 提供动态生成的OpenAPI JSON文档接口
+  app.get("/api-docs.json", (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+  });
 });
 
 // 构建一个Express应用程序
@@ -155,58 +216,10 @@ async function performDatabaseHealthCheck() {
 
 const routeInfo = getRouteInfo(container);
 
-// 优化的路由信息打印函数
-function printOptimizedRouteInfo(routes: any[]) {
-  const totalEndpoints = routes.reduce(
-    (total, module) => total + (module.endpoints?.length || 0),
-    0
-  );
-
-  console.log("\n" + "=".repeat(60));
-  console.log("📋 API 接口统计报告");
-  console.log("=".repeat(60));
-  console.log(`📊 模块总数: ${routes.length} 个`);
-  console.log(`🔗 接口总数: ${totalEndpoints} 个`);
-  console.log("=".repeat(60));
-
-  routes.forEach((module, index) => {
-    const controllerName = module.controller;
-    const endpoints = module.endpoints || [];
-    const endpointCount = endpoints.length;
-
-    console.log(`\n📁 ${index + 1}. ${controllerName} 模块`);
-    console.log(`   └─ 接口数量: ${endpointCount} 个`);
-
-    if (endpointCount > 0) {
-      console.log("   └─ 接口列表:");
-      endpoints.forEach((endpoint: any, endpointIndex: number) => {
-        const route = endpoint.route;
-        const method = route.split(" ")[0];
-        const path = route.split(" ")[1] || route;
-        const methodEmoji = getMethodEmoji(method);
-        console.log(`      ${methodEmoji} ${endpointIndex + 1}. ${route}`);
-      });
-    }
-  });
-
-  console.log("\n" + "=".repeat(60));
-  console.log("✅ 路由信息加载完成");
-  console.log("=".repeat(60));
-}
-
-// 根据HTTP方法返回对应的emoji
-function getMethodEmoji(method: string): string {
-  const methodMap: { [key: string]: string } = {
-    GET: "📖",
-    POST: "📝",
-    PUT: "✏️",
-    DELETE: "🗑️",
-    PATCH: "🔧",
-  };
-  return methodMap[method] || "🔗";
-}
-
-printOptimizedRouteInfo(routeInfo);
+// 初始化路由信息管理器
+const routeInfoManager = container.get(RouteInfoManager);
+routeInfoManager.initialize(routeInfo);
+// routeInfoManager.printRouteMappings();
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "localhost";

@@ -22,7 +22,7 @@ import { UserManagerService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: System User
+ *   name: 系统管理
  *   description: 系统用户管理相关接口
  */
 @controller("/system/user")
@@ -40,7 +40,7 @@ export class UserManager {
    * /system/user/list:
    *   get:
    *     summary: 获取用户列表
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -131,7 +131,7 @@ export class UserManager {
    * /system/user/detail/{id}:
    *   get:
    *     summary: 获取用户详情
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -199,7 +199,7 @@ export class UserManager {
    * /system/user/create:
    *   post:
    *     summary: 创建用户
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -276,7 +276,7 @@ export class UserManager {
    * /system/user/update:
    *   put:
    *     summary: 更新用户
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -351,7 +351,7 @@ export class UserManager {
    * /system/user/delete/{id}:
    *   put:
    *     summary: 删除用户
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -401,7 +401,7 @@ export class UserManager {
    * /system/user/batchDelete:
    *   put:
    *     summary: 批量删除用户
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -465,7 +465,7 @@ export class UserManager {
    *   put:
    *     summary: 启用/禁用用户
    *     description: 更新用户的启用状态
-   *     tags: [System User]
+   *     tags: [系统管理 - 用户管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:

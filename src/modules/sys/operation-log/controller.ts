@@ -21,7 +21,7 @@ import { OperationLogService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: Operation Log
+ *   name: 系统管理
  *   description: 操作日志管理相关接口
  */
 @controller("/system/operation-log")
@@ -43,7 +43,7 @@ export class OperationLogController {
    * /system/operation-log/list:
    *   get:
    *     summary: 获取操作日志列表
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -135,7 +135,7 @@ export class OperationLogController {
    * /system/operation-log/detail/{id}:
    *   get:
    *     summary: 获取操作日志详情
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -182,7 +182,7 @@ export class OperationLogController {
    * /system/operation-log/stats:
    *   get:
    *     summary: 获取操作日志统计信息
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     responses:
@@ -231,7 +231,7 @@ export class OperationLogController {
    * /system/operation-log/delete/{id}:
    *   delete:
    *     summary: 删除操作日志
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -276,7 +276,7 @@ export class OperationLogController {
    * /system/operation-log/batch-delete:
    *   post:
    *     summary: 批量删除操作日志
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -326,7 +326,7 @@ export class OperationLogController {
    * /system/operation-log/clear-expired:
    *   post:
    *     summary: 清理过期操作日志
-   *     tags: [Operation Log]
+   *     tags: [系统管理 - 操作日志]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -372,4 +372,3 @@ export class OperationLogController {
     res.sendResult(data, code, message, errMsg);
   }
 }
-
