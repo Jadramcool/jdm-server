@@ -6,15 +6,20 @@ import {
 } from "../src/config/database";
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
+import { navigationContainer } from "../src/modules/navigation/index";
 import { externalContainer } from "../src/modules/external/index";
 import { noticeContainer } from "../src/modules/notice/index";
+import { Public } from "../src/modules/public/controller";
+import { PublicService } from "../src/modules/public/services";
 import { systemContainer } from "../src/modules/sys/index";
 import { Upload } from "../src/modules/upload/controller";
 import { UploadService } from "../src/modules/upload/services";
+
 import { User } from "../src/modules/user/controller";
 import { UserService } from "../src/modules/user/services";
 import { XiaoChengService } from "../src/modules/xiaocheng/services";
 import { HttpService } from "../src/utils/http";
+
 import { RouteInfoManager } from "../src/utils/routeInfoManager";
 import { UtilService } from "../src/utils/utils";
 import { XiaoCheng } from "./../src/modules/xiaocheng/controller";
@@ -34,7 +39,11 @@ const createContainer = () => {
    * 外部数据库模块
    */
   container.load(externalContainer);
-
+  /**
+   * public模块
+   */
+  container.bind(Public).to(Public);
+  container.bind(PublicService).to(PublicService);
   /**
    * user模块
    */
@@ -54,6 +63,11 @@ const createContainer = () => {
 
   container.bind(UtilService).to(UtilService);
   container.bind(HttpService).to(HttpService);
+
+  /**
+   * 导航模块
+   */
+  container.load(navigationContainer);
 
   /**
    * 路由信息管理器

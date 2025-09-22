@@ -22,7 +22,7 @@ import { UserService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: User
+ *   name: 用户管理
  *   description: 用户管理
  */
 
@@ -36,7 +36,7 @@ export class User {
    * /user/register:
    *   post:
    *     summary: 注册
-   *     tags: [User]
+   *     tags: [用户管理]
    *     requestBody:
    *       required: true
    *       content:
@@ -70,7 +70,7 @@ export class User {
    * /user/login:
    *   post:
    *     summary: 登录
-   *     tags: [User]
+   *     tags: [用户管理]
    *     requestBody:
    *       required: true
    *       content:
@@ -106,7 +106,7 @@ export class User {
    * /user/info:
    *   get:
    *     summary: 获取用户信息
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     responses:
@@ -150,7 +150,7 @@ export class User {
    * /user/userRole:
    *   get:
    *     summary: 获取用户角色
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     responses:
@@ -198,7 +198,7 @@ export class User {
    *   get:
    *     summary: 获取用户菜单
    *     description: 获取用户菜单列表，包括用户角色对应的菜单权限
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     responses:
@@ -249,7 +249,7 @@ export class User {
    * /user/update:
    *   put:
    *     summary: 更新用户信息
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -295,7 +295,7 @@ export class User {
    * /user/checkPassword:
    *   post:
    *     summary: 验证用户密码
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -346,7 +346,7 @@ export class User {
    * /user/updatePassword:
    *   put:
    *     summary: 修改用户密码
-   *     tags: [User]
+   *     tags: [用户管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:

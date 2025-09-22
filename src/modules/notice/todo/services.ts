@@ -88,8 +88,6 @@ export class TodoService {
    * @param todo
    */
   public async createTodo(todo: TodoDto, user: User) {
-    console.log("🚀 ~ todo:", todo);
-
     try {
       let todoDto = plainToClass(TodoDto, todo);
       const errors = await validate(todoDto);
@@ -267,9 +265,6 @@ export class TodoService {
   public async updateTodoOrder(data: any) {
     try {
       const { sort, pid = 0 } = data;
-      console.log("🚀 ~ updateTodoOrder ~ sort:", sort);
-
-      console.log("🚀 ~ updateTodoOrder ~ pid:", pid);
       let parentOrder = 0;
 
       if (pid) {

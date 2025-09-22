@@ -15,7 +15,7 @@ import { MenuService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: System Menu
+ *   name: 系统管理
  *   description: 系统菜单管理
  */
 
@@ -34,7 +34,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/list:
    *   get:
    *     summary: 获取菜单列表
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -99,7 +99,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/create:
    *   post:
    *     summary: 创建菜单
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -154,7 +154,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/update:
    *   put:
    *     summary: 更新菜单
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -236,7 +236,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/delete/{id}:
    *   delete:
    *     summary: 删除菜单
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -286,7 +286,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/batchDelete:
    *   put:
    *     summary: 批量删除菜单
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -344,7 +344,7 @@ export class Menu implements interfaces.Controller {
    * /system/menu/onlineMenus:
    *   get:
    *     summary: 获取在线菜单列表
-   *     tags: [System Menu]
+   *     tags: [系统管理 - 菜单管理]
    *     parameters:
    *       - in: query
    *         name: page

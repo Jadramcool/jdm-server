@@ -14,13 +14,12 @@ import cors from "cors";
 import express from "express";
 import { getRouteInfo, InversifyExpressServer } from "inversify-express-utils";
 import "module-alias/register";
+import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import createContainer from "./config/container";
 import { checkDatabaseHealth } from "./src/config/database";
 import { PrismaDB } from "./src/db";
 import { JWT } from "./src/jwt";
-// import { logger } from "./src/middleware/logger";
-import swaggerJsDoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
 import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
 import { RouteInfoManager } from "./src/utils/routeInfoManager";
@@ -37,14 +36,70 @@ const swaggerOptions: any = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API Documentation",
+      title: "JDM Server API",
       version: "1.0.0",
-      description: "API documentation for the Express application",
+      description: `这是一个企业级管理系统的API文档。您可以在这里找到所有可用的API接口，包括用户管理、部门管理、通知系统、AI聊天等功能。
+
+  更多信息请访问：
+  - [项目文档](https://github.com/Jadramcool)
+  - [API JSON文档](http://localhost:3000/api-docs.json)
+
+  如有问题请联系开发者。`,
+      // termsOfService: "https://your-domain.com/terms",
+      // contact: {
+      //   name: "API Support",
+      //   url: "https://your-domain.com/support",
+      //   email: "support@your-domain.com",
+      // },
+      // license: {
+      //   name: "MIT",
+      //   url: "https://opensource.org/licenses/MIT",
+      // },
     },
     servers: [
       {
-        url: "http://localhost:3000/api", // API 根路径
-        description: "Local server",
+        url: "http://localhost:3000/api",
+        description: "开发环境服务器",
+      },
+      {
+        url: "http://117.72.60.94:3000/api",
+        description: "生产环境服务器",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "请在此处输入JWT token，格式：Bearer <token>",
+        },
+      },
+      schemas: {
+        ApiResponse: {
+          type: "object",
+          properties: {
+            code: {
+              type: "integer",
+              description: "响应状态码",
+              example: 200,
+            },
+            message: {
+              type: "string",
+              description: "响应消息",
+              example: "操作成功",
+            },
+            data: {
+              type: "object",
+              description: "响应数据",
+            },
+          },
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },
@@ -77,11 +132,16 @@ server.setConfig((app) => {
   );
 
   app.use(responseHandler);
-  // app.use(logger);
   app.use("/uploads", express.static("uploads")); // 静态文件
 
   // Swagger UI 路由
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+  // 提供动态生成的OpenAPI JSON文档接口
+  app.get("/api-docs.json", (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+  });
 });
 
 // 构建一个Express应用程序

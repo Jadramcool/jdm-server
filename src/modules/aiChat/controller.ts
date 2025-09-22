@@ -8,7 +8,7 @@ import { AiChatService } from "./services";
 /**
  * @swagger
  * tags:
- *   name: AI Chat
+ *   name: AI聊天管理
  *   description: AI聊天服务
  */
 
@@ -26,7 +26,7 @@ export class AiChat {
    * /aiChat/zhipu-chat:
    *   post:
    *     summary: 智谱清言AI聊天
-   *     tags: [AI Chat]
+   *     tags: [AI聊天管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -93,7 +93,7 @@ export class AiChat {
    *   post:
    *     summary: AI流式聊天
    *     description: 使用流式传输的AI聊天接口，实时返回AI回复
-   *     tags: [AI Chat]
+   *     tags: [AI聊天管理]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
