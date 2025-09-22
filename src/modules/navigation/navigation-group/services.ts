@@ -64,6 +64,20 @@ export class NavigationGroupService {
         };
       }
 
+      // 处理排序字段：如果没有传入sortOrder或者为0，则自动分配为最后
+      let sortOrder = navigationGroupData.sortOrder;
+      if (!sortOrder || sortOrder === 0) {
+        // 查询当前最大的sortOrder值
+        const maxSortOrderResult = await prisma.navigationGroup.aggregate({
+          _max: {
+            sortOrder: true,
+          },
+        });
+
+        // 如果没有任何记录，从1开始；否则在最大值基础上+1
+        sortOrder = (maxSortOrderResult._max.sortOrder || 0) + 10;
+      }
+
       // 创建导航组
       const navigationGroup = await prisma.navigationGroup.create({
         data: {
@@ -71,6 +85,7 @@ export class NavigationGroupService {
           icon: navigationGroupData.icon || null,
           description: navigationGroupData.description || null,
           status: navigationGroupData.status || 1,
+          sortOrder: sortOrder,
           createdTime: new Date(),
           updatedTime: new Date(),
         },

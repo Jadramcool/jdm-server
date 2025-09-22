@@ -215,13 +215,28 @@ export class NavigationService {
         }
       }
 
+      // 处理排序字段：如果没有传入sortOrder或者为0，则自动分配为最后
+      let sortOrder = navigation.sortOrder;
+      if (!sortOrder || sortOrder === 0) {
+        // 查询当前最大的sortOrder值
+        const maxSortOrderResult =
+          await this.PrismaDB.prisma.navigationGroup.aggregate({
+            _max: {
+              sortOrder: true,
+            },
+          });
+
+        // 如果没有任何记录，从1开始；否则在最大值基础上+1
+        sortOrder = (maxSortOrderResult._max.sortOrder || 0) + 10;
+      }
+
       // 构建创建数据，映射DTO字段到数据库字段
       const createData = {
         name: navigation.name, // DTO的name映射到数据库的name字段
         path: navigation.path || "", // 使用提供的路径或默认空字符串
         icon: navigation.icon || null, // 使用提供的图标或默认null
         description: navigation.description || null, // 使用提供的描述或默认null
-        sortOrder: navigation.sortOrder || 0, // 使用提供的排序或默认0
+        sortOrder: sortOrder, // 使用提供的排序或默认0
         status: navigation.status !== undefined ? navigation.status : 1, // 使用提供的状态或默认启用
       };
 
