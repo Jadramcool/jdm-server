@@ -65,9 +65,9 @@ model User {
   Todo            Todo[] // 待办事项
   department      Department?    @relation("UserDepartment", fields: [departmentId], references: [id]) // 所属部门
   userNotice      UserNotice[] // 用户通知关联
-  isBlogUser Boolean @default(false) @map("is_blog_user") // 是否是博客用户
+  isBlogUser      Boolean        @default(false) @map("is_blog_user") // 是否是博客用户
 
-  roles           UserRole[] // 用户角色关联
+  roles UserRole[] // 用户角色关联
 
   // 博客相关关系
   blogPosts        BlogPost[] // 用户发布的博客文章
@@ -627,13 +627,15 @@ model BlogCommentLike {
 
 // 博客配置表
 model BlogConfig {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique // 配置键
-  value       String?  @db.Text // 配置值（JSON格式）
+  id          Int        @id @default(autoincrement())
+  key         String     @unique // 配置键
+  name        String     @default("") @map("name") // 配置名称
+  value       String?    @db.Text // 配置值（JSON格式）
   description String? // 配置描述
   category    String? // 配置分类
-  createdTime DateTime @default(now()) @map("created_time")
-  updatedTime DateTime @updatedAt @map("updated_time")
+  type        ConfigType @default(STRING) // 配置类型
+  createdTime DateTime   @default(now()) @map("created_time")
+  updatedTime DateTime   @updatedAt @map("updated_time")
 
   @@index([category])
   @@map("blog_config")

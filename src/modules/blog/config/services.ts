@@ -1,3 +1,5 @@
+import { FilterHelper, PaginationHelper } from "@/utils";
+import { ConfigType } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../../db";
 import { UtilService } from "../../../utils/utils";
@@ -6,14 +8,16 @@ interface CreateConfigData {
   key: string;
   value: string;
   description?: string;
-  type?: string;
+  type?: ConfigType;
   category?: string;
+  name?: string;
 }
 
 interface UpdateConfigData {
+  id: number;
   value?: string;
   description?: string;
-  type?: string;
+  type?: ConfigType;
   category?: string;
 }
 
@@ -28,7 +32,7 @@ interface ConfigListQuery {
 @injectable()
 export class BlogConfigService {
   constructor(
-    @inject(PrismaDB) private readonly prismaService: PrismaDB,
+    @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(UtilService) private readonly utilService: UtilService
   ) {}
 
@@ -38,10 +42,9 @@ export class BlogConfigService {
   async createConfig(data: CreateConfigData): Promise<Jres> {
     try {
       // 检查配置键是否已存在
-      const existingConfig =
-        await this.prismaService.prisma.blogConfig.findUnique({
-          where: { key: data.key },
-        });
+      const existingConfig = await this.PrismaDB.prisma.blogConfig.findUnique({
+        where: { key: data.key },
+      });
 
       if (existingConfig) {
         return {
@@ -51,12 +54,14 @@ export class BlogConfigService {
         };
       }
 
-      const config = await this.prismaService.prisma.blogConfig.create({
+      const config = await this.PrismaDB.prisma.blogConfig.create({
         data: {
           key: data.key,
           value: data.value,
           description: data.description || "",
           category: data.category || "general",
+          type: data.type || ConfigType.STRING,
+          name: data.name,
         },
       });
 
@@ -76,73 +81,88 @@ export class BlogConfigService {
     }
   }
 
-  /**
-   * 获取配置列表
-   */
-  async getConfigList(query: ConfigListQuery): Promise<Jres> {
+  // 获取所有配置
+  async getAllConfigs(): Promise<Jres> {
     try {
-      const { category, type, keyword, page, pageSize } = query;
-
-      // 构建查询条件
-      const where: any = {};
-
-      if (category) {
-        where.category = category;
-      }
-
-      // type字段在BlogConfig模型中不存在，移除此条件
-
-      if (keyword) {
-        where.OR = [
-          { key: { contains: keyword } },
-          { description: { contains: keyword } },
-          { value: { contains: keyword } },
-        ];
-      }
-
-      // 如果提供了分页参数
-      if (page && pageSize) {
-        const pageNum = parseInt(page);
-        const size = parseInt(pageSize);
-        const skip = (pageNum - 1) * size;
-
-        const [configs, total] = await Promise.all([
-          this.prismaService.prisma.blogConfig.findMany({
-            where,
-            orderBy: {
-              createdTime: "desc",
-            },
-            skip,
-            take: size,
-          }),
-          this.prismaService.prisma.blogConfig.count({ where }),
-        ]);
-
-        return {
-          code: 200,
-          message: "",
-          data: {
-            data: configs,
-            total,
-            page: pageNum,
-            pageSize: size,
-            totalPages: Math.ceil(total / size),
-          },
-        };
-      }
-
-      // 不分页
-      const configs = await this.prismaService.prisma.blogConfig.findMany({
-        where,
-        orderBy: {
-          createdTime: "desc",
-        },
+      const configs = await this.PrismaDB.prisma.blogConfig.findMany({
+        orderBy: [{ createdTime: "asc" }],
       });
+      const configsMap = configs.reduce((acc, config) => {
+        acc[config.key] = config.value;
+        return acc;
+      }, {} as Record<string, string>);
 
       return {
         code: 200,
+        message: "获取所有配置成功",
+        data: configsMap,
+      };
+    } catch (error) {
+      console.error("获取所有配置失败:", error);
+      return {
+        code: 500,
+        message: "获取所有配置失败",
+        data: null,
+        errMsg: error instanceof Error ? error.message : "未知错误",
+      };
+    }
+  }
+
+  /**
+   * 获取配置列表
+   */
+  async getConfigList(config: ReqListConfig): Promise<Jres> {
+    try {
+      let { filters, options, pagination } = config;
+
+      // 初始化过滤条件
+      filters = filters || {};
+      let sqlFilters: any = {};
+
+      const keys = Object.keys(filters);
+      if (keys.length > 0) {
+        // 添加基础过滤条件
+        sqlFilters = FilterHelper.addFilterCondition(filters, [
+          "id",
+          "name", // 使用数据库实际字段名
+          "category",
+          "type",
+          "keyword",
+        ]);
+
+        // 遍历时间字段并添加范围过滤条件
+        ["createdTime", "updatedTime"].forEach((timeField) => {
+          if (keys.includes(timeField) && Array.isArray(filters[timeField])) {
+            sqlFilters[timeField] = {
+              gte: new Date(filters[timeField][0]),
+              lte: new Date(filters[timeField][1]),
+            };
+          }
+        });
+      }
+
+      const showPagination = options?.showPagination !== false; // 默认启用分页
+
+      const page = Math.max(1, parseInt(pagination?.page as string) || 1);
+      const pageSize = Math.max(
+        1,
+        Math.min(100, parseInt(pagination?.pageSize as string) || 10)
+      ); // 限制最大页面大小为100
+
+      const resp = await PaginationHelper.executePagedQuery(
+        this.PrismaDB.prisma.blogConfig,
+        sqlFilters,
+        {
+          showPagination,
+          page,
+          pageSize,
+          orderBy: [{ createdTime: "asc" }],
+        }
+      );
+      return {
+        code: 200,
         message: "",
-        data: configs,
+        data: resp,
       };
     } catch (error) {
       console.error("获取配置列表失败:", error);
@@ -160,7 +180,7 @@ export class BlogConfigService {
    */
   async getConfigsByCategory(category: string): Promise<Jres> {
     try {
-      const configs = await this.prismaService.prisma.blogConfig.findMany({
+      const configs = await this.PrismaDB.prisma.blogConfig.findMany({
         where: {
           category,
         },
@@ -201,7 +221,7 @@ export class BlogConfigService {
    */
   async getConfigByKey(key: string): Promise<Jres> {
     try {
-      const config = await this.prismaService.prisma.blogConfig.findUnique({
+      const config = await this.PrismaDB.prisma.blogConfig.findUnique({
         where: {
           key,
         },
@@ -239,7 +259,7 @@ export class BlogConfigService {
    */
   async getConfigById(id: number): Promise<Jres> {
     try {
-      const config = await this.prismaService.prisma.blogConfig.findUnique({
+      const config = await this.PrismaDB.prisma.blogConfig.findUnique({
         where: {
           id,
         },
@@ -272,14 +292,14 @@ export class BlogConfigService {
   /**
    * 更新配置
    */
-  async updateConfig(id: number, data: UpdateConfigData): Promise<Jres> {
+  async updateConfig(data: UpdateConfigData): Promise<Jres> {
+    const { id, ...updateData } = data;
     try {
-      const existingConfig =
-        await this.prismaService.prisma.blogConfig.findUnique({
-          where: {
-            id,
-          },
-        });
+      const existingConfig = await this.PrismaDB.prisma.blogConfig.findUnique({
+        where: {
+          id,
+        },
+      });
 
       if (!existingConfig) {
         return {
@@ -289,10 +309,10 @@ export class BlogConfigService {
         };
       }
 
-      const config = await this.prismaService.prisma.blogConfig.update({
+      const config = await this.PrismaDB.prisma.blogConfig.update({
         where: { id },
         data: {
-          ...data,
+          ...updateData,
           updatedTime: new Date(),
         },
       });
@@ -314,52 +334,15 @@ export class BlogConfigService {
   }
 
   /**
-   * 批量更新配置
-   */
-  async updateConfigs(
-    configs: Array<{ key: string; value: string }>
-  ): Promise<Jres> {
-    try {
-      const updatePromises = configs.map(({ key, value }) =>
-        this.prismaService.prisma.blogConfig.updateMany({
-          where: {
-            key,
-          },
-          data: {
-            value,
-          },
-        })
-      );
-
-      await Promise.all(updatePromises);
-
-      return {
-        code: 200,
-        message: "配置批量更新成功",
-        data: null,
-      };
-    } catch (error) {
-      console.error("批量更新配置失败:", error);
-      return {
-        code: 500,
-        message: "批量更新配置失败",
-        data: null,
-        errMsg: error instanceof Error ? error.message : "未知错误",
-      };
-    }
-  }
-
-  /**
    * 删除配置
    */
   async deleteConfig(id: number): Promise<Jres> {
     try {
-      const existingConfig =
-        await this.prismaService.prisma.blogConfig.findUnique({
-          where: {
-            id,
-          },
-        });
+      const existingConfig = await this.PrismaDB.prisma.blogConfig.findUnique({
+        where: {
+          id,
+        },
+      });
 
       if (!existingConfig) {
         return {
@@ -369,7 +352,7 @@ export class BlogConfigService {
         };
       }
 
-      await this.prismaService.prisma.blogConfig.delete({
+      await this.PrismaDB.prisma.blogConfig.delete({
         where: { id },
       });
 
@@ -394,7 +377,7 @@ export class BlogConfigService {
    */
   async getConfigCategories(): Promise<Jres> {
     try {
-      const categories = await this.prismaService.prisma.blogConfig.findMany({
+      const categories = await this.PrismaDB.prisma.blogConfig.findMany({
         select: {
           category: true,
         },
@@ -428,8 +411,8 @@ export class BlogConfigService {
   async getConfigStats(): Promise<Jres> {
     try {
       const [totalConfigs, categoryStats] = await Promise.all([
-        this.prismaService.prisma.blogConfig.count(),
-        this.prismaService.prisma.blogConfig.groupBy({
+        this.PrismaDB.prisma.blogConfig.count(),
+        this.PrismaDB.prisma.blogConfig.groupBy({
           by: ["category"],
           _count: {
             id: true,

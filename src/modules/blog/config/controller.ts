@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { inject } from "inversify";
-import { controller, httpGet as Get, httpPost as Post, httpPut as Put, httpDelete as Delete } from "inversify-express-utils";
+import {
+  controller,
+  httpDelete as Delete,
+  httpGet as Get,
+  httpPost as Post,
+  httpPut as Put,
+} from "inversify-express-utils";
 import { UtilService } from "../../../utils/utils";
 import { BlogConfigService } from "./services";
 
@@ -9,7 +15,7 @@ import { BlogConfigService } from "./services";
  * tags:
  *   - name: 博客配置管理
  *     description: 博客系统配置相关接口
- * 
+ *
  * components:
  *   schemas:
  *     BlogConfig:
@@ -44,7 +50,7 @@ import { BlogConfigService } from "./services";
  *           description: 更新时间
  *         parsedValue:
  *           description: 解析后的值（根据type转换）
- * 
+ *
  *     CreateConfigRequest:
  *       type: object
  *       required:
@@ -73,7 +79,7 @@ import { BlogConfigService } from "./services";
  *           default: general
  *           description: 配置分类
  *           example: "site"
- * 
+ *
  *     UpdateConfigRequest:
  *       type: object
  *       properties:
@@ -90,7 +96,7 @@ import { BlogConfigService } from "./services";
  *         category:
  *           type: string
  *           description: 配置分类
- * 
+ *
  *     BatchUpdateConfigRequest:
  *       type: object
  *       required:
@@ -115,7 +121,7 @@ import { BlogConfigService } from "./services";
  *               value: "新的博客标题"
  *             - key: "site_description"
  *               value: "这是一个很棒的博客"
- * 
+ *
  *     ConfigStatsResponse:
  *       type: object
  *       properties:
@@ -139,7 +145,7 @@ import { BlogConfigService } from "./services";
  *         errMsg:
  *           type: string
  *           example: ""
- * 
+ *
  *     ConfigListResponse:
  *       type: object
  *       properties:
@@ -383,12 +389,25 @@ export class BlogConfigController {
    */
   @Get("/")
   public async getConfigList(req: Request, res: Response) {
+    const config = this.UtilService.parseQueryParams(req);
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogConfigService.getConfigList(req.query);
+    }: Jres = await this.BlogConfigService.getConfigList(config);
+    res.sendResult(data, code, message, errMsg);
+  }
+
+  // 获取所有配置
+  @Get("/all")
+  public async getAllConfigs(req: Request, res: Response) {
+    const {
+      data = null,
+      code = 200,
+      message = "",
+      errMsg = "",
+    }: Jres = await this.BlogConfigService.getAllConfigs();
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -445,7 +464,7 @@ export class BlogConfigController {
   @Get("/category/:category")
   public async getConfigsByCategory(req: Request, res: Response) {
     const category = req.params.category;
-    
+
     const {
       data = null,
       code = 200,
@@ -523,7 +542,7 @@ export class BlogConfigController {
   @Get("/key/:key")
   public async getConfigByKey(req: Request, res: Response) {
     const key = req.params.key;
-    
+
     const {
       data = null,
       code = 200,
@@ -696,7 +715,7 @@ export class BlogConfigController {
   @Get("/:id")
   public async getConfigById(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,
@@ -779,82 +798,14 @@ export class BlogConfigController {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  @Put("/:id")
+  @Put("/update")
   public async updateConfig(req: Request, res: Response) {
-    const id = parseInt(req.params.id);
-    
     const {
       data = null,
       code = 200,
       message = "",
       errMsg = "",
-    }: Jres = await this.BlogConfigService.updateConfig(id, req.body);
-    res.sendResult(data, code, message, errMsg);
-  }
-
-  /**
-   * @swagger
-   * /blog/config/batch:
-   *   put:
-   *     tags:
-   *       - 博客配置管理
-   *     summary: 批量更新博客配置
-   *     description: 批量更新多个博客配置项的值
-   *     security:
-   *       - BearerAuth: []
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/BatchUpdateConfigRequest'
-   *           examples:
-   *             batch_update:
-   *               summary: 批量更新示例
-   *               value:
-   *                 configs:
-   *                   - key: "site_title"
-   *                     value: "新的博客标题"
-   *                   - key: "site_description"
-   *                     value: "这是一个很棒的博客"
-   *                   - key: "posts_per_page"
-   *                     value: "15"
-   *     responses:
-   *       200:
-   *         description: 批量更新成功
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ApiResponse'
-   *             examples:
-   *               success:
-   *                 summary: 批量更新成功响应
-   *                 value:
-   *                   data: null
-   *                   code: 200
-   *                   message: "配置批量更新成功"
-   *                   errMsg: ""
-   *       401:
-   *         description: 未授权
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ErrorResponse'
-   *       500:
-   *         description: 服务器内部错误
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ErrorResponse'
-   */
-  @Put("/batch")
-  public async updateConfigs(req: Request, res: Response) {
-    const {
-      data = null,
-      code = 200,
-      message = "",
-      errMsg = "",
-    }: Jres = await this.BlogConfigService.updateConfigs(req.body.configs);
+    }: Jres = await this.BlogConfigService.updateConfig(req.body);
     res.sendResult(data, code, message, errMsg);
   }
 
@@ -906,7 +857,7 @@ export class BlogConfigController {
   @Delete("/:id")
   public async deleteConfig(req: Request, res: Response) {
     const id = parseInt(req.params.id);
-    
+
     const {
       data = null,
       code = 200,

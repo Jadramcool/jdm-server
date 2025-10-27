@@ -21,37 +21,37 @@ export async function initBlogData() {
         key: "site_description",
         value: "一个基于 Node.js + TypeScript + Prisma 的现代化博客系统",
         description: "网站描述",
-        category: "basic",
+        category: "BASIC",
       },
       {
         key: "site_keywords",
         value: "JDM,博客,Node.js,TypeScript,Prisma,技术分享",
         description: "网站关键词",
-        category: "basic",
+        category: "BASIC",
       },
       {
         key: "posts_per_page",
         value: "10",
         description: "每页文章数量",
-        category: "display",
+        category: "DISPLAY",
       },
       {
         key: "comment_need_approval",
         value: "true",
         description: "评论是否需要审核",
-        category: "comment",
+        category: "COMMENT",
       },
       {
         key: "allow_guest_comment",
         value: "true",
         description: "是否允许游客评论",
-        category: "comment",
+        category: "COMMENT",
       },
       {
         key: "enable_friend_links",
         value: "true",
         description: "是否启用友情链接",
-        category: "feature",
+        category: "FEATURE",
       },
     ];
 
