@@ -1,6 +1,5 @@
 import { FilterHelper, FlattenHelper, PaginationHelper } from "@/utils";
 import { UtilService } from "@/utils/utils";
-import { PrismaClient } from "@prisma/client";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import { inject, injectable } from "inversify";
@@ -9,8 +8,6 @@ import {
   NavigationGroupDto,
   UpdateNavigationGroupDto,
 } from "./navigation-group.dto";
-
-const prisma = new PrismaClient();
 
 /**
  * 导航组服务类
@@ -50,11 +47,12 @@ export class NavigationGroupService {
       }
 
       // 检查导航组名称是否已存在
-      const existingGroup = await prisma.navigationGroup.findFirst({
-        where: {
-          name: navigationGroupData.name,
-        },
-      });
+      const existingGroup =
+        await this.PrismaDB.prisma.navigationGroup.findFirst({
+          where: {
+            name: navigationGroupData.name,
+          },
+        });
 
       if (existingGroup) {
         return {
@@ -68,28 +66,31 @@ export class NavigationGroupService {
       let sortOrder = navigationGroupData.sortOrder;
       if (!sortOrder || sortOrder === 0) {
         // 查询当前最大的sortOrder值
-        const maxSortOrderResult = await prisma.navigationGroup.aggregate({
-          _max: {
-            sortOrder: true,
-          },
-        });
+        const maxSortOrderResult =
+          await this.PrismaDB.prisma.navigationGroup.aggregate({
+            _max: {
+              sortOrder: true,
+            },
+          });
 
         // 如果没有任何记录，从1开始；否则在最大值基础上+1
         sortOrder = (maxSortOrderResult._max.sortOrder || 0) + 10;
       }
 
       // 创建导航组
-      const navigationGroup = await prisma.navigationGroup.create({
-        data: {
-          name: navigationGroupData.name,
-          icon: navigationGroupData.icon || null,
-          description: navigationGroupData.description || null,
-          status: navigationGroupData.status || 1,
-          sortOrder: sortOrder,
-          createdTime: new Date(),
-          updatedTime: new Date(),
-        },
-      });
+      const navigationGroup = await this.PrismaDB.prisma.navigationGroup.create(
+        {
+          data: {
+            name: navigationGroupData.name,
+            icon: navigationGroupData.icon || null,
+            description: navigationGroupData.description || null,
+            status: navigationGroupData.status || 1,
+            sortOrder: sortOrder,
+            createdTime: new Date(),
+            updatedTime: new Date(),
+          },
+        }
+      );
 
       return {
         code: 200,
@@ -133,11 +134,12 @@ export class NavigationGroupService {
       }
 
       // 检查导航组是否存在
-      const existingGroup = await prisma.navigationGroup.findFirst({
-        where: {
-          id: updateData.id,
-        },
-      });
+      const existingGroup =
+        await this.PrismaDB.prisma.navigationGroup.findFirst({
+          where: {
+            id: updateData.id,
+          },
+        });
 
       if (!existingGroup) {
         return {
@@ -149,12 +151,14 @@ export class NavigationGroupService {
 
       // 如果更新名称，检查名称是否已被其他导航组使用
       if (updateData.name && updateData.name !== existingGroup.name) {
-        const nameExists = await prisma.navigationGroup.findFirst({
-          where: {
-            name: updateData.name,
-            id: { not: updateData.id },
-          },
-        });
+        const nameExists = await this.PrismaDB.prisma.navigationGroup.findFirst(
+          {
+            where: {
+              name: updateData.name,
+              id: { not: updateData.id },
+            },
+          }
+        );
 
         if (nameExists) {
           return {
@@ -178,47 +182,49 @@ export class NavigationGroupService {
         updateFields.status = updateData.status;
 
       // 使用事务更新导航组和关联导航
-      const result = await prisma.$transaction(async (transactionPrisma) => {
-        // 更新导航组
-        const updatedGroup = await transactionPrisma.navigationGroup.update({
-          where: { id: updateData.id },
-          data: updateFields,
-        });
+      const result = await this.PrismaDB.prisma.$transaction(
+        async (transactionPrisma) => {
+          // 更新导航组
+          const updatedGroup = await transactionPrisma.navigationGroup.update({
+            where: { id: updateData.id },
+            data: updateFields,
+          });
 
-        // 如果导航组被禁用（status = 0），同时禁用所有关联的导航
-        if (updateData.status === 0) {
-          // 获取该导航组下的所有导航ID
-          const navigationGroupNavigations =
-            await transactionPrisma.navigationGroupNavigation.findMany({
-              where: {
-                groupId: updateData.id,
-              },
-              select: {
-                navigationId: true,
-              },
-            });
+          // 如果导航组被禁用（status = 0），同时禁用所有关联的导航
+          if (updateData.status === 0) {
+            // 获取该导航组下的所有导航ID
+            const navigationGroupNavigations =
+              await transactionPrisma.navigationGroupNavigation.findMany({
+                where: {
+                  groupId: updateData.id,
+                },
+                select: {
+                  navigationId: true,
+                },
+              });
 
-          // 提取导航ID数组
-          const navigationIds = navigationGroupNavigations.map(
-            (item) => item.navigationId
-          );
+            // 提取导航ID数组
+            const navigationIds = navigationGroupNavigations.map(
+              (item) => item.navigationId
+            );
 
-          // 如果有关联的导航，则批量禁用
-          if (navigationIds.length > 0) {
-            await transactionPrisma.navigation.updateMany({
-              where: {
-                id: { in: navigationIds },
-              },
-              data: {
-                status: 0, // 禁用状态
-                updatedTime: new Date(),
-              },
-            });
+            // 如果有关联的导航，则批量禁用
+            if (navigationIds.length > 0) {
+              await transactionPrisma.navigation.updateMany({
+                where: {
+                  id: { in: navigationIds },
+                },
+                data: {
+                  status: 0, // 禁用状态
+                  updatedTime: new Date(),
+                },
+              });
+            }
           }
-        }
 
-        return updatedGroup;
-      });
+          return updatedGroup;
+        }
+      );
 
       return {
         code: 200,
@@ -259,11 +265,12 @@ export class NavigationGroupService {
       }
 
       // 检查导航组是否存在
-      const existingGroup = await prisma.navigationGroup.findFirst({
-        where: {
-          id: navigationGroupId,
-        },
-      });
+      const existingGroup =
+        await this.PrismaDB.prisma.navigationGroup.findFirst({
+          where: {
+            id: navigationGroupId,
+          },
+        });
 
       if (!existingGroup) {
         return {
@@ -275,7 +282,7 @@ export class NavigationGroupService {
 
       // 检查是否有关联的导航项
       const relatedNavigations =
-        await prisma.navigationGroupNavigation.findMany({
+        await this.PrismaDB.prisma.navigationGroupNavigation.findMany({
           where: {
             groupId: navigationGroupId,
           },
@@ -290,7 +297,7 @@ export class NavigationGroupService {
       }
 
       // 硬删除导航组
-      const deletedGroup = await prisma.navigationGroup.delete({
+      const deletedGroup = await this.PrismaDB.prisma.navigationGroup.delete({
         where: { id: navigationGroupId },
       });
 
@@ -330,11 +337,12 @@ export class NavigationGroupService {
       }
 
       // 查询导航组详情
-      const navigationGroup = await prisma.navigationGroup.findFirst({
-        where: {
-          id: navigationGroupId,
-        },
-      });
+      const navigationGroup =
+        await this.PrismaDB.prisma.navigationGroup.findFirst({
+          where: {
+            id: navigationGroupId,
+          },
+        });
 
       if (!navigationGroup) {
         return {
@@ -469,4 +477,3 @@ export class NavigationGroupService {
     }
   }
 }
-

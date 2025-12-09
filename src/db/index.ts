@@ -7,17 +7,16 @@
  * @Description:
  *
  */
-import { PrismaClient } from "@prisma/client";
 import { inject, injectable } from "inversify";
-import type { OptimizedPrismaClient } from "../types/prisma";
+import { ConfiguredPrismaClient } from "../config/database";
 
 // 注入器
 @injectable()
 export class PrismaDB {
-  prisma: OptimizedPrismaClient;
+  prisma: ConfiguredPrismaClient;
   constructor(
     @inject("PrismaClient")
-    prismaClient: OptimizedPrismaClient
+    prismaClient: ConfiguredPrismaClient
   ) {
     this.prisma = prismaClient;
   }
