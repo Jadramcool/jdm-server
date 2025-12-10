@@ -7,7 +7,6 @@ generator client {
 // 数据源配置
 datasource db {
   provider = "mysql" // 使用MySQL数据库
-  url      = env("DATABASE_URL") // 从环境变量获取数据库连接URL
 }
 
 /**

@@ -84,9 +84,9 @@ import { NavigationGroupService } from "./services";
  *           type: string
  *           description: 描述
  *         status:
-           type: number
-           description: 状态
-         createdTime:
+ *           type: number
+ *           description: 状态
+ *         createdTime:
  *           type: string
  *           format: date-time
  *           description: 创建时间
@@ -449,4 +449,3 @@ export class NavigationGroup {
     res.sendResult(data, code, message, errMsg);
   }
 }
-

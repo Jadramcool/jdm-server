@@ -7,6 +7,7 @@
  * @Description: JDM Server 主入口文件
  *
  */
+import "dotenv/config";
 import "reflect-metadata";
 
 // 引入模块别名

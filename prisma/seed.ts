@@ -7,7 +7,9 @@
  * @Description:
  *
  */
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
 import {
   Department,
   Menu,
@@ -18,7 +20,17 @@ import {
 } from "./initData";
 import { initBlogData, createSampleBlogPost } from "./initData/blog";
 
-const prisma = new PrismaClient();
+const connectionUrl = new URL(
+  process.env.DATABASE_URL || "mysql://localhost:3306/test"
+);
+if (process.env.DATABASE_URL) {
+  if (!connectionUrl.searchParams.has("connectionLimit")) {
+    connectionUrl.searchParams.set("connectionLimit", "5");
+  }
+}
+
+const adapter = new PrismaMariaDb(connectionUrl.toString());
+const prisma = new PrismaClient({ adapter });
 
 /**
  * 初始化系统配置数据

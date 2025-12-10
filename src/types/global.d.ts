@@ -4,13 +4,11 @@
  * @Date: 2024-12-19
  */
 
-import type { OptimizedPrismaClient } from './prisma';
-
 // 扩展全局类型定义
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      NODE_ENV: 'development' | 'production' | 'test';
+      NODE_ENV: "development" | "production" | "test";
       DATABASE_URL: string;
       DB_CONNECTION_LIMIT?: string;
       DB_CONNECTION_TIMEOUT?: string;
@@ -22,9 +20,9 @@ declare global {
 }
 
 // 模块声明增强
-declare module 'inversify' {
+declare module "inversify" {
   interface Container {
-    get<T>(serviceIdentifier: 'PrismaClient'): OptimizedPrismaClient;
+    get<T>(serviceIdentifier: "PrismaClient"): PrismaClient;
   }
 }
 
