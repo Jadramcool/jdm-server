@@ -1,5 +1,5 @@
 // 部门创建数据类型
-type DepartmentSeedData = {
+export interface DepartmentSeedData {
   id: number;
   name: string;
   code: string;
@@ -9,14 +9,19 @@ type DepartmentSeedData = {
   level: number;
   sortOrder: number;
   status: number;
-};
+}
 
 /**
  * 部门初始化数据
- * 3层级结构：总公司 -> 分公司/事业部 -> 部门
+ * 采用3层级结构组织：总公司 -> 分公司/事业部 -> 部门
+ *
+ * 结构说明：
+ * - level 1: 总公司层级
+ * - level 2: 事业部层级
+ * - level 3: 具体职能部门层级
  */
 export const departments: DepartmentSeedData[] = [
-  // 第一层：总公司
+  // ==================== Level 1: 总公司 ====================
   {
     id: 1,
     name: "总公司",
@@ -25,10 +30,10 @@ export const departments: DepartmentSeedData[] = [
     parentId: null,
     level: 1,
     sortOrder: 1,
-    status: 0,
+    status: 0, // 0: 正常, 1: 禁用
   },
 
-  // 第二层：分公司/事业部
+  // ==================== Level 2: 事业部 ====================
   {
     id: 2,
     name: "技术事业部",
@@ -80,8 +85,7 @@ export const departments: DepartmentSeedData[] = [
     status: 0,
   },
 
-  // 第三层：具体部门
-  // 技术事业部下属部门
+  // ==================== Level 3: 技术事业部下属部门 ====================
   {
     id: 7,
     name: "前端开发部",
@@ -123,7 +127,7 @@ export const departments: DepartmentSeedData[] = [
     status: 0,
   },
 
-  // 市场事业部下属部门
+  // ==================== Level 3: 市场事业部下属部门 ====================
   {
     id: 11,
     name: "市场推广部",
@@ -155,7 +159,7 @@ export const departments: DepartmentSeedData[] = [
     status: 0,
   },
 
-  // 运营事业部下属部门
+  // ==================== Level 3: 运营事业部下属部门 ====================
   {
     id: 14,
     name: "产品运营部",
@@ -187,7 +191,7 @@ export const departments: DepartmentSeedData[] = [
     status: 0,
   },
 
-  // 财务事业部下属部门
+  // ==================== Level 3: 财务事业部下属部门 ====================
   {
     id: 17,
     name: "会计部",
@@ -209,7 +213,7 @@ export const departments: DepartmentSeedData[] = [
     status: 0,
   },
 
-  // 人力资源事业部下属部门
+  // ==================== Level 3: 人力资源事业部下属部门 ====================
   {
     id: 19,
     name: "招聘部",

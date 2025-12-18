@@ -1,11 +1,21 @@
 import { Prisma } from "@prisma/client";
+
 // 菜单数据类型定义
-interface CustomMenuCreateInput extends Prisma.MenuCreateInput {
+export interface MenuSeedData extends Prisma.MenuCreateInput {
   id: number;
 }
 
-// 菜单初始化数据
-export const menus: CustomMenuCreateInput[] = [
+/**
+ * 菜单初始化数据
+ * 按功能模块组织菜单结构
+ *
+ * 菜单类型说明：
+ * - DIRECTORY: 目录，用于分组
+ * - MENU: 菜单项，对应具体页面
+ * - BUTTON: 按钮，用于页面内操作权限控制
+ */
+export const menus: MenuSeedData[] = [
+  // ==================== 首页 ====================
   {
     id: 1,
     name: "首页",
@@ -28,6 +38,8 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: false,
     extraData: '{"withContentCard": false}',
   },
+
+  // ==================== 系统管理 ====================
   {
     id: 2,
     name: "系统管理",
@@ -50,6 +62,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
+  // -------- 系统管理子菜单 --------
   {
     id: 3,
     name: "用户管理",
@@ -116,6 +129,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: null,
   },
+  // ==================== 个人中心 ====================
   {
     id: 6,
     name: "个人中心",
@@ -138,6 +152,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard": false}',
   },
+  // -------- 用户管理按钮权限 --------
   {
     id: 7,
     name: "新增",
@@ -160,6 +175,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: null,
   },
+  // ==================== 公告管理 ====================
   {
     id: 8,
     name: "公告管理",
@@ -182,6 +198,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: null,
   },
+  // -------- 公告管理子菜单 --------
   {
     id: 9,
     name: "公告",
@@ -226,6 +243,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard": false}',
   },
+  // ==================== 博客 ====================
   {
     id: 11,
     name: "博客",
@@ -248,6 +266,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: false,
     extraData: '{"withContentCard":true}',
   },
+  // -------- 博客子菜单 --------
   {
     id: 12,
     name: "博客首页",
@@ -270,6 +289,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: false,
     extraData: '{"withContentCard":true}',
   },
+  // ==================== 系统配置 ====================
   {
     id: 13,
     name: "系统配置",
@@ -292,28 +312,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
-  {
-    id: 14,
-    name: "u3c3",
-    code: "U3C3",
-    type: "MENU",
-    pid: 15,
-    path: "/resource/u3c3",
-    redirect: null,
-    icon: "tabler:subtask",
-    component: "/src/views/other/resource/u3c3/index.vue",
-    layout: "normal",
-    keepAlive: false,
-    method: null,
-    description: null,
-    show: true,
-    enable: true,
-    order: 0,
-    createdTime: "2025-08-25T09:51:07.829Z",
-    updatedTime: "2025-08-25T09:51:07.829Z",
-    needLogin: true,
-    extraData: '{"withContentCard":true}',
-  },
+  // ==================== 资源库 ====================
   {
     id: 15,
     name: "资源库",
@@ -336,6 +335,30 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":false}',
   },
+  // -------- 资源库子菜单 --------
+  {
+    id: 14,
+    name: "u3c3",
+    code: "U3C3",
+    type: "MENU",
+    pid: 15,
+    path: "/resource/u3c3",
+    redirect: null,
+    icon: "tabler:subtask",
+    component: "/src/views/other/resource/u3c3/index.vue",
+    layout: "normal",
+    keepAlive: false,
+    method: null,
+    description: null,
+    show: true,
+    enable: true,
+    order: 0,
+    createdTime: "2025-08-25T09:51:07.829Z",
+    updatedTime: "2025-08-25T09:51:07.829Z",
+    needLogin: true,
+    extraData: '{"withContentCard":true}',
+  },
+  // ==================== 小诚 ====================
   {
     id: 16,
     name: "小诚",
@@ -358,6 +381,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
+  // -------- 小诚子菜单 --------
   {
     id: 17,
     name: "任务列表",
@@ -402,6 +426,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
+  // ==================== 操作日志 ====================
   {
     id: 19,
     name: "操作日志",
@@ -424,6 +449,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
+  // ==================== 部门管理 ====================
   {
     id: 20,
     name: "部门管理",
@@ -446,6 +472,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: true,
     extraData: '{"withContentCard":true}',
   },
+  // ==================== 导航管理 ====================
   {
     id: 21,
     name: "导航管理",
@@ -468,6 +495,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: false,
     extraData: '{"withContentCard":true}',
   },
+  // -------- 导航管理子菜单 --------
   {
     id: 22,
     name: "导航",
@@ -490,6 +518,7 @@ export const menus: CustomMenuCreateInput[] = [
     needLogin: false,
     extraData: '{"withContentCard":true}',
   },
+  // ==================== 公开页面 ====================
   {
     id: 23,
     name: "公开页面",

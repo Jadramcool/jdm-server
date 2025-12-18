@@ -8,13 +8,13 @@
 prisma/
 ├── initData/           # 初始化数据文件
 │   ├── department.ts   # 部门数据
+│   ├── index.ts       # 导出所有初始化数据
 │   ├── menu.ts        # 菜单数据
 │   ├── operationLog.ts # 操作日志数据
 │   ├── role.ts        # 角色数据
 │   ├── sysConfig.ts   # 系统配置数据
 │   └── user.ts        # 用户数据
 ├── migrations/         # 数据库迁移文件
-├── models/            # 数据模型文件
 ├── schema.prisma      # Prisma 模式文件
 ├── seed.ts           # 种子数据脚本
 └── readme.md         # 本文档
@@ -120,6 +120,15 @@ npx prisma migrate reset
 - 部门组织架构
 - 示例操作日志
 
+### 初始化数据优化
+
+所有初始化数据文件均已优化，具有以下特点：
+
+1. **统一命名规范**：所有数据接口采用 `[Name]SeedData` 命名格式
+2. **完善的文档注释**：每个字段都有详细的中文说明
+3. **清晰的数据结构**：使用分组和视觉分隔符组织数据
+4. **类型安全保障**：充分利用 TypeScript 的类型检查优势
+
 ### 自定义种子数据
 
 修改 `initData/` 目录下的相应文件来自定义初始数据。
@@ -171,6 +180,7 @@ npx prisma studio
 2. **类型安全**：充分利用 Prisma 的类型安全特性
 3. **查询优化**：使用 `include` 和 `select` 优化查询性能
 4. **事务处理**：对于复杂操作使用 Prisma 事务
+5. **数据初始化**：遵循 `initData/` 目录中的优化规范编写新的初始化数据
 
 ## 🐛 常见问题
 

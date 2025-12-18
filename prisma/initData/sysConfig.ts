@@ -1,10 +1,24 @@
 import { Prisma } from "@prisma/client";
-// 系统配置数据类型定义
 
-interface CustomSysConfigCreateInput extends Prisma.SysConfigCreateInput {}
+/**
+ * 系统配置种子数据类型
+ * 扩展Prisma的系统配置创建输入类型
+ */
+export interface SysConfigSeedData extends Prisma.SysConfigCreateInput {}
 
-// 系统配置初始化数据
-export const sysConfigs: CustomSysConfigCreateInput[] = [
+/**
+ * 系统配置初始化数据
+ *
+ * 包含系统运行所需的各种配置项，按功能类别分组：
+ * 1. 系统核心配置 - 系统基础设置和状态
+ * 2. 站点信息配置 - 网站基本信息展示
+ * 3. 主题样式配置 - 界面外观相关设置
+ * 4. 功能特性配置 - 系统功能参数设置
+ */
+export const sysConfigs: SysConfigSeedData[] = [
+  // ==================== 系统核心配置 ====================
+  // 系统基础设置和运行状态相关配置
+
   {
     description: "系统版权信息",
     category: "system",
@@ -16,6 +30,7 @@ export const sysConfigs: CustomSysConfigCreateInput[] = [
     type: "STRING",
     name: "版权信息",
   },
+
   {
     description: "系统初始化状态",
     category: "system",
@@ -27,28 +42,7 @@ export const sysConfigs: CustomSysConfigCreateInput[] = [
     type: "BOOLEAN",
     name: "初始化状态",
   },
-  {
-    description: "网站名称",
-    category: "site",
-    key: "site_name",
-    value: "JDM管理系统",
-    isPublic: true,
-    isSystem: false,
-    sortOrder: 3,
-    type: "STRING",
-    name: "网站名称",
-  },
-  {
-    description: "网站描述",
-    category: "site",
-    key: "site_description",
-    value: "基于NestJS和React的现代化管理系统",
-    isPublic: true,
-    isSystem: false,
-    sortOrder: 4,
-    type: "STRING",
-    name: "网站描述",
-  },
+
   {
     description: "系统版本号",
     category: "system",
@@ -60,39 +54,7 @@ export const sysConfigs: CustomSysConfigCreateInput[] = [
     type: "STRING",
     name: "系统版本",
   },
-  {
-    description: "系统主题色",
-    category: "theme",
-    key: "primary_color",
-    value: "#1890ff",
-    isPublic: true,
-    isSystem: false,
-    sortOrder: 6,
-    type: "STRING",
-    name: "主题色",
-  },
-  {
-    description: "每页显示条数",
-    category: "pagination",
-    key: "page_size",
-    value: "10",
-    isPublic: true,
-    isSystem: false,
-    sortOrder: 7,
-    type: "NUMBER",
-    name: "分页大小",
-  },
-  {
-    description: "文件上传大小限制(MB)",
-    category: "upload",
-    key: "max_file_size",
-    value: "10",
-    isPublic: false,
-    isSystem: true,
-    sortOrder: 8,
-    type: "NUMBER",
-    name: "文件大小限制",
-  },
+
   {
     description: "系统维护模式",
     category: "system",
@@ -104,6 +66,76 @@ export const sysConfigs: CustomSysConfigCreateInput[] = [
     type: "BOOLEAN",
     name: "维护模式",
   },
+
+  // ==================== 站点信息配置 ====================
+  // 网站基本信息展示相关配置
+
+  {
+    description: "网站名称",
+    category: "site",
+    key: "site_name",
+    value: "JDM管理系统",
+    isPublic: true,
+    isSystem: false,
+    sortOrder: 3,
+    type: "STRING",
+    name: "网站名称",
+  },
+
+  {
+    description: "网站描述",
+    category: "site",
+    key: "site_description",
+    value: "基于NestJS和React的现代化管理系统",
+    isPublic: true,
+    isSystem: false,
+    sortOrder: 4,
+    type: "STRING",
+    name: "网站描述",
+  },
+
+  // ==================== 主题样式配置 ====================
+  // 界面外观相关设置
+
+  {
+    description: "系统主题色",
+    category: "theme",
+    key: "primary_color",
+    value: "#1890ff",
+    isPublic: true,
+    isSystem: false,
+    sortOrder: 6,
+    type: "STRING",
+    name: "主题色",
+  },
+
+  // ==================== 功能特性配置 ====================
+  // 系统功能参数设置
+
+  {
+    description: "每页显示条数",
+    category: "pagination",
+    key: "page_size",
+    value: "10",
+    isPublic: true,
+    isSystem: false,
+    sortOrder: 7,
+    type: "NUMBER",
+    name: "分页大小",
+  },
+
+  {
+    description: "文件上传大小限制(MB)",
+    category: "upload",
+    key: "max_file_size",
+    value: "10",
+    isPublic: false,
+    isSystem: true,
+    sortOrder: 8,
+    type: "NUMBER",
+    name: "文件大小限制",
+  },
+
   {
     description: "默认语言",
     category: "locale",
