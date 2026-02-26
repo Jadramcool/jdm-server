@@ -21,6 +21,11 @@ const userError = {
     zhCN: "用户名已存在",
     enUS: "Username already exist",
   },
+  // 用户已被禁用
+  login_user_disabled: {
+    zhCN: "用户已被禁用，请联系管理员",
+    enUS: "User has been disabled, please contact administrator",
+  },
 };
 
 export default userError;
