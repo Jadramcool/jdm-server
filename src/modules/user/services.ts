@@ -13,7 +13,7 @@ export class UserService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
-  ) {}
+  ) { }
 
   /**
    * 创建用户
@@ -156,6 +156,14 @@ export class UserService {
         return {
           code: 400,
           errMsg: ErrorInfo.userError.login_username_not_exist, // 用户不存在
+        };
+      }
+
+      // 检查用户是否被禁用
+      if (result.status === 0) {
+        return {
+          code: 400,
+          errMsg: ErrorInfo.userError.login_user_disabled, // 用户已被禁用
         };
       }
 

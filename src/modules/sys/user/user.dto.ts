@@ -17,6 +17,9 @@ export class UserDto {
   @IsMobilePhone("zh-CN", {}, { message: "手机号格式不正确" })
   phone: string;
 
+  @Transform((name) => name.value.trim())
+  name: string;
+
   password: string;
 
   roles: string[] | number[] | null | undefined;

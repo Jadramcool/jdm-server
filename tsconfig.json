@@ -10,12 +10,16 @@
     "forceConsistentCasingInFileNames": true,
     "strict": false,
     "skipLibCheck": true,
-    "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"],
-      "@db/*": ["db/*"],
-      "@jwt/*": ["jwt/*"]
+      "@/*": ["./src/*"],
+      "@db/*": ["./src/db/*"],
+      "@jwt/*": ["./src/jwt/*"]
     }
   },
-  "include": ["src/**/*", "src/typings/*.d.ts", "src/typings/global.d.ts", "src/types/*.ts"]
+  "include": [
+    "src/**/*",
+    "src/typings/*.d.ts",
+    "src/typings/global.d.ts",
+    "src/types/*.ts"
+  ]
 }

@@ -4,8 +4,15 @@ import { ICreateOperationLog } from "../../src/modules/sys/operation-log/typings
 /**
  * 操作日志初始化数据
  * 用于演示和测试操作日志功能
+ *
+ * 包含多种操作类型的示例数据：
+ * - 登录操作（成功/失败）
+ * - 数据增删改查操作
+ * - 系统导出操作
  */
 export const operationLogInitData: ICreateOperationLog[] = [
+  // ==================== 登录操作 ====================
+  // 管理员成功登录
   {
     userId: 1,
     username: "admin",
@@ -28,6 +35,9 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 156,
   },
+
+  // ==================== 用户管理操作 ====================
+  // 创建新用户
   {
     userId: 1,
     username: "admin",
@@ -51,6 +61,7 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 234,
   },
+  // 更新系统配置
   {
     userId: 1,
     username: "admin",
@@ -72,6 +83,8 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 89,
   },
+
+  // 查看用户列表
   {
     userId: 2,
     username: "testuser",
@@ -93,6 +106,8 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 45,
   },
+  // ==================== 登录失败操作 ====================
+  // 用户登录失败
   {
     userId: undefined,
     username: "-",
@@ -115,6 +130,8 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 123,
   },
+  // ==================== 用户删除操作 ====================
+  // 删除用户
   {
     userId: 1,
     username: "admin",
@@ -135,6 +152,8 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 67,
   },
+  // ==================== 系统导出操作 ====================
+  // 导出操作日志
   {
     userId: 1,
     username: "admin",
@@ -157,6 +176,8 @@ export const operationLogInitData: ICreateOperationLog[] = [
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     duration: 1234,
   },
+  // ==================== 通知公告操作 ====================
+  // 查看通知详情
   {
     userId: 2,
     username: "testuser",

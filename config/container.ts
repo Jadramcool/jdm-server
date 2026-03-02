@@ -1,9 +1,6 @@
 import { Container } from "inversify";
 import "reflect-metadata"; // 反射元数据功能
-import {
-  createOptimizedPrismaClient,
-  type OptimizedPrismaClient,
-} from "../src/config/database";
+import { ConfiguredPrismaClient, createPrismaClient } from "../src/config/database";
 import { PrismaDB } from "../src/db";
 import { JWT } from "../src/jwt";
 import { navigationContainer } from "../src/modules/navigation/index";
@@ -72,11 +69,11 @@ const createContainer = () => {
    * 3. 优化omit配置，提高安全性
    * 4. 支持环境变量配置
    */
-  container.bind<OptimizedPrismaClient>("PrismaClient").toConstantValue(
-    createOptimizedPrismaClient({
+  container.bind<ConfiguredPrismaClient>("PrismaClient").toConstantValue(
+    createPrismaClient({
       enableQueryLog: process.env.NODE_ENV === "development",
       connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "10"),
-      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "20000"),
+      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "10000"),
       queryTimeout: parseInt(process.env.DB_QUERY_TIMEOUT || "60000"),
     })
   );

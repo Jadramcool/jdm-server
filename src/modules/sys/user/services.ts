@@ -31,7 +31,7 @@ export class UserManagerService {
     @inject(JWT) private readonly JWT: JWT,
     @inject(DepartmentService)
     private readonly departmentService: DepartmentService
-  ) {}
+  ) { }
 
   // 获取用户列表
   public async getUserList(config: ReqListConfig) {
@@ -50,6 +50,7 @@ export class UserManagerService {
         "status",
         "roleType",
         "role",
+        "phone",
       ]);
 
       // 遍历时间字段并添加范围过滤条件
@@ -149,11 +150,11 @@ export class UserManagerService {
     const paginationData =
       options?.showPagination !== false
         ? {
-            page,
-            pageSize,
-            totalRecords,
-            totalPages,
-          }
+          page,
+          pageSize,
+          totalRecords,
+          totalPages,
+        }
         : null;
 
     return {
@@ -188,7 +189,7 @@ export class UserManagerService {
         };
       }
 
-      const { username, phone } = user;
+      const { username, phone, name } = user;
 
       // 检查 username 或 phone 是否已存在
       const existingUser = await this.PrismaDB.prisma.user.findFirst({
@@ -202,6 +203,11 @@ export class UserManagerService {
           message: "用户名或手机号已存在",
           errMsg: "用户名或手机号已存在",
         };
+      }
+
+      // 如果 name 为空，则默认使用 username
+      if (!user.name) {
+        user.name = user.username;
       }
 
       let result = null;
