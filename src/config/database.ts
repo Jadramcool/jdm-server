@@ -8,8 +8,26 @@ import { PrismaClient } from "@prisma/client";
 import type { PoolConfig } from "mariadb";
 import type { DatabaseOptions } from "../types/prisma";
 
-// 重新导出类型以便其他模块使用
 export type { DatabaseOptions };
+
+/**
+ * 从环境变量获取数据库配置
+ */
+function getDatabaseConfig() {
+  const dbUrl = process.env.DATABASE_URL || "mysql://localhost:3306/test";
+  const url = new URL(dbUrl);
+
+  return {
+    host: url.hostname,
+    port: Number(url.port) || 3306,
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1),
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "10", 10),
+    connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || "10000", 10),
+    idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || "30000", 10),
+  };
+}
 
 /**
  * 创建PrismaClient实例
@@ -17,23 +35,21 @@ export type { DatabaseOptions };
  * @returns PrismaClient实例
  */
 export function createPrismaClient(config: DatabaseOptions = {}) {
-  const {
-    enableQueryLog = process.env.NODE_ENV === "development",
-    connectionLimit = 10,
-    connectionTimeout = 5000,
-  } = config;
+  const isDevelopment = process.env.NODE_ENV === "development";
 
-  const dbUrl = process.env.DATABASE_URL || "mysql://localhost:3306/test";
-  const url = new URL(dbUrl);
+  const dbConfig = getDatabaseConfig();
+
   const poolConfig: PoolConfig = {
-    host: url.hostname,
-    port: Number(url.port) || 3306,
-    user: url.username,
-    password: url.password,
-    database: url.pathname.slice(1),
-    connectionLimit,
-    connectTimeout: connectionTimeout,
+    host: dbConfig.host,
+    port: dbConfig.port,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.database,
+    connectionLimit: config.connectionLimit ?? dbConfig.connectionLimit,
+    connectTimeout: config.connectionTimeout ?? dbConfig.connectTimeout,
+    idleTimeout: dbConfig.idleTimeout,
   };
+
   const adapter = new PrismaMariaDb(poolConfig);
 
   return new PrismaClient({
@@ -43,33 +59,14 @@ export function createPrismaClient(config: DatabaseOptions = {}) {
         password: true,
       },
     },
-    // 日志配置
-    log: enableQueryLog
+    log: isDevelopment
       ? [
-          {
-            emit: "event",
-            level: "query",
-          },
-          {
-            emit: "stdout",
-            level: "error",
-          },
-          {
-            emit: "stdout",
-            level: "info",
-          },
-          {
-            emit: "stdout",
-            level: "warn",
-          },
-        ]
-      : [
-          {
-            emit: "stdout",
-            level: "error",
-          },
-        ],
-    // 错误格式
+        { emit: "event", level: "query" },
+        { emit: "stdout", level: "error" },
+        { emit: "stdout", level: "info" },
+        { emit: "stdout", level: "warn" },
+      ]
+      : [{ emit: "stdout", level: "error" }],
     errorFormat: "pretty",
   });
 }

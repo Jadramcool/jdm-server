@@ -9,13 +9,14 @@
  */
 // <reference path="../../global.d.ts" />
 import type { Request, Response } from "express";
-import { inject } from "inversify"; // 装饰器 用于依赖注入
+import { inject } from "inversify";
 import {
   controller,
   httpGet as Get,
   httpPost as Post,
   httpPut as Put,
 } from "inversify-express-utils";
+import type { JwtPayload } from "jsonwebtoken";
 import { JWT } from "../../jwt";
 import { UserService } from "./services";
 
@@ -28,8 +29,10 @@ import { UserService } from "./services";
 
 @controller("/user")
 export class User {
-  // @param UserService @inject(UserService): 这是一个装饰器，用于依赖注入。
-  constructor(@inject(UserService) private readonly UserService: UserService) {}
+  constructor(
+    @inject(UserService) private readonly UserService: UserService,
+    @inject(JWT) private readonly JWT: JWT
+  ) { }
 
   /**
    * @swagger
@@ -99,6 +102,50 @@ export class User {
       errMsg = "",
     }: Jres = await this.UserService.login(req.body);
     res.sendResult(data, code, message, errMsg);
+  }
+
+  /**
+   * @swagger
+   * /user/refresh:
+   *   post:
+   *     summary: 刷新Access Token
+   *     tags: [用户管理]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               refreshToken:
+   *                 type: string
+   *                 description: Refresh Token
+   *     responses:
+   *       200:
+   *         description: 刷新成功
+   *       401:
+   *         description: Token已过期
+   */
+  @Post("/refresh")
+  public async refreshToken(req: Request, res: Response) {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      res.sendResult(null, 400, "缺少refreshToken参数");
+      return;
+    }
+
+    try {
+      const decoded = this.JWT.verifyRefreshToken(refreshToken) as JwtPayload;
+      const accessToken = this.JWT.createAccessToken({
+        id: decoded.id,
+        username: decoded.username,
+      });
+
+      res.sendResult({ accessToken }, 200, "刷新成功");
+    } catch (error) {
+      res.sendResult(null, 401, "Token已过期，请重新登录");
+    }
   }
 
   /**

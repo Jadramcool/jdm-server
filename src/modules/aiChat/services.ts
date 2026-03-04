@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { Readable } from "stream";
 import { ZhipuAI } from "zhipuai-sdk-nodejs-v4";
 import { PrismaDB } from "../../db";
+import { InternalServerException } from "../../exceptions";
 
 const openai = new OpenAI({
   apiKey: process.env["ARK_API_KEY"],
@@ -17,7 +18,7 @@ export class AiChatService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
-  ) {}
+  ) { }
 
   /**
    * AI问答
@@ -114,9 +115,9 @@ export class AiChatService {
 
       // 返回 Readable 流，这样前端可以接收并处理
       return readableStream;
-    } catch (err) {
-      console.error("API request error:", err); // 记录错误日志
-      throw new Error("AI 问答失败: " + err.message); // 抛出错误
+    } catch (err: any) {
+      console.error("API request error:", err);
+      throw new InternalServerException("AI 问答失败: " + err.message);
     }
   }
 }

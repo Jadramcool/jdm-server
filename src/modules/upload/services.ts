@@ -5,6 +5,7 @@ import { inject, injectable } from "inversify";
 import multer from "multer";
 import path from "path";
 import { PrismaDB } from "../../db";
+import { InternalServerException, BadRequestException, NotFoundException } from "../../exceptions";
 import {
   AliyunOSSManager,
   createOSSManager,
@@ -570,7 +571,7 @@ export class UploadService {
     config: UploadConfig = this.fileTypePresets.all
   ): Promise<UploadResult> {
     if (!this.ossManager) {
-      throw new Error("OSS未配置，无法使用OSS上传功能");
+      throw new BadRequestException("OSS未配置，无法使用OSS上传功能");
     }
 
     // 先使用本地上传获取文件
@@ -584,7 +585,7 @@ export class UploadService {
     );
 
     if (!file) {
-      throw new Error("文件上传失败");
+      throw new BadRequestException("文件上传失败");
     }
 
     const localFilePath = path.join("./uploads/", file.filename);
@@ -599,7 +600,7 @@ export class UploadService {
 
       // 验证本地文件是否存在
       if (!fs.existsSync(localFilePath)) {
-        throw new Error(`本地文件不存在: ${localFilePath}`);
+        throw new NotFoundException(`本地文件不存在: ${localFilePath}`);
       }
 
       // 上传到OSS
@@ -625,9 +626,9 @@ export class UploadService {
 
       // 重新抛出更详细的错误信息
       if (error instanceof Error) {
-        throw new Error(`OSS上传失败: ${error.message}`);
+        throw new InternalServerException(`OSS上传失败: ${error.message}`);
       }
-      throw new Error("OSS上传失败: 未知错误");
+      throw new InternalServerException("OSS上传失败: 未知错误");
     }
   }
 
@@ -806,9 +807,8 @@ export class UploadService {
               this.cleanupLocalFile(file.path);
               throw {
                 code: 500,
-                message: `OSS上传失败: ${
-                  error instanceof Error ? error.message : "未知错误"
-                }`,
+                message: `OSS上传失败: ${error instanceof Error ? error.message : "未知错误"
+                  }`,
                 error: "OSS_UPLOAD_FAILED",
               };
             }

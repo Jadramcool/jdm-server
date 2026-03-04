@@ -4,6 +4,7 @@ import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../../db";
+import { NotFoundException } from "@/exceptions";
 import {
   NavigationGroupDto,
   UpdateNavigationGroupDto,
@@ -18,7 +19,7 @@ export class NavigationGroupService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(UtilService) private UtilService: UtilService
-  ) {}
+  ) { }
 
   /**
    * 创建导航组
@@ -142,11 +143,7 @@ export class NavigationGroupService {
         });
 
       if (!existingGroup) {
-        return {
-          code: 404,
-          message: "导航组不存在",
-          data: null,
-        };
+        throw new NotFoundException("导航组不存在");
       }
 
       // 如果更新名称，检查名称是否已被其他导航组使用
@@ -273,11 +270,7 @@ export class NavigationGroupService {
         });
 
       if (!existingGroup) {
-        return {
-          code: 404,
-          message: "导航组不存在",
-          data: null,
-        };
+        throw new NotFoundException("导航组不存在");
       }
 
       // 检查是否有关联的导航项
@@ -345,11 +338,7 @@ export class NavigationGroupService {
         });
 
       if (!navigationGroup) {
-        return {
-          code: 404,
-          message: "导航组不存在",
-          data: null,
-        };
+        throw new NotFoundException("导航组不存在");
       }
 
       return {

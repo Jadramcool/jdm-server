@@ -23,6 +23,7 @@ import { PrismaDB } from "./src/db";
 import { JWT } from "./src/jwt";
 import { createOperationLogMiddleware } from "./src/middleware/operationLog";
 import { responseHandler } from "./src/middleware/sendResult";
+import { errorHandler } from "./src/middleware/errorHandler";
 import { RouteInfoManager } from "./src/utils/routeInfoManager";
 
 const container = createContainer();
@@ -133,6 +134,7 @@ server.setConfig((app) => {
   );
 
   app.use(responseHandler);
+  app.use(errorHandler);
   app.use("/uploads", express.static("uploads")); // 静态文件
 
   // Swagger UI 路由
@@ -182,8 +184,16 @@ process.on("SIGINT", async () => {
   await gracefulShutdown();
 });
 
-// 优雅关闭函数
+let serverInstance: ReturnType<typeof app.listen> | null = null;
+
+export function setServerInstance(server: ReturnType<typeof app.listen>) {
+  serverInstance = server;
+}
+
 async function gracefulShutdown() {
+  const startTime = Date.now();
+  console.log("\n📥 开始优雅关闭...");
+
   try {
     console.log("🔌 正在关闭数据库连接...");
     const prismaDB = container.get(PrismaDB);
@@ -191,10 +201,24 @@ async function gracefulShutdown() {
     console.log("✅ 数据库连接已关闭");
   } catch (error) {
     console.error("❌ 关闭数据库连接时出错:", error);
-  } finally {
-    console.log("👋 服务器已关闭");
-    process.exit(0);
   }
+
+  if (serverInstance) {
+    console.log("🌐 正在关闭HTTP服务器...");
+    await new Promise<void>((resolve) => {
+      serverInstance!.close(() => {
+        console.log("✅ HTTP服务器已关闭");
+        resolve();
+      });
+    });
+  }
+
+  const duration = Date.now() - startTime;
+  console.log(`👋 服务器已关闭 (耗时: ${duration}ms)`);
+
+  setTimeout(() => {
+    process.exit(0);
+  }, 100);
 }
 
 // 数据库健康检查
@@ -229,11 +253,10 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 // 启动服务器
 async function startServer() {
   try {
-    // 执行数据库健康检查
     await performDatabaseHealthCheck();
 
-    // 启动HTTP服务器
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
+      setServerInstance(server);
       console.log("\n" + "=".repeat(60));
       console.log("🚀 JDM Server 启动成功!");
       console.log("=".repeat(60));

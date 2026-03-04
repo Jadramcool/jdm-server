@@ -5,6 +5,7 @@ import { inject, injectable } from "inversify";
 import _ from "lodash";
 import { PrismaDB } from "../../../db";
 import { checkUnique } from "../../../utils/checkUnique";
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from "@/exceptions";
 import { BatchUpdateConfigDto, ConfigDto } from "./config.dto";
 
 @injectable()
@@ -12,7 +13,7 @@ export class ConfigService {
   constructor(
     @inject(PrismaDB)
     private readonly PrismaDB: PrismaDB
-  ) {}
+  ) { }
 
   /**
    * 获取配置列表
@@ -81,11 +82,11 @@ export class ConfigService {
     // 分页信息
     const paginationData = pageSize
       ? {
-          page,
-          pageSize,
-          totalRecords: total,
-          totalPages: Math.ceil(total / pageSize),
-        }
+        page,
+        pageSize,
+        totalRecords: total,
+        totalPages: Math.ceil(total / pageSize),
+      }
       : null;
 
     return {
@@ -109,12 +110,7 @@ export class ConfigService {
       });
 
       if (!config) {
-        return {
-          data: null,
-          code: 404,
-          message: "配置不存在",
-          errMsg: "配置不存在",
-        };
+        throw new NotFoundException("配置不存在");
       }
 
       const result = {
@@ -151,12 +147,7 @@ export class ConfigService {
       });
 
       if (!config) {
-        return {
-          data: null,
-          code: 404,
-          message: "配置不存在",
-          errMsg: "配置不存在",
-        };
+        throw new NotFoundException("配置不存在");
       }
 
       const value = this.parseConfigValue(config.value, config.type);
@@ -239,12 +230,7 @@ export class ConfigService {
         configDto.key.trim()
       );
       if (isUnique) {
-        return {
-          data: null,
-          code: 409,
-          message: `配置键名 '${configDto.key}' 已存在，请使用其他键名`,
-          errMsg: `配置键名 '${configDto.key}' 已存在，请使用其他键名`,
-        };
+        throw new ConflictException(`配置键名 '${configDto.key}' 已存在，请使用其他键名`);
       }
 
       // 处理配置值
@@ -317,12 +303,7 @@ export class ConfigService {
       });
 
       if (!existingConfig) {
-        return {
-          data: null,
-          code: 404,
-          message: `配置不存在 (ID: ${id})`,
-          errMsg: `配置不存在 (ID: ${id})`,
-        };
+        throw new NotFoundException(`配置不存在 (ID: ${id})`);
       }
 
       // 如果修改了键名，检查唯一性
@@ -344,12 +325,7 @@ export class ConfigService {
           trimmedKey
         );
         if (isUnique) {
-          return {
-            data: null,
-            code: 409,
-            message: `配置键名 '${trimmedKey}' 已存在，请使用其他键名`,
-            errMsg: `配置键名 '${trimmedKey}' 已存在，请使用其他键名`,
-          };
+          throw new ConflictException(`配置键名 '${trimmedKey}' 已存在，请使用其他键名`);
         }
       }
 
@@ -357,9 +333,9 @@ export class ConfigService {
       const value =
         configDto.value !== undefined
           ? this.stringifyConfigValue(
-              configDto.value,
-              configDto.type || existingConfig.type
-            )
+            configDto.value,
+            configDto.type || existingConfig.type
+          )
           : existingConfig.value;
 
       // 构建更新数据
@@ -518,22 +494,12 @@ export class ConfigService {
       });
 
       if (!config) {
-        return {
-          data: null,
-          code: 404,
-          message: `配置不存在 (ID: ${id})`,
-          errMsg: `配置不存在 (ID: ${id})`,
-        };
+        throw new NotFoundException(`配置不存在 (ID: ${id})`);
       }
 
       // 检查是否为系统配置
       if (config.isSystem) {
-        return {
-          data: null,
-          code: 403,
-          message: `系统配置 '${config.key}' 不能删除`,
-          errMsg: `系统配置 '${config.key}' 不能删除`,
-        };
+        throw new ForbiddenException(`系统配置 '${config.key}' 不能删除`);
       }
 
       const result = await this.PrismaDB.prisma.sysConfig.delete({
@@ -628,12 +594,7 @@ export class ConfigService {
       });
 
       if (!config || !config.value) {
-        return {
-          data: { isValid: false },
-          code: 404,
-          message: "配置不存在或密码为空",
-          errMsg: "配置不存在或密码为空",
-        };
+        throw new NotFoundException("配置不存在或密码为空");
       }
 
       const isValid = bcrypt.compareSync(password, config.value);

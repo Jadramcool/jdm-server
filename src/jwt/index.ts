@@ -10,16 +10,31 @@
 import { injectable } from "inversify";
 import jsonwebtoken from "jsonwebtoken";
 import passport from "passport";
-import { ExtractJwt, Strategy } from "passport-jwt"; // 他是passport的插件
+import { ExtractJwt, Strategy } from "passport-jwt";
 
 @injectable()
 export class JWT {
-  private secret: string = "jdmshidashuaibi";
-  private jwtOptions = {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: this.secret,
+  private secret: string;
+  private accessTokenExpire: string;
+  private refreshTokenExpire: string;
+  private jwtOptions: {
+    jwtFromRequest: any;
+    secretOrKey: string;
   };
+
   constructor() {
+    this.secret = process.env.JWT_SECRET || "";
+    if (!this.secret) {
+      console.warn("⚠️ 警告: JWT_SECRET 环境变量未设置，使用默认密钥存在安全风险！");
+      console.warn("请在 .env 文件中设置 JWT_SECRET=your-secret-key");
+      this.secret = "jdmshidashuaibi";
+    }
+    this.accessTokenExpire = process.env.JWT_ACCESS_EXPIRE || "30m";
+    this.refreshTokenExpire = process.env.JWT_REFRESH_EXPIRE || "7d";
+    this.jwtOptions = {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: this.secret,
+    };
     this.strategy();
   }
 
@@ -49,17 +64,43 @@ export class JWT {
   }
 
   /**
-   * 创建token
+   * 创建Access Token (短期，默认30分钟)
+   * @param data Object
+   */
+  public createAccessToken(data: object) {
+    return jsonwebtoken.sign(data, this.secret, {
+      expiresIn: this.accessTokenExpire
+    });
+  }
+
+  /**
+   * 创建Refresh Token (长期，默认7天)
+   * @param data Object
+   */
+  public createRefreshToken(data: object) {
+    return jsonwebtoken.sign(data, this.secret, {
+      expiresIn: this.refreshTokenExpire
+    });
+  }
+
+  /**
+   * 兼容旧接口，创建Token (默认生成双Token)
    * @param data Object
    */
   public createToken(data: object) {
-    // 生成tokenF
-    return jsonwebtoken.sign(data, this.secret, { expiresIn: "7d" });
+    return jsonwebtoken.sign(data, this.secret, {
+      expiresIn: this.accessTokenExpire
+    });
+  }
+
+  /**
+   * 验证Refresh Token
+   */
+  public verifyRefreshToken(token: string) {
+    return jsonwebtoken.verify(token, this.secret);
   }
 
   public verifyToken(token: string) {
-    // token = token ? token.split("Bearer ")[1] : null;
-    // 验证token
     return jsonwebtoken.verify(token, this.secret);
   }
 

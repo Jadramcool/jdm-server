@@ -1,6 +1,7 @@
 import { JWT } from "@jwt/index";
 import { inject, injectable } from "inversify";
 import { PrismaDB } from "../../db";
+import { NotFoundException, BadRequestException } from "../../exceptions";
 
 // 排序参数接口定义
 interface SortParams {
@@ -18,7 +19,7 @@ export class PublicService {
   constructor(
     @inject(PrismaDB) private readonly PrismaDB: PrismaDB,
     @inject(JWT) private readonly JWT: JWT
-  ) {}
+  ) { }
 
   /**
    * 通用排序方法（优化版本：只更新被移动的项目）
@@ -157,7 +158,7 @@ export class PublicService {
         });
 
         if (!sourceItem) {
-          throw new Error("找不到要移动的项目");
+          throw new NotFoundException("找不到要移动的项目");
         }
 
         let newSortOrder: number;
@@ -194,7 +195,7 @@ export class PublicService {
               select: { id: true, [sortField]: true },
             });
             if (!targetItem) {
-              throw new Error("找不到目标项目");
+              throw new NotFoundException("找不到目标项目");
             }
 
             if (position === "before") {
@@ -264,7 +265,7 @@ export class PublicService {
             break;
 
           default:
-            throw new Error("无效的位置参数");
+            throw new BadRequestException("无效的位置参数");
         }
 
         // 如果新排序值与当前值相同，无需更新

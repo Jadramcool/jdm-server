@@ -178,10 +178,19 @@ export class UserService {
       // 删除密码字段，确保安全性
       delete result.password;
 
+      // 生成双Token
+      const tokenData = {
+        id: result.id,
+        username: result.username,
+      };
+      const accessToken = this.JWT.createAccessToken(tokenData);
+      const refreshToken = this.JWT.createRefreshToken(tokenData);
+
       return {
         data: {
           ...result,
-          token: this.JWT.createToken(result),
+          accessToken,
+          refreshToken,
         },
         code: 200,
         message: "登录成功",
