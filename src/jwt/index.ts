@@ -25,9 +25,7 @@ export class JWT {
   constructor() {
     this.secret = process.env.JWT_SECRET || "";
     if (!this.secret) {
-      console.warn("⚠️ 警告: JWT_SECRET 环境变量未设置，使用默认密钥存在安全风险！");
-      console.warn("请在 .env 文件中设置 JWT_SECRET=your-secret-key");
-      this.secret = "jdmshidashuaibi";
+      throw new Error("❌ 错误: JWT_SECRET 环境变量未设置！请在 .env 文件中设置 JWT_SECRET=your-secret-key");
     }
     this.accessTokenExpire = process.env.JWT_ACCESS_EXPIRE || "30m";
     this.refreshTokenExpire = process.env.JWT_REFRESH_EXPIRE || "7d";

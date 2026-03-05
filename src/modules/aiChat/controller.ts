@@ -19,7 +19,7 @@ export class AiChat {
     private readonly AiChatService: AiChatService,
     @inject(UtilService)
     private readonly UtilService: UtilService
-  ) {}
+  ) { }
 
   /**
    * @swagger
@@ -154,7 +154,6 @@ export class AiChat {
     // }: Jres = await this.AiChatService.aiChat(req.body);
 
     const aiStream: any = await this.AiChatService.aiChat(req.body);
-    console.log("🚀 ~ aiChat ~ aiStream:", aiStream);
 
     // 设置响应头，以流式传输数据
     res.setHeader("Content-Type", "text/plain"); // 可以根据需要设置其他类型
